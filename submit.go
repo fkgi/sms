@@ -1,9 +1,6 @@
 package sms
 
-import (
-	"bytes"
-)
-
+/*
 func CreateSubmit(dest, data string) *TPDU {
 	msgRef++
 
@@ -65,3 +62,4 @@ func (p TPDU) encodeSubmitReport() []byte {
 
 	return buf.Bytes()
 }
+*/

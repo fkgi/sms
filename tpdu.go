@@ -1,9 +1,9 @@
 package sms
 
 import (
-	"bytes"
+	"fmt"
+	"io"
 	"time"
-	"unicode/utf16"
 )
 
 var (
@@ -14,7 +14,75 @@ func init() {
 	msgRef = byte(time.Now().Nanosecond())
 }
 
-type TPDU struct {
+// TPDU represents a SMS PDU
+type TPDU interface {
+	WriteTo(w io.Writer) (n int64, e error)
+	ReadFrom(h byte, r io.Reader) (n int64, e error)
+}
+
+// ParseAsSM parse byte data to TPDU as SM side
+func ParseAsSM(r io.Reader) (t TPDU, n int64, e error) {
+	h := make([]byte, 1)
+	i := 0
+	if i, e = r.Read(h); e != nil {
+		return
+	} else if i != 1 {
+		e = fmt.Errorf("no data")
+		return
+	}
+
+	switch h[0] & 0x03 {
+	case 0x00:
+		t = &Deliver{}
+	case 0x01:
+		//		t = &SubmitReport{}
+	case 0x02:
+		//		t = &StatusReport{}
+	case 0x03:
+		e = fmt.Errorf("invalid data: reserved TPDU type")
+		return
+	}
+
+	if n, e = t.ReadFrom(h[0], r); e != nil {
+		return
+	}
+	n++
+
+	return
+}
+
+// ParseAsSC parse byte data to TPDU as SC side
+func ParseAsSC(r io.Reader) (t TPDU, n int64, e error) {
+	h := make([]byte, 1)
+	i := 0
+	if i, e = r.Read(h); e != nil {
+		return
+	} else if i != 1 {
+		e = fmt.Errorf("no data")
+		return
+	}
+
+	switch h[0] & 0x03 {
+	case 0x00:
+		//		t = &DeliverReport{}
+	case 0x01:
+		//		t = &Submit{}
+	case 0x02:
+		//		t = &Command{}
+	case 0x03:
+		e = fmt.Errorf("invalid data: reserved TPDU type")
+		return
+	}
+
+	if n, e = t.ReadFrom(h[0], r); e != nil {
+		return
+	}
+	n++
+
+	return
+}
+
+/*
 	Req bool
 
 	MTI  byte    // Message Type Indicator
@@ -49,24 +117,6 @@ type TPDU struct {
 	UDh []byte
 }
 
-func (p TPDU) Encode() []byte {
-	switch p.MTI {
-	case 0x00:
-		if p.Req {
-			return p.encodeDeliver()
-		} else {
-			return p.encodeDeliverReport()
-		}
-	case 0x01:
-		if p.Req {
-			return p.encodeSubmit()
-		} else {
-			return p.encodeSubmitReport()
-		}
-	}
-	return nil
-}
-
 func (p TPDU) encodeUD() []byte {
 	s := p.UD
 	if len(s)*2 > 140-len(p.UDh) {
@@ -83,36 +133,84 @@ func (p TPDU) encodeUD() []byte {
 	}
 	return b
 }
+*/
 
-type TPAddr struct {
+// Address is SMS originator/destination address
+type Address struct {
 	EXT   bool
 	TON   byte
 	NPI   byte
-	Digit string
+	Digit addrValue
 }
 
-func (p TPAddr) encode() []byte {
-	var buf bytes.Buffer
+type addrValue interface {
+	Length() int
+	String() string
+	WriteTo(w io.Writer) (n int64, e error)
+}
 
-	b := byte(len(p.Digit))
-	buf.WriteByte(b)
+// WriteTo wite binary data to io.Writer
+func (a Address) WriteTo(w io.Writer) (n int64, e error) {
+	i := 0
+	b := []byte{byte(a.Digit.Length()), 0x00}
 
-	if p.EXT {
-		b = 0x80
+	if a.EXT {
+		b[1] = 0x80
 	} else {
-		b = 0x00
+		b[1] = 0x00
 	}
-	b = b | (p.TON&0x07)<<4
-	b = b | (p.NPI & 0x0f)
-	buf.WriteByte(b)
+	b[1] = b[1] | (a.TON&0x07)<<4
+	b[1] = b[1] | (a.NPI & 0x0f)
+	if i, e = w.Write(b); e != nil {
+		return
+	}
 
-	buf.Write(stotbcd(p.Digit))
+	if n, e = a.Digit.WriteTo(w); e != nil {
+		return
+	}
+	n += int64(i)
 
-	return buf.Bytes()
+	return
 }
 
-func getTime(t time.Time) []byte {
-	r := make([]byte, 7)
+// ReadFrom read byte data and set parameter of the Address
+func (a *Address) ReadFrom(r io.Reader) (n int64, e error) {
+	i := 0
+	b := make([]byte, 2)
+	if i, e = r.Read(b); e != nil {
+		return
+	} else if i != 2 {
+		e = fmt.Errorf("more data required")
+		return
+	}
+
+	l := int(b[0])
+	a.EXT = b[1]&0x80 == 0x80
+	a.TON = (b[1] >> 4) & 0x07
+	a.NPI = b[1] & 0x0f
+
+	if l%2 == 1 {
+		l++
+	}
+	l = l / 2
+	b = make([]byte, l)
+	if i, e = r.Read(b); e != nil {
+		return
+	} else if i != l {
+		e = fmt.Errorf("more data required")
+		return
+	}
+	n = int64(i + 2)
+
+	return
+}
+
+// DateTime is time data for TP-SCTS, TP-DT and in Absolute format of TP-VP
+type DateTime [7]byte
+
+// EncodeTime create DateTime
+func EncodeTime(t time.Time) DateTime {
+	var r [7]byte
 
 	r[0] = byte(t.Year() % 10)
 	r[0] = (r[0] << 4) | byte((t.Year()/10)%10)
@@ -133,55 +231,6 @@ func getTime(t time.Time) []byte {
 	r[6] = (r[6] << 4) | byte(((z/10)%10)&0x0f)
 	if z < 0 {
 		r[6] = r[6] | 0x08
-	}
-	return r
-}
-
-func stotbcd(s string) []byte {
-	if len(s)%2 != 0 {
-		s = s + " "
-	}
-	r := make([]byte, len(s)/2)
-	for i, c := range s {
-		v := byte(0x0f)
-		switch c {
-		case '0':
-			v = 0x00
-		case '1':
-			v = 0x01
-		case '2':
-			v = 0x02
-		case '3':
-			v = 0x03
-		case '4':
-			v = 0x04
-		case '5':
-			v = 0x05
-		case '6':
-			v = 0x06
-		case '7':
-			v = 0x07
-		case '8':
-			v = 0x08
-		case '9':
-			v = 0x09
-		case '*':
-			v = 0x09
-		case '#':
-			v = 0x09
-		case 'a', 'A':
-			v = 0x09
-		case 'b', 'B':
-			v = 0x09
-		case 'c', 'C':
-			v = 0x09
-		default:
-			v = 0x0f
-		}
-		if i%2 == 1 {
-			v = v << 4
-		}
-		r[i/2] = r[i/2] | v
 	}
 	return r
 }
