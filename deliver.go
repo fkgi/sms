@@ -7,18 +7,19 @@ import (
 
 // Deliver is TPDU message from SC to MS
 type Deliver struct {
-	MTI  byte     // Message Type Indicator
-	MMS  bool     // More Messages to Send (true=more messages)
-	LP   bool     // Loop Prevention
-	SRI  bool     // Status Report Indication
-	UDHI bool     // User Data Header Indicator
-	RP   bool     // Reply Path
-	OA   Address  // Originating Address
-	PID  byte     // Protocol Identifier
-	DCS  byte     // Data Coding Scheme
-	SCTS DateTime // Service Centre Time Stamp
-	UDL  byte     // User Data Length
-	UD   []byte   // User Data
+	MTI  byte // Message Type Indicator
+	MMS  bool // More Messages to Send (true=more messages)
+	LP   bool // Loop Prevention
+	SRI  bool // Status Report Indication (true=status report shall be returned)
+	UDHI bool // User Data Header Indicator
+	RP   bool // Reply Path
+
+	OA   Address   // Originating Address
+	PID  byte      // Protocol Identifier
+	DCS  byte      // Data Coding Scheme
+	SCTS TimeStamp // Service Centre Time Stamp
+	UDL  byte      // User Data Length
+	UD   []byte    // User Data
 }
 
 // WriteTo output byte data of this TPDU

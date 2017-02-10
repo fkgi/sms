@@ -73,6 +73,11 @@ func (s GSM7bitString) Length() int {
 	return bit / 7
 }
 
+// ByteLength return octets of the GSM 7bit String
+func (s GSM7bitString) ByteLength() int {
+	return len(s)
+}
+
 // String return string value of the GSM 7bit String
 func (s GSM7bitString) String() string {
 	var b bytes.Buffer
