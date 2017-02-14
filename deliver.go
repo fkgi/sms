@@ -16,10 +16,10 @@ type Deliver struct {
 
 	OA   Address   // Originating Address
 	PID  byte      // Protocol Identifier
-	DCS  byte      // Data Coding Scheme
+	DCS  dcs       // Data Coding Scheme
 	SCTS TimeStamp // Service Centre Time Stamp
-	UDL  byte      // User Data Length
-	UD   []byte    // User Data
+	// UDL  byte      // User Data Length
+	UD []byte // User Data
 }
 
 // WriteTo output byte data of this TPDU
@@ -52,11 +52,14 @@ func (d *Deliver) WriteTo(w io.Writer) (n int64, e error) {
 
 	b = make([]byte, 10)
 	b[0] = d.PID
-	b[1] = d.DCS
+	b[1] = d.DCS.encodeDCS()
 	for j := 0; j < 7; j++ {
 		b[j+2] = d.SCTS[j]
 	}
-	b[9] = d.UDL
+
+	l := d.DCS.unitSize()
+	l = ((len(d.UD) * 8) - (len(d.UD) * 8 % l)) / l
+	b[9] = byte(l)
 	if i, e = w.Write(b); e != nil {
 		return
 	}
@@ -95,13 +98,22 @@ func (d *Deliver) ReadFrom(h byte, r io.Reader) (n int64, e error) {
 	n += int64(i)
 
 	d.PID = b[0]
-	d.DCS = b[1]
+	d.DCS = decodeDCS(b[1])
+	if d.DCS == nil {
+		e = fmt.Errorf("invalid TP-DCS data")
+		return
+	}
 	for j := 0; j < 7; j++ {
 		d.SCTS[j] = b[j+2]
 	}
-	d.UDL = b[9]
 
-	d.UD = make([]byte, int(d.UDL))
+	l := d.DCS.unitSize()
+	l *= int(b[9])
+	if l%8 != 0 {
+		l += 8 - l%8
+	}
+
+	d.UD = make([]byte, l/8)
 	if i, e = r.Read(d.UD); e != nil {
 		return
 	} else if i != len(d.UD) {
