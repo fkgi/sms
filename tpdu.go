@@ -1,6 +1,7 @@
 package sms
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"time"
@@ -251,3 +252,19 @@ func EncodeTime(t time.Time) TimeStamp {
 	return r
 }
 
+func encodeUDH(m map[byte][]byte) []byte {
+	if len(m) == 0 {
+		return []byte{}
+	}
+
+	var b bytes.Buffer
+	b.WriteByte(0x00)
+	for k, v := range m {
+		b.WriteByte(k)
+		b.WriteByte(byte(len(v)))
+		b.Write(v)
+	}
+	r := b.Bytes()
+	r[0] = byte(len(r) - 1)
+	return r
+}

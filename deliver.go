@@ -7,19 +7,20 @@ import (
 
 // Deliver is TPDU message from SC to MS
 type Deliver struct {
-	MTI  byte // Message Type Indicator
-	MMS  bool // More Messages to Send (true=more messages)
-	LP   bool // Loop Prevention
-	SRI  bool // Status Report Indication (true=status report shall be returned)
-	UDHI bool // User Data Header Indicator
-	RP   bool // Reply Path
+	MTI byte // Message Type Indicator
+	MMS bool // More Messages to Send (true=more messages)
+	LP  bool // Loop Prevention
+	SRI bool // Status Report Indication (true=status report shall be returned)
+	//	UDHI bool // User Data Header Indicator
+	RP bool // Reply Path
 
 	OA   Address   // Originating Address
 	PID  byte      // Protocol Identifier
 	DCS  dcs       // Data Coding Scheme
 	SCTS TimeStamp // Service Centre Time Stamp
 	// UDL  byte      // User Data Length
-	UD []byte // User Data
+	UDH map[byte][]byte // User Data Header
+	UD  []byte          // User Data
 }
 
 // WriteTo output byte data of this TPDU
@@ -35,7 +36,7 @@ func (d *Deliver) WriteTo(w io.Writer) (n int64, e error) {
 	if d.SRI {
 		b[0] = b[0] | 0x20
 	}
-	if d.UDHI {
+	if d.UDH != nil && len(d.UDH) != 0 {
 		b[0] = b[0] | 0x40
 	}
 	if d.RP {
@@ -50,21 +51,27 @@ func (d *Deliver) WriteTo(w io.Writer) (n int64, e error) {
 	}
 	n += int64(i)
 
+	udh := encodeUDH(d.UDH)
+	u := d.DCS.unitSize()
+	l := len(udh) + len(d.UD)
+	l = ((l * 8) - (l * 8 % u)) / u
+
 	b = make([]byte, 10)
 	b[0] = d.PID
 	b[1] = d.DCS.encodeDCS()
 	for j := 0; j < 7; j++ {
 		b[j+2] = d.SCTS[j]
 	}
-
-	l := d.DCS.unitSize()
-	l = ((len(d.UD) * 8) - (len(d.UD) * 8 % l)) / l
 	b[9] = byte(l)
 	if i, e = w.Write(b); e != nil {
 		return
 	}
 	n += int64(i)
 
+	if i, e = w.Write(udh); e != nil {
+		return
+	}
+	n += int64(i)
 	if i, e = w.Write(d.UD); e != nil {
 		return
 	}
@@ -79,7 +86,7 @@ func (d *Deliver) ReadFrom(h byte, r io.Reader) (n int64, e error) {
 	d.MMS = h&0x04 != 0x04
 	d.LP = h&0x08 == 0x08
 	d.SRI = h&0x20 == 0x20
-	d.UDHI = h&0x40 == 0x40
+	udh := h&0x40 == 0x40
 	d.RP = h&0x80 == 0x80
 
 	d.OA = Address{}
