@@ -66,7 +66,7 @@ func ParseAsSC(r io.Reader) (t TPDU, n int64, e error) {
 	case 0x00:
 		//		t = &DeliverReport{}
 	case 0x01:
-		//		t = &Submit{}
+		t = &Submit{}
 	case 0x02:
 		//		t = &Command{}
 	case 0x03:
@@ -250,4 +250,3 @@ func EncodeTime(t time.Time) TimeStamp {
 	}
 	return r
 }
-
