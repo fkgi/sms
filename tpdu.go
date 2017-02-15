@@ -67,7 +67,7 @@ func ParseAsSC(r io.Reader) (t TPDU, n int64, e error) {
 	case 0x00:
 		//		t = &DeliverReport{}
 	case 0x01:
-		//		t = &Submit{}
+		t = &Submit{}
 	case 0x02:
 		//		t = &Command{}
 	case 0x03:
@@ -251,6 +251,7 @@ func EncodeTime(t time.Time) TimeStamp {
 	}
 	return r
 }
+<<<<<<< HEAD
 
 func encodeUDH(m map[byte][]byte) []byte {
 	if len(m) == 0 {
@@ -268,3 +269,5 @@ func encodeUDH(m map[byte][]byte) []byte {
 	r[0] = byte(len(r) - 1)
 	return r
 }
+=======
+>>>>>>> e31f85d3701d03cc283c013fa0a86ad85b741831

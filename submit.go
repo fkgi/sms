@@ -1,5 +1,34 @@
 package sms
 
+import "io"
+
+// Submit is TPDU message from MS to SC
+type Submit struct {
+	MTI byte // Message Type Indicator
+	RD  bool // Reject Duplicates
+	VPF byte // Validity Period Format
+	SRR bool // Status Report Request
+	RP  bool // Reply Path
+
+	MR  byte    // Message Reference
+	DA  Address // Destination Address
+	PID byte    // Protocol Identifier
+	DCS dcs     // Data Coding Scheme
+	UD  []byte  // User Data
+}
+
+// WriteTo output byte data of this TPDU
+func (d *Submit) WriteTo(w io.Writer) (n int64, e error) {
+
+	return
+}
+
+// ReadFrom read byte data and set parameter of the TPDU
+func (d *Submit) ReadFrom(h byte, r io.Reader) (n int64, e error) {
+
+	return
+}
+
 /*
 func CreateSubmit(dest, data string) *TPDU {
 	msgRef++
