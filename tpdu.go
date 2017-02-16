@@ -18,11 +18,12 @@ func init() {
 // TPDU represents a SMS PDU
 type TPDU interface {
 	WriteTo(w io.Writer) (n int64, e error)
-	ReadFrom(h byte, r io.Reader) (n int64, e error)
+	readFrom(h byte, r io.Reader) (n int64, e error)
+	PrintStack(w io.Writer)
 }
 
-// ParseAsSM parse byte data to TPDU as SM side
-func ParseAsSM(r io.Reader) (t TPDU, n int64, e error) {
+// ReadAsSM parse byte data to TPDU as SM side
+func ReadAsSM(r io.Reader) (t TPDU, n int64, e error) {
 	h := make([]byte, 1)
 	i := 0
 	if i, e = r.Read(h); e != nil {
@@ -44,7 +45,7 @@ func ParseAsSM(r io.Reader) (t TPDU, n int64, e error) {
 		return
 	}
 
-	if n, e = t.ReadFrom(h[0], r); e != nil {
+	if n, e = t.readFrom(h[0], r); e != nil {
 		return
 	}
 	n++
@@ -52,8 +53,8 @@ func ParseAsSM(r io.Reader) (t TPDU, n int64, e error) {
 	return
 }
 
-// ParseAsSC parse byte data to TPDU as SC side
-func ParseAsSC(r io.Reader) (t TPDU, n int64, e error) {
+// ReadAsSC parse byte data to TPDU as SC side
+func ReadAsSC(r io.Reader) (t TPDU, n int64, e error) {
 	h := make([]byte, 1)
 	i := 0
 	if i, e = r.Read(h); e != nil {
@@ -75,7 +76,7 @@ func ParseAsSC(r io.Reader) (t TPDU, n int64, e error) {
 		return
 	}
 
-	if n, e = t.ReadFrom(h[0], r); e != nil {
+	if n, e = t.readFrom(h[0], r); e != nil {
 		return
 	}
 	n++
@@ -118,117 +119,9 @@ func ParseAsSC(r io.Reader) (t TPDU, n int64, e error) {
 	UDh []byte
 }
 
-func (p TPDU) encodeUD() []byte {
-	s := p.UD
-	if len(s)*2 > 140-len(p.UDh) {
-		s = s[0 : (140-len(p.UDh))/2]
-	} else if len(s) == 0 {
-		return make([]byte, 0)
-	}
-
-	u := utf16.Encode([]rune(s))
-	b := make([]byte, len(u)*2)
-	for i, c := range u {
-		b[i*2] = byte((c >> 8) & 0xff)
-		b[i*2+1] = byte(c & 0xff)
-	}
-	return b
-}
 */
 
-// Address is SMS originator/destination address
-type Address struct {
-	TON  byte
-	NPI  byte
-	Addr addrValue
-}
-
-type addrValue interface {
-	Length() int
-	ByteLength() int
-	String() string
-	WriteTo(w io.Writer) (n int64, e error)
-}
-
-// WriteTo wite binary data to io.Writer
-func (a Address) WriteTo(w io.Writer) (n int64, e error) {
-	i := 0
-	switch a.Addr.(type) {
-	case TBCD:
-		i = a.Addr.Length()
-		if a.TON == 0x05 {
-			e = fmt.Errorf("invalid TON for digit address")
-			return
-		}
-	case GSM7bitString:
-		i = a.Addr.ByteLength() * 2
-		if a.TON != 0x05 || a.NPI != 0x00 {
-			e = fmt.Errorf("invalid TON/NPI for alphanumeric address")
-			return
-		}
-	}
-
-	b := []byte{byte(i), 0x80}
-	b[1] = b[1] | (a.TON&0x07)<<4
-	b[1] = b[1] | (a.NPI & 0x0f)
-	if i, e = w.Write(b); e != nil {
-		n = int64(i)
-		return
-	}
-
-	n, e = a.Addr.WriteTo(w)
-	n += int64(i)
-
-	if e == nil && n > 12 {
-		e = fmt.Errorf("too much long address data %d", n)
-	}
-	return
-}
-
-// ReadFrom read byte data and set parameter of the Address
-func (a *Address) ReadFrom(r io.Reader) (n int64, e error) {
-	i := 0
-	b := make([]byte, 2)
-	if i, e = r.Read(b); e != nil {
-		return
-	} else if i != 2 {
-		e = fmt.Errorf("more data required")
-		return
-	}
-
-	l := int(b[0])
-	a.TON = (b[1] >> 4) & 0x07
-	a.NPI = b[1] & 0x0f
-
-	if a.TON == 0x05 {
-		l /= 2
-		b := make([]byte, l)
-		i, e = r.Read(b)
-		a.Addr = GSM7bitString(b)
-	} else {
-		if l%2 == 1 {
-			l++
-		}
-		l /= 2
-		b := make([]byte, l)
-		i, e = r.Read(b)
-		a.Addr = TBCD(b)
-	}
-
-	n = int64(i + 2)
-	if i != l {
-		e = fmt.Errorf("more data required")
-	}
-	return
-}
-
-// TimeStamp is time data for TP-SCTS, TP-DT and in Absolute format of TP-VP
-type TimeStamp [7]byte
-
-// EncodeTime create DateTime
-func EncodeTime(t time.Time) TimeStamp {
-	var r [7]byte
-
+func encodeTime(t time.Time) (r [7]byte) {
 	r[0] = byte(t.Year() % 10)
 	r[0] = (r[0] << 4) | byte((t.Year()/10)%10)
 	r[1] = byte(t.Month() % 10)
@@ -249,7 +142,23 @@ func EncodeTime(t time.Time) TimeStamp {
 	if z < 0 {
 		r[6] = r[6] | 0x08
 	}
-	return r
+	return
+}
+
+func decodeTime(t [7]byte) time.Time {
+	d := [6]int{}
+	for i := range d {
+		d[i] = int(t[i] & 0x0f)
+		d[i] = (d[i] * 10) + int((t[i]&0xf0)>>4)
+	}
+	l := int(t[6] & 0x0f)
+	l = (l * 10) + int((t[6]&0x70)>>4)
+	if t[6]&0x80 == 0x80 {
+		l = -l
+	}
+	loc := time.FixedZone("unknown", l*15*60)
+	println(l)
+	return time.Date(2000+d[0], time.Month(d[1]), d[2], d[3], d[4], d[5], 0, loc)
 }
 
 func encodeUDH(m map[byte][]byte) []byte {
@@ -267,4 +176,47 @@ func encodeUDH(m map[byte][]byte) []byte {
 	r := b.Bytes()
 	r[0] = byte(len(r) - 1)
 	return r
+}
+
+func decodeUDH(b []byte) map[byte][]byte {
+	m := make(map[byte][]byte)
+	if len(b) == 0 {
+		return m
+	}
+
+	buf := bytes.NewBuffer(b)
+	buf.ReadByte()
+	for buf.Len() != 0 {
+		k, _ := buf.ReadByte()
+		l, _ := buf.ReadByte()
+		v := make([]byte, l)
+		buf.Read(v)
+		m[k] = v
+	}
+	return m
+}
+
+func mmsStat(b bool) string {
+	if b {
+		return "More messages are waiting"
+	}
+	return "No more messages are waiting"
+}
+func lpStat(b bool) string {
+	if b {
+		return "Forwarded/spawned message"
+	}
+	return "Not forwarded/spawned message"
+}
+func sriStat(b bool) string {
+	if b {
+		return "Status report shall be returned"
+	}
+	return "Status report shall not be returned"
+}
+func rpStat(b bool) string {
+	if b {
+		return "Reply Path is set"
+	}
+	return "Reply Path is not set"
 }

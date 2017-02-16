@@ -23,10 +23,13 @@ func (d *Submit) WriteTo(w io.Writer) (n int64, e error) {
 	return
 }
 
-// ReadFrom read byte data and set parameter of the TPDU
-func (d *Submit) ReadFrom(h byte, r io.Reader) (n int64, e error) {
+func (d *Submit) readFrom(h byte, r io.Reader) (n int64, e error) {
 
 	return
+}
+
+// PrintStack show PDU parameter
+func (d *Submit) PrintStack(w io.Writer) {
 }
 
 /*

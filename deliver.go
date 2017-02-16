@@ -3,30 +3,28 @@ package sms
 import (
 	"fmt"
 	"io"
+	"time"
 )
 
 // Deliver is TPDU message from SC to MS
 type Deliver struct {
-	MTI byte // Message Type Indicator
 	MMS bool // More Messages to Send (true=more messages)
 	LP  bool // Loop Prevention
 	SRI bool // Status Report Indication (true=status report shall be returned)
-	//	UDHI bool // User Data Header Indicator
-	RP bool // Reply Path
+	RP  bool // Reply Path
 
-	OA   Address   // Originating Address
-	PID  byte      // Protocol Identifier
-	DCS  dcs       // Data Coding Scheme
-	SCTS TimeStamp // Service Centre Time Stamp
-	// UDL  byte      // User Data Length
-	UDH map[byte][]byte // User Data Header
-	UD  []byte          // User Data
+	OA   Address         // Originating Address
+	PID  byte            // Protocol Identifier
+	DCS  dcs             // Data Coding Scheme
+	SCTS time.Time       // Service Centre Time Stamp
+	UDH  map[byte][]byte // User Data Header
+	UD   []byte          // User Data
 }
 
 // WriteTo output byte data of this TPDU
 func (d *Deliver) WriteTo(w io.Writer) (n int64, e error) {
 	i := 0
-	b := []byte{d.MTI}
+	b := []byte{0x00}
 	if !d.MMS {
 		b[0] = b[0] | 0x04
 	}
@@ -59,8 +57,8 @@ func (d *Deliver) WriteTo(w io.Writer) (n int64, e error) {
 	b = make([]byte, 10)
 	b[0] = d.PID
 	b[1] = d.DCS.encodeDCS()
-	for j := 0; j < 7; j++ {
-		b[j+2] = d.SCTS[j]
+	for j, k := range encodeTime(d.SCTS) {
+		b[j+2] = k
 	}
 	b[9] = byte(l)
 	if i, e = w.Write(b); e != nil {
@@ -80,13 +78,10 @@ func (d *Deliver) WriteTo(w io.Writer) (n int64, e error) {
 	return
 }
 
-// ReadFrom read byte data and set parameter of the TPDU
-func (d *Deliver) ReadFrom(h byte, r io.Reader) (n int64, e error) {
-	d.MTI = h & 0x03
+func (d *Deliver) readFrom(h byte, r io.Reader) (n int64, e error) {
 	d.MMS = h&0x04 != 0x04
 	d.LP = h&0x08 == 0x08
 	d.SRI = h&0x20 == 0x20
-	udh := h&0x40 == 0x40
 	d.RP = h&0x80 == 0x80
 
 	d.OA = Address{}
@@ -107,12 +102,14 @@ func (d *Deliver) ReadFrom(h byte, r io.Reader) (n int64, e error) {
 	d.PID = b[0]
 	d.DCS = decodeDCS(b[1])
 	if d.DCS == nil {
-		e = fmt.Errorf("invalid TP-DCS data")
+		e = fmt.Errorf("invalid TP-DCS data: % x", b[1])
 		return
 	}
+	t := [7]byte{}
 	for j := 0; j < 7; j++ {
-		d.SCTS[j] = b[j+2]
+		t[j] = b[j+2]
 	}
+	d.SCTS = decodeTime(t)
 
 	l := d.DCS.unitSize()
 	l *= int(b[9])
@@ -129,29 +126,32 @@ func (d *Deliver) ReadFrom(h byte, r io.Reader) (n int64, e error) {
 	}
 	n += int64(i)
 
+	if h&0x40 == 0x40 {
+		d.UDH = decodeUDH(d.UD[0 : d.UD[0]+1])
+		d.UD = d.UD[d.UD[0]+1:]
+	}
+
 	return
 }
 
-/*
-func CreateDeliver(src, data string) *TPDU {
-	msgRef++
+// PrintStack show PDU parameter
+func (d *Deliver) PrintStack(w io.Writer) {
+	fmt.Fprintf(w, "SMS message stack: Deliver\n")
+	fmt.Fprintf(w, "TP-MMS:  %s\n", mmsStat(d.MMS))
+	fmt.Fprintf(w, "TP-LP:   %s\n", lpStat(d.LP))
+	fmt.Fprintf(w, "TP-SRI:  %s\n", sriStat(d.SRI))
+	fmt.Fprintf(w, "TP-RP:   %s\n", rpStat(d.RP))
 
-	p := &TPDU{}
-	p.Req = true // request message
+	fmt.Fprintf(w, "TP-OA:   %s\n", d.OA)
+	fmt.Fprintf(w, "TP-PID:  %d\n", d.PID)
+	fmt.Fprintf(w, "TP-DCS:  %s\n", d.DCS)
+	fmt.Fprintf(w, "TP-SCTS: %s\n", d.SCTS)
+	fmt.Fprintf(w, "TP-UD:\n")
+	for k, v := range d.UDH {
+		fmt.Fprintf(w, " IEI:%d = % x\n", k, v)
+	}
 
-	p.MTI = 0x00  // message type indicator
-	p.MMS = false // more message to send
-	p.LP = false  // loop prevention
-	p.SRI = true  // status report indication
-	p.RP = false  // reply path
-
-	p.OA = TPAddr{true, 0, 1, src} // originating address
-	p.PID = 0x00                   // protocol identifer Default store and forward short message
-	p.DCS = 0x08                   // data coding scheme UCS2 with no Message Class
-	p.SCTS = getTime(time.Now())   // service center time stamp
-
-	p.UD = data // user data
-
-	return p
+	if d.UD != nil && len(d.UD) != 0 {
+		fmt.Fprintf(w, "%s\n", d.DCS.decodeData(d.UD))
+	}
 }
-*/
