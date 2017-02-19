@@ -57,7 +57,7 @@ func (d *Deliver) WriteTo(w io.Writer) (n int64, e error) {
 	b = make([]byte, 10)
 	b[0] = d.PID
 	b[1] = d.DCS.encodeDCS()
-	for j, k := range encodeTime(d.SCTS) {
+	for j, k := range encodeSCTimeStamp(d.SCTS) {
 		b[j+2] = k
 	}
 	b[9] = byte(l)
@@ -105,11 +105,7 @@ func (d *Deliver) readFrom(h byte, r io.Reader) (n int64, e error) {
 		e = fmt.Errorf("invalid TP-DCS data: % x", b[1])
 		return
 	}
-	t := [7]byte{}
-	for j := 0; j < 7; j++ {
-		t[j] = b[j+2]
-	}
-	d.SCTS = decodeTime(t)
+	d.SCTS = decodeSCTimeStamp([7]byte{b[2], b[3], b[4], b[5], b[6], b[7], b[8]})
 
 	l := d.DCS.unitSize()
 	l *= int(b[9])
@@ -146,11 +142,11 @@ func (d *Deliver) PrintStack(w io.Writer) {
 	fmt.Fprintf(w, "TP-PID:  %d\n", d.PID)
 	fmt.Fprintf(w, "TP-DCS:  %s\n", d.DCS)
 	fmt.Fprintf(w, "TP-SCTS: %s\n", d.SCTS)
+
 	fmt.Fprintf(w, "TP-UD:\n")
 	for k, v := range d.UDH {
 		fmt.Fprintf(w, " IEI:%d = % x\n", k, v)
 	}
-
 	if d.UD != nil && len(d.UD) != 0 {
 		fmt.Fprintf(w, "%s\n", d.DCS.decodeData(d.UD))
 	}

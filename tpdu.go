@@ -121,19 +121,13 @@ func ReadAsSC(r io.Reader) (t TPDU, n int64, e error) {
 
 */
 
-func encodeTime(t time.Time) (r [7]byte) {
-	r[0] = byte(t.Year() % 10)
-	r[0] = (r[0] << 4) | byte((t.Year()/10)%10)
-	r[1] = byte(t.Month() % 10)
-	r[1] = (r[1] << 4) | byte((t.Month()/10)%10)
-	r[2] = byte(t.Day() % 10)
-	r[2] = (r[2] << 4) | byte((t.Day()/10)%10)
-	r[3] = byte(t.Hour() % 10)
-	r[3] = (r[3] << 4) | byte((t.Hour()/10)%10)
-	r[4] = byte(t.Minute() % 10)
-	r[4] = (r[4] << 4) | byte((t.Minute()/10)%10)
-	r[5] = byte(t.Second() % 10)
-	r[5] = (r[5] << 4) | byte((t.Second()/10)%10)
+func encodeSCTimeStamp(t time.Time) (r [7]byte) {
+	r[0] = int2SemiOctet(t.Year())
+	r[1] = int2SemiOctet(int(t.Month()))
+	r[2] = int2SemiOctet(t.Day())
+	r[3] = int2SemiOctet(t.Hour())
+	r[4] = int2SemiOctet(t.Minute())
+	r[5] = int2SemiOctet(t.Second())
 
 	_, z := t.Zone()
 	z /= 900
@@ -145,20 +139,29 @@ func encodeTime(t time.Time) (r [7]byte) {
 	return
 }
 
-func decodeTime(t [7]byte) time.Time {
+func int2SemiOctet(i int) (b byte) {
+	b = byte(i % 10)
+	b = (b << 4) | byte((i/10)%10)
+	return
+}
+
+func decodeSCTimeStamp(t [7]byte) time.Time {
 	d := [6]int{}
 	for i := range d {
-		d[i] = int(t[i] & 0x0f)
-		d[i] = (d[i] * 10) + int((t[i]&0xf0)>>4)
+		d[i] = semiOctet2Int(t[i])
 	}
-	l := int(t[6] & 0x0f)
-	l = (l * 10) + int((t[6]&0x70)>>4)
+	l := semiOctet2Int(t[6] & 0x7f)
 	if t[6]&0x80 == 0x80 {
 		l = -l
 	}
-	loc := time.FixedZone("unknown", l*15*60)
-	println(l)
-	return time.Date(2000+d[0], time.Month(d[1]), d[2], d[3], d[4], d[5], 0, loc)
+	return time.Date(2000+d[0], time.Month(d[1]), d[2], d[3], d[4], d[5], 0,
+		time.FixedZone("unknown", l*15*60))
+}
+
+func semiOctet2Int(b byte) (i int) {
+	i = int(b & 0x0f)
+	i = (i * 10) + int((b&0xf0)>>4)
+	return
 }
 
 func encodeUDH(m map[byte][]byte) []byte {
@@ -219,4 +222,16 @@ func rpStat(b bool) string {
 		return "Reply Path is set"
 	}
 	return "Reply Path is not set"
+}
+func rdStat(b bool) string {
+	if b {
+		return "Reject duplicate SUBMIT"
+	}
+	return "Accept duplicate SUBMIT"
+}
+func srrStat(b bool) string {
+	if b {
+		return "Status report is requested"
+	}
+	return "Status report is not requested"
 }
