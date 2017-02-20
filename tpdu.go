@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	msgRef = byte(0)
+	msgRef byte
 )
 
 func init() {
@@ -139,12 +139,6 @@ func encodeSCTimeStamp(t time.Time) (r [7]byte) {
 	return
 }
 
-func int2SemiOctet(i int) (b byte) {
-	b = byte(i % 10)
-	b = (b << 4) | byte((i/10)%10)
-	return
-}
-
 func decodeSCTimeStamp(t [7]byte) time.Time {
 	d := [6]int{}
 	for i := range d {
@@ -156,6 +150,12 @@ func decodeSCTimeStamp(t [7]byte) time.Time {
 	}
 	return time.Date(2000+d[0], time.Month(d[1]), d[2], d[3], d[4], d[5], 0,
 		time.FixedZone("unknown", l*15*60))
+}
+
+func int2SemiOctet(i int) (b byte) {
+	b = byte(i % 10)
+	b = (b << 4) | byte((i/10)%10)
+	return
 }
 
 func semiOctet2Int(b byte) (i int) {

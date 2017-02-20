@@ -36,6 +36,7 @@ func relativeFormatString(b byte) string {
 func (f VPRelative) Period(t time.Time) time.Time {
 	return relativeFormatPeriod(t, f[0])
 }
+
 func relativeFormatPeriod(t time.Time, b byte) time.Time {
 	if b < 144 {
 		i := time.Duration(b+1) * 5 * time.Minute

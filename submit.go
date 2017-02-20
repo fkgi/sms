@@ -60,7 +60,7 @@ func (d *Submit) WriteTo(w io.Writer) (n int64, e error) {
 
 	b = make([]byte, 2)
 	b[0] = d.PID
-	b[1] = d.DCS.encodeDCS()
+	b[1] = d.DCS.encode()
 	if i, e = w.Write(b); e != nil {
 		return
 	}

@@ -81,37 +81,28 @@ func (s GSM7bitString) ByteLength() int {
 // String return string value of the GSM 7bit String
 func (s GSM7bitString) String() string {
 	var b bytes.Buffer
-
 	for i, r := range s {
-		bk := i+1 == len(s)
 		switch i % 7 {
 		case 0:
 			b.WriteRune(code[r&0x7f])
-			if !bk {
-				b.WriteRune(code[((r>>7)&0x01)|((s[i+1]<<1)&0x7e)])
-			}
-		case 1:
-			if !bk {
-				b.WriteRune(code[((r>>6)&0x03)|((s[i+1]<<2)&0x7c)])
-			}
-		case 2:
-			if !bk {
-				b.WriteRune(code[((r>>5)&0x07)|((s[i+1]<<3)&0x78)])
-			}
-		case 3:
-			if !bk {
-				b.WriteRune(code[((r>>4)&0x0f)|((s[i+1]<<4)&0x70)])
-			}
-		case 4:
-			if !bk {
-				b.WriteRune(code[((r>>3)&0x1f)|((s[i+1]<<5)&0x60)])
-			}
-		case 5:
-			if !bk {
-				b.WriteRune(code[((r>>2)&0x3f)|((s[i+1]<<6)&0x40)])
-			}
 		case 6:
 			b.WriteRune(code[(r>>1)&0x7f])
+		}
+		if i+1 != len(s) {
+			switch i % 7 {
+			case 0:
+				b.WriteRune(code[((r>>7)&0x01)|((s[i+1]<<1)&0x7e)])
+			case 1:
+				b.WriteRune(code[((r>>6)&0x03)|((s[i+1]<<2)&0x7c)])
+			case 2:
+				b.WriteRune(code[((r>>5)&0x07)|((s[i+1]<<3)&0x78)])
+			case 3:
+				b.WriteRune(code[((r>>4)&0x0f)|((s[i+1]<<4)&0x70)])
+			case 4:
+				b.WriteRune(code[((r>>3)&0x1f)|((s[i+1]<<5)&0x60)])
+			case 5:
+				b.WriteRune(code[((r>>2)&0x3f)|((s[i+1]<<6)&0x40)])
+			}
 		}
 	}
 	return b.String()

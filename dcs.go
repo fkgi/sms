@@ -7,46 +7,45 @@ import (
 )
 
 type dcs interface {
-	encodeDCS() (b byte)
+	encode() (b byte)
 	unitSize() int
 	String() string
 	decodeData(b []byte) string
+	encodeData(s string) ([]byte, error)
 }
 
 func decodeDCS(b byte) dcs {
-	if b&0xc0 == 0x00 {
+	switch b & 0xc0 {
+	case 0x00:
 		return &GeneralDataCoding{
 			AutoDelete: false,
 			Compressed: b&0x20 == 0x20,
 			MsgClass:   msgClass(b & 0x13),
 			Charset:    charset(b & 0x0c)}
-	}
-	if b&0xc0 == 0x40 {
+	case 0x40:
 		return &GeneralDataCoding{
 			AutoDelete: true,
 			Compressed: b&0x20 == 0x20,
 			MsgClass:   msgClass(b & 0x13),
 			Charset:    charset(b & 0x0c)}
 	}
-	if b&0xf0 == 0xc0 {
+	switch b & 0xf0 {
+	case 0xc0:
 		return &MessageWaiting{
 			Behavior:    DiscardMessageGSM7bit,
 			Active:      b&0x08 == 0x08,
 			WaitingType: waitType(b & 0x03)}
-	}
-	if b&0xf0 == 0xd0 {
+	case 0xd0:
 		return &MessageWaiting{
 			Behavior:    StoreMessageGSM7bit,
 			Active:      b&0x08 == 0x08,
 			WaitingType: waitType(b & 0x03)}
-	}
-	if b&0xf0 == 0xe0 {
+	case 0xe0:
 		return &MessageWaiting{
 			Behavior:    StoreMessageUCS2,
 			Active:      b&0x08 == 0x08,
 			WaitingType: waitType(b & 0x03)}
-	}
-	if b&0xf0 == 0xf0 {
+	case 0xf0:
 		return &DataCodingMessage{
 			IsData:   b&0x04 == 0x04,
 			MsgClass: msgClass((b & 0x03) | 0x10)}
@@ -85,29 +84,29 @@ type GeneralDataCoding struct {
 	Charset    charset
 }
 
-func (s *GeneralDataCoding) encodeDCS() (b byte) {
-	if s.AutoDelete {
+func (c *GeneralDataCoding) encode() (b byte) {
+	if c.AutoDelete {
 		b = 0x40
 	} else {
 		b = 0x00
 	}
-	if s.Compressed {
+	if c.Compressed {
 		b = b | 0x20
 	}
-	b = b | byte(s.MsgClass)
-	b = b | byte(s.Charset&0x0c)
+	b = b | byte(c.MsgClass)
+	b = b | byte(c.Charset&0x0c)
 	return
 }
 
-func (s *GeneralDataCoding) unitSize() int {
-	if s.Charset == GSM7bitAlphabet {
+func (c *GeneralDataCoding) unitSize() int {
+	if c.Charset == GSM7bitAlphabet {
 		return 7
 	}
 	return 8
 }
 
-func (s *GeneralDataCoding) decodeData(b []byte) string {
-	switch s.Charset {
+func (c *GeneralDataCoding) decodeData(b []byte) string {
+	switch c.Charset {
 	case GSM7bitAlphabet:
 		return GSM7bitString(b).String()
 	case Data8bit:
@@ -118,16 +117,28 @@ func (s *GeneralDataCoding) decodeData(b []byte) string {
 	return ""
 }
 
-func (s *GeneralDataCoding) String() string {
+func (c *GeneralDataCoding) encodeData(s string) ([]byte, error) {
+	switch c.Charset {
+	case GSM7bitAlphabet:
+		return GetGSM7bitString(s)
+	case Data8bit:
+		return []byte(s), nil
+	case UCS2:
+		return encodeUCS2(s), nil
+	}
+	return nil, nil
+}
+
+func (c *GeneralDataCoding) String() string {
 	var b bytes.Buffer
 	b.WriteString("General Data Coding")
-	if s.AutoDelete {
+	if c.AutoDelete {
 		b.WriteString("(Automatic Deletion)")
 	}
-	if s.Compressed {
+	if c.Compressed {
 		b.WriteString(", compressed")
 	}
-	switch s.MsgClass {
+	switch c.MsgClass {
 	case NoMessageClass:
 		b.WriteString(", no class")
 	case MessageClass0:
@@ -139,7 +150,7 @@ func (s *GeneralDataCoding) String() string {
 	case MessageClass3:
 		b.WriteString(", class 3")
 	}
-	switch s.Charset {
+	switch c.Charset {
 	case GSM7bitAlphabet:
 		b.WriteString(", GSM 7bit default alphabet")
 	case Data8bit:
@@ -178,35 +189,41 @@ type MessageWaiting struct {
 	WaitingType waitType
 }
 
-func (s *MessageWaiting) encodeDCS() (b byte) {
+func (c *MessageWaiting) encode() (b byte) {
 	b = 0xc0
-	b = b | byte(s.Behavior&0xc0)
-	if s.Active {
+	b = b | byte(c.Behavior&0xc0)
+	if c.Active {
 		b = b | 0x80
 	}
-	b = b | byte(s.WaitingType&0x03)
+	b = b | byte(c.WaitingType&0x03)
 	return
 }
 
-func (s *MessageWaiting) unitSize() int {
-	if s.Behavior == StoreMessageUCS2 {
+func (c *MessageWaiting) unitSize() int {
+	if c.Behavior == StoreMessageUCS2 {
 		return 8
 	}
-
 	return 7
 }
 
-func (s *MessageWaiting) decodeData(b []byte) string {
-	if s.Behavior == StoreMessageUCS2 {
+func (c *MessageWaiting) decodeData(b []byte) string {
+	if c.Behavior == StoreMessageUCS2 {
 		return decodeUCS2(b)
 	}
 	return GSM7bitString(b).String()
 }
 
-func (s *MessageWaiting) String() string {
+func (c *MessageWaiting) encodeData(s string) ([]byte, error) {
+	if c.Behavior == StoreMessageUCS2 {
+		return encodeUCS2(s), nil
+	}
+	return GetGSM7bitString(s)
+}
+
+func (c *MessageWaiting) String() string {
 	var b bytes.Buffer
 	b.WriteString("MessageWaiting")
-	switch s.Behavior {
+	switch c.Behavior {
 	case DiscardMessageGSM7bit:
 		b.WriteString("(Discard Message with GSM 7bit default alphabet)")
 	case StoreMessageGSM7bit:
@@ -214,12 +231,12 @@ func (s *MessageWaiting) String() string {
 	case StoreMessageUCS2:
 		b.WriteString("(Store Message with UCS2)")
 	}
-	if s.Active {
+	if c.Active {
 		b.WriteString(", active")
 	} else {
 		b.WriteString(", inactive")
 	}
-	switch s.WaitingType {
+	switch c.WaitingType {
 	case VoicemailMessageWaiting:
 		b.WriteString(", Voicemail Message")
 	case FaxMessageWaiting:
@@ -238,38 +255,45 @@ type DataCodingMessage struct {
 	MsgClass msgClass
 }
 
-func (s *DataCodingMessage) encodeDCS() (b byte) {
+func (c *DataCodingMessage) encode() (b byte) {
 	b = 0xf0
-	if s.IsData {
+	if c.IsData {
 		b = b | 0x40
 	}
-	b = b | byte(s.MsgClass&0x03)
+	b = b | byte(c.MsgClass&0x03)
 	return
 }
 
-func (s *DataCodingMessage) unitSize() int {
-	if s.IsData {
+func (c *DataCodingMessage) unitSize() int {
+	if c.IsData {
 		return 8
 	}
 	return 7
 }
 
-func (s *DataCodingMessage) decodeData(b []byte) string {
-	if s.IsData {
+func (c *DataCodingMessage) decodeData(b []byte) string {
+	if c.IsData {
 		return fmt.Sprintf("% x", b)
 	}
 	return GSM7bitString(b).String()
 }
 
-func (s *DataCodingMessage) String() string {
+func (c *DataCodingMessage) encodeData(s string) ([]byte, error) {
+	if c.IsData {
+		return []byte(s), nil
+	}
+	return GetGSM7bitString(s)
+}
+
+func (c *DataCodingMessage) String() string {
 	var b bytes.Buffer
 	b.WriteString("Data coding/message")
-	if s.IsData {
+	if c.IsData {
 		b.WriteString(", 8-bit data")
 	} else {
 		b.WriteString(", GSM 7 bit default alphabet")
 	}
-	switch s.MsgClass {
+	switch c.MsgClass {
 	case MessageClass0:
 		b.WriteString(", class 0")
 	case MessageClass1:

@@ -56,7 +56,7 @@ func (d *Deliver) WriteTo(w io.Writer) (n int64, e error) {
 
 	b = make([]byte, 10)
 	b[0] = d.PID
-	b[1] = d.DCS.encodeDCS()
+	b[1] = d.DCS.encode()
 	for j, k := range encodeSCTimeStamp(d.SCTS) {
 		b[j+2] = k
 	}
