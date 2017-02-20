@@ -165,8 +165,15 @@ func (d *Submit) readFrom(h byte, r io.Reader) (n int64, e error) {
 		d.VP = VPAbsolute([7]byte{b[0], b[1], b[2], b[3], b[4], b[5], b[6]})
 	}
 
+	b = make([]byte, 1)
+	if i, e = r.Read(b); e != nil {
+		return
+	} else if i != len(b) {
+		e = fmt.Errorf("more data required")
+		return
+	}
 	l := d.DCS.unitSize()
-	l *= int(b[9])
+	l *= int(b[0])
 	if l%8 != 0 {
 		l += 8 - l%8
 	}
