@@ -1,7 +1,6 @@
 package sms
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"time"
@@ -121,7 +120,14 @@ func ReadAsSC(r io.Reader) (t TPDU, n int64, e error) {
 
 */
 
-func encodeSCTimeStamp(t time.Time) (r [7]byte) {
+func writeBytes(w io.Writer, n int64, b []byte) (int64, error) {
+	i, e := w.Write(b)
+	n += int64(i)
+	return n, e
+}
+
+func encodeSCTimeStamp(t time.Time) (r []byte) {
+	r = make([]byte, 7)
 	r[0] = int2SemiOctet(t.Year())
 	r[1] = int2SemiOctet(int(t.Month()))
 	r[2] = int2SemiOctet(t.Day())
@@ -162,41 +168,6 @@ func semiOctet2Int(b byte) (i int) {
 	i = int(b & 0x0f)
 	i = (i * 10) + int((b&0xf0)>>4)
 	return
-}
-
-func encodeUDH(m map[byte][]byte) []byte {
-	if len(m) == 0 {
-		return []byte{}
-	}
-
-	var b bytes.Buffer
-	b.WriteByte(0x00)
-	for k, v := range m {
-		b.WriteByte(k)
-		b.WriteByte(byte(len(v)))
-		b.Write(v)
-	}
-	r := b.Bytes()
-	r[0] = byte(len(r) - 1)
-	return r
-}
-
-func decodeUDH(b []byte) map[byte][]byte {
-	m := make(map[byte][]byte)
-	if len(b) == 0 {
-		return m
-	}
-
-	buf := bytes.NewBuffer(b)
-	buf.ReadByte()
-	for buf.Len() != 0 {
-		k, _ := buf.ReadByte()
-		l, _ := buf.ReadByte()
-		v := make([]byte, l)
-		buf.Read(v)
-		m[k] = v
-	}
-	return m
 }
 
 func mmsStat(b bool) string {

@@ -40,8 +40,7 @@ func TestDecodeDeliver(t *testing.T) {
 	p.SCTS = time.Date(
 		2011, time.March, 22, 14, 25, 40, 0,
 		time.FixedZone("unknown", 9*60*60))
-	p.UDH = make(map[byte][]byte)
-	p.UDH[0] = []byte{0x87, 0x02, 0x01}
+	p.UDH = []udh{&ConcatenatedSM{0x84, 0x0a, 0x01}}
 	p.UD, _ = p.DCS.encodeData("あいうえお")
 
 	b := new(bytes.Buffer)

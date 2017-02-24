@@ -38,8 +38,7 @@ func TestDecodeSubmit(t *testing.T) {
 		MsgClass:   NoMessageClass,
 		Charset:    UCS2}
 	p.VP = nil
-	p.UDH = make(map[byte][]byte)
-	p.UDH[0] = []byte{0x84, 0x0a, 0x01}
+	p.UDH = []udh{&ConcatenatedSM{0x84, 0x0a, 0x01}}
 	p.UD, _ = p.DCS.encodeData("あいうえお")
 
 	b := new(bytes.Buffer)

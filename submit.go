@@ -3,6 +3,7 @@ package sms
 import (
 	"fmt"
 	"io"
+	"time"
 )
 
 // Submit is TPDU message from MS to SC
@@ -11,33 +12,32 @@ type Submit struct {
 	SRR bool // Status Report Request
 	RP  bool // Reply Path
 
-	MR  byte            // Message Reference
-	DA  Address         // Destination Address
-	PID byte            // Protocol Identifier
-	DCS dcs             // Data Coding Scheme
-	VP  vp              // Validity Period
-	UDH map[byte][]byte // User Data Header
-	UD  []byte          // User Data
+	MR  byte    // Message Reference
+	DA  Address // Destination Address
+	PID byte    // Protocol Identifier
+	DCS dcs     // Data Coding Scheme
+	VP  vp      // Validity Period
+	UDH []udh   // User Data Header
+	UD  []byte  // User Data
 }
 
 // WriteTo output byte data of this TPDU
 func (d *Submit) WriteTo(w io.Writer) (n int64, e error) {
-	i := 0
-	b := []byte{0x01, 0x00}
-	var vp []byte
+	b := []byte{0x01, d.MR}
 	if d.RD {
 		b[0] = b[0] | 0x04
 	}
-	switch vpf := d.VP.(type) {
+	var vp []byte
+	switch v := d.VP.(type) {
 	case VPRelative:
 		b[0] = b[0] | 0x10
-		vp = []byte{vpf[0]}
+		vp = []byte{v[0]}
 	case VPEnhanced:
 		b[0] = b[0] | 0x08
-		vp = []byte{vpf[0], vpf[1], vpf[2], vpf[3], vpf[4], vpf[5], vpf[6]}
+		vp = []byte{v[0], v[1], v[2], v[3], v[4], v[5], v[6]}
 	case VPAbsolute:
 		b[0] = b[0] | 0x18
-		vp = []byte{vpf[0], vpf[1], vpf[2], vpf[3], vpf[4], vpf[5], vpf[6]}
+		vp = []byte{v[0], v[1], v[2], v[3], v[4], v[5], v[6]}
 	}
 	if d.SRR {
 		b[0] = b[0] | 0x20
@@ -48,50 +48,38 @@ func (d *Submit) WriteTo(w io.Writer) (n int64, e error) {
 	if d.RP {
 		b[0] = b[0] | 0x80
 	}
-	b[1] = d.MR
-	if i, e = w.Write(b); e != nil {
+	if n, e = writeBytes(w, n, b); e != nil {
 		return
 	}
 
-	if n, e = d.DA.WriteTo(w); e != nil {
+	var nn int64
+	nn, e = d.DA.WriteTo(w)
+	n += nn
+	if e != nil {
 		return
 	}
-	n += int64(i)
 
-	b = make([]byte, 2)
-	b[0] = d.PID
-	b[1] = d.DCS.encode()
-	if i, e = w.Write(b); e != nil {
+	b = []byte{d.PID, d.DCS.encode()}
+	if n, e = writeBytes(w, n, b); e != nil {
 		return
 	}
-	n += int64(i)
 
-	if i, e = w.Write(vp); e != nil {
+	if n, e = writeBytes(w, n, vp); e != nil {
 		return
 	}
-	n += int64(i)
 
 	udh := encodeUDH(d.UDH)
 	u := d.DCS.unitSize()
 	l := len(udh) + len(d.UD)
 	l = ((l * 8) - (l * 8 % u)) / u
-
-	b = make([]byte, 1)
-	b[0] = byte(l)
-	if i, e = w.Write(b); e != nil {
+	b = []byte{byte(l)}
+	if n, e = writeBytes(w, n, b); e != nil {
 		return
 	}
-	n += int64(i)
-
-	if i, e = w.Write(udh); e != nil {
+	if n, e = writeBytes(w, n, udh); e != nil {
 		return
 	}
-	n += int64(i)
-	if i, e = w.Write(d.UD); e != nil {
-		return
-	}
-	n += int64(i)
-
+	n, e = writeBytes(w, n, d.UD)
 	return
 }
 
@@ -211,10 +199,21 @@ func (d *Submit) PrintStack(w io.Writer) {
 	}
 
 	fmt.Fprintf(w, "TP-UD:\n")
-	for k, v := range d.UDH {
-		fmt.Fprintf(w, " IEI:%d = % x\n", k, v)
+	for _, h := range d.UDH {
+		fmt.Fprintf(w, " %s\n", h)
 	}
 	if d.UD != nil && len(d.UD) != 0 {
 		fmt.Fprintf(w, "%s\n", d.DCS.decodeData(d.UD))
 	}
+}
+
+// SubmitReport is TPDU message from SC to MS
+type SubmitReport struct {
+	FCS  byte            // Failure Cause
+	PI   byte            // Parameter Indicator
+	SCTS time.Time       // Service Centre Time Stamp
+	PID  byte            // Protocol Identifier
+	DCS  dcs             // Data Coding Scheme
+	UDH  map[byte][]byte // User Data Header
+	UD   []byte          // User Data
 }

@@ -13,17 +13,16 @@ type Deliver struct {
 	SRI bool // Status Report Indication (true=status report shall be returned)
 	RP  bool // Reply Path
 
-	OA   Address         // Originating Address
-	PID  byte            // Protocol Identifier
-	DCS  dcs             // Data Coding Scheme
-	SCTS time.Time       // Service Centre Time Stamp
-	UDH  map[byte][]byte // User Data Header
-	UD   []byte          // User Data
+	OA   Address   // Originating Address
+	PID  byte      // Protocol Identifier
+	DCS  dcs       // Data Coding Scheme
+	SCTS time.Time // Service Centre Time Stamp
+	UDH  []udh     // User Data Header
+	UD   []byte    // User Data
 }
 
 // WriteTo output byte data of this TPDU
 func (d *Deliver) WriteTo(w io.Writer) (n int64, e error) {
-	i := 0
 	b := []byte{0x00}
 	if !d.MMS {
 		b[0] = b[0] | 0x04
@@ -40,41 +39,37 @@ func (d *Deliver) WriteTo(w io.Writer) (n int64, e error) {
 	if d.RP {
 		b[0] = b[0] | 0x80
 	}
-	if i, e = w.Write(b); e != nil {
+	if n, e = writeBytes(w, n, b); e != nil {
 		return
 	}
 
-	if n, e = d.OA.WriteTo(w); e != nil {
+	var nn int64
+	nn, e = d.OA.WriteTo(w)
+	n += nn
+	if e != nil {
 		return
 	}
-	n += int64(i)
 
 	udh := encodeUDH(d.UDH)
 	u := d.DCS.unitSize()
 	l := len(udh) + len(d.UD)
 	l = ((l * 8) - (l * 8 % u)) / u
-
-	b = make([]byte, 10)
-	b[0] = d.PID
-	b[1] = d.DCS.encode()
-	for j, k := range encodeSCTimeStamp(d.SCTS) {
-		b[j+2] = k
-	}
-	b[9] = byte(l)
-	if i, e = w.Write(b); e != nil {
+	b = []byte{d.PID, d.DCS.encode()}
+	if n, e = writeBytes(w, n, b); e != nil {
 		return
 	}
-	n += int64(i)
-
-	if i, e = w.Write(udh); e != nil {
+	b = encodeSCTimeStamp(d.SCTS)
+	if n, e = writeBytes(w, n, b); e != nil {
 		return
 	}
-	n += int64(i)
-	if i, e = w.Write(d.UD); e != nil {
+	b = []byte{byte(l)}
+	if n, e = writeBytes(w, n, b); e != nil {
 		return
 	}
-	n += int64(i)
-
+	if n, e = writeBytes(w, n, udh); e != nil {
+		return
+	}
+	n, e = writeBytes(w, n, d.UD)
 	return
 }
 
@@ -144,10 +139,20 @@ func (d *Deliver) PrintStack(w io.Writer) {
 	fmt.Fprintf(w, "TP-SCTS: %s\n", d.SCTS)
 
 	fmt.Fprintf(w, "TP-UD:\n")
-	for k, v := range d.UDH {
-		fmt.Fprintf(w, " IEI:%d = % x\n", k, v)
+	for _, h := range d.UDH {
+		fmt.Fprintf(w, " %s\n", h)
 	}
 	if d.UD != nil && len(d.UD) != 0 {
 		fmt.Fprintf(w, "%s\n", d.DCS.decodeData(d.UD))
 	}
+}
+
+// DeliverReport is TPDU message from MS to SC
+type DeliverReport struct {
+	FCS byte            // Failure Cause
+	PI  byte            // Parameter Indicator
+	PID byte            // Protocol Identifier
+	DCS dcs             // Data Coding Scheme
+	UDH map[byte][]byte // User Data Header
+	UD  []byte          // User Data
 }
