@@ -36,9 +36,9 @@ func ReadAsSM(r io.Reader) (t TPDU, n int64, e error) {
 	case 0x00:
 		t = &Deliver{}
 	case 0x01:
-		//		t = &SubmitReport{}
+		// t = &SubmitReport{}
 	case 0x02:
-		//		t = &StatusReport{}
+		// t = &StatusReport{}
 	case 0x03:
 		e = fmt.Errorf("invalid data: reserved TPDU type")
 		return
@@ -65,11 +65,11 @@ func ReadAsSC(r io.Reader) (t TPDU, n int64, e error) {
 
 	switch h[0] & 0x03 {
 	case 0x00:
-		//		t = &DeliverReport{}
+		// t = &DeliverReport{}
 	case 0x01:
 		t = &Submit{}
 	case 0x02:
-		//		t = &Command{}
+		// t = &Command{}
 	case 0x03:
 		e = fmt.Errorf("invalid data: reserved TPDU type")
 		return
