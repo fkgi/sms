@@ -8,10 +8,38 @@ import (
 
 var (
 	msgRef byte
+	fcsStr map[byte]string
 )
 
 func init() {
 	msgRef = byte(time.Now().Nanosecond())
+	fcsStr = map[byte]string{
+		0x80: "Telematic interworking not supported",
+		0x81: "Short message Type 0 not supported",
+		0x82: "Cannot replace short message",
+		0x8F: "Unspecified TP-PID error",
+		0x90: "Data coding scheme (alphabet) not supported",
+		0x91: "Message class not supported",
+		0x9F: "Unspecified TP-DCS error",
+		0xA0: "Command cannot be actioned",
+		0xA1: "Command unsupported",
+		0xAF: "Unspecified TP-Command error",
+		0xB0: "TPDU not supported",
+		0xC0: "SC busy",
+		0xC1: "No SC subscription",
+		0xC2: "SC system failure",
+		0xC3: "Invalid SME address",
+		0xC4: "Destination SME barred",
+		0xC5: "SM Rejected-Duplicate SM",
+		0xC6: "TP-VPF not supported",
+		0xC7: "TP-VP not supported",
+		0xD0: "(U)SIM SMS storage full",
+		0xD1: "No SMS storage capability in (U)SIM",
+		0xD2: "Error in MS",
+		0xD3: "Memory Capacity Exceeded",
+		0xD4: "(U)SIM Application Toolkit Busy",
+		0xD5: "(U)SIM data download error",
+		0xFF: "Unspecified error cause"}
 }
 
 // TPDU represents a SMS PDU

@@ -42,7 +42,7 @@ func (d *Submit) WriteTo(w io.Writer) (n int64, e error) {
 	if d.SRR {
 		b[0] = b[0] | 0x20
 	}
-	if d.UDH != nil && len(d.UDH) != 0 {
+	if len(d.UDH) != 0 {
 		b[0] = b[0] | 0x40
 	}
 	if d.RP {
@@ -198,22 +198,122 @@ func (d *Submit) PrintStack(w io.Writer) {
 		fmt.Fprintf(w, "TP-VP:   %s\n", d.VP)
 	}
 
-	fmt.Fprintf(w, "TP-UD:\n")
-	for _, h := range d.UDH {
-		fmt.Fprintf(w, " %s\n", h)
-	}
-	if d.UD != nil && len(d.UD) != 0 {
-		fmt.Fprintf(w, "%s\n", d.DCS.decodeData(d.UD))
+	if len(d.UDH)+len(d.UD) != 0 {
+		fmt.Fprintf(w, "TP-UD:\n")
+		for _, h := range d.UDH {
+			fmt.Fprintf(w, "%s\n", h)
+		}
+		if len(d.UD) != 0 {
+			fmt.Fprintf(w, "%s\n", d.DCS.decodeData(d.UD))
+		}
 	}
 }
 
 // SubmitReport is TPDU message from SC to MS
 type SubmitReport struct {
-	FCS  byte            // Failure Cause
-	PI   byte            // Parameter Indicator
-	SCTS time.Time       // Service Centre Time Stamp
-	PID  byte            // Protocol Identifier
-	DCS  dcs             // Data Coding Scheme
-	UDH  map[byte][]byte // User Data Header
-	UD   []byte          // User Data
+	FCS *byte // Failure Cause
+	// PI   byte      // Parameter Indicator
+	SCTS time.Time // Service Centre Time Stamp
+	PID  *byte     // Protocol Identifier
+	DCS  dcs       // Data Coding Scheme
+	UDH  []udh     // User Data Header
+	UD   []byte    // User Data
+}
+
+// WriteTo output byte data of this TPDU
+func (d *SubmitReport) WriteTo(w io.Writer) (n int64, e error) {
+	b := []byte{0x01}
+	if len(d.UDH) != 0 {
+		b[0] = b[0] | 0x40
+	}
+	if n, e = writeBytes(w, n, b); e != nil {
+		return
+	}
+
+	if d.FCS != nil {
+		b = []byte{*d.FCS}
+		if n, e = writeBytes(w, n, b); e != nil {
+			return
+		}
+	}
+
+	b = []byte{0x00}
+	if d.PID != nil {
+		b[0] = b[0] | 0x01
+	}
+	if d.DCS != nil {
+		b[0] = b[0] | 0x02
+	}
+	if len(d.UDH)+len(d.UD) != 0 {
+		b[0] = b[0] | 0x04
+	}
+	if n, e = writeBytes(w, n, b); e != nil {
+		return
+	}
+
+	b = encodeSCTimeStamp(d.SCTS)
+	if n, e = writeBytes(w, n, b); e != nil {
+		return
+	}
+
+	if d.PID != nil {
+		b = []byte{*d.PID}
+		if n, e = writeBytes(w, n, b); e != nil {
+			return
+		}
+	}
+	if d.DCS != nil {
+		b = []byte{d.DCS.encode()}
+		if n, e = writeBytes(w, n, b); e != nil {
+			return
+		}
+	}
+
+	if len(d.UDH)+len(d.UD) != 0 {
+		udh := encodeUDH(d.UDH)
+		u := d.DCS.unitSize()
+		l := len(udh) + len(d.UD)
+		l = ((l * 8) - (l * 8 % u)) / u
+		b = []byte{byte(l)}
+		if n, e = writeBytes(w, n, b); e != nil {
+			return
+		}
+		if n, e = writeBytes(w, n, udh); e != nil {
+			return
+		}
+		n, e = writeBytes(w, n, d.UD)
+	}
+	return
+}
+
+// PrintStack show PDU parameter
+func (d *SubmitReport) PrintStack(w io.Writer) {
+	fmt.Fprintf(w, "SMS message stack: Submit Report")
+	if d.FCS != nil {
+		fmt.Fprintf(w, " for RP-ERROR\n")
+		v, ok := fcsStr[*d.FCS]
+		if !ok {
+			v = fmt.Sprintf("Reserved(%d)", *d.FCS)
+		}
+		fmt.Fprintf(w, "TP-FCS:  %s\n", v)
+	} else {
+		fmt.Fprintf(w, " for RP-ACK\n")
+	}
+
+	fmt.Fprintf(w, "TP-SCTS: %s\n", d.SCTS)
+	if d.PID != nil {
+		fmt.Fprintf(w, "TP-PID:  %d\n", *d.PID)
+	}
+	if d.DCS != nil {
+		fmt.Fprintf(w, "TP-DCS:  %s\n", d.DCS)
+	}
+	if len(d.UDH)+len(d.UD) != 0 {
+		fmt.Fprintf(w, "TP-UD:\n")
+		for _, h := range d.UDH {
+			fmt.Fprintf(w, "%s\n", h)
+		}
+		if len(d.UD) != 0 {
+			fmt.Fprintf(w, "%s\n", d.DCS.decodeData(d.UD))
+		}
+	}
 }

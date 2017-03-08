@@ -138,20 +138,21 @@ func (d *Deliver) PrintStack(w io.Writer) {
 	fmt.Fprintf(w, "TP-DCS:  %s\n", d.DCS)
 	fmt.Fprintf(w, "TP-SCTS: %s\n", d.SCTS)
 
-	fmt.Fprintf(w, "TP-UD:\n")
-	for _, h := range d.UDH {
-		fmt.Fprintf(w, " %s\n", h)
-	}
-	if d.UD != nil && len(d.UD) != 0 {
-		fmt.Fprintf(w, "%s\n", d.DCS.decodeData(d.UD))
+	if len(d.UDH)+len(d.UD) != 0 {
+		fmt.Fprintf(w, "TP-UD:\n")
+		for _, h := range d.UDH {
+			fmt.Fprintf(w, " %s\n", h)
+		}
+		if len(d.UD) != 0 {
+			fmt.Fprintf(w, "%s\n", d.DCS.decodeData(d.UD))
+		}
 	}
 }
 
 // DeliverReport is TPDU message from MS to SC
 type DeliverReport struct {
-	FCS byte            // Failure Cause
-	PI  byte            // Parameter Indicator
-	PID byte            // Protocol Identifier
+	FCS *byte           // Failure Cause
+	PID *byte           // Protocol Identifier
 	DCS dcs             // Data Coding Scheme
 	UDH map[byte][]byte // User Data Header
 	UD  []byte          // User Data
