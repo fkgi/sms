@@ -50,7 +50,7 @@ type TPDU interface {
 }
 
 // ReadAsSM parse byte data to TPDU as SM side
-func ReadAsSM(r io.Reader) (t TPDU, n int64, e error) {
+func ReadAsSM(r io.Reader, nack bool) (t TPDU, n int64, e error) {
 	h := make([]byte, 1)
 	i := 0
 	if i, e = r.Read(h); e != nil {
@@ -64,7 +64,12 @@ func ReadAsSM(r io.Reader) (t TPDU, n int64, e error) {
 	case 0x00:
 		t = &Deliver{}
 	case 0x01:
-		// t = &SubmitReport{}
+		if nack {
+			var fcs byte = 0x00
+			t = &SubmitReport{FCS: &fcs}
+		} else {
+			t = &SubmitReport{FCS: nil}
+		}
 	case 0x02:
 		// t = &StatusReport{}
 	case 0x03:
@@ -81,7 +86,7 @@ func ReadAsSM(r io.Reader) (t TPDU, n int64, e error) {
 }
 
 // ReadAsSC parse byte data to TPDU as SC side
-func ReadAsSC(r io.Reader) (t TPDU, n int64, e error) {
+func ReadAsSC(r io.Reader, nack bool) (t TPDU, n int64, e error) {
 	h := make([]byte, 1)
 	i := 0
 	if i, e = r.Read(h); e != nil {
@@ -111,46 +116,18 @@ func ReadAsSC(r io.Reader) (t TPDU, n int64, e error) {
 	return
 }
 
-/*
-	Req bool
-
-	MTI  byte    // Message Type Indicator
-	MMS  bool    // More Messages to Send
-	RD   bool    // Reject Duplicates
-	LP   bool    // Loop Prevention
-	VPF  byte    // Validity Period Format
-	SRI  bool    // Status Report Indication
-	SRR  bool    // Status Report Request
-	SRQ  bool    // Status Report Qualifier
-	UDHI bool    // User Data Header Indicator
-	RP   bool    // Reply Path
-	FCS  byte    // Failure Cause
-	MR   byte    // Message Reference
-	DA   TPAddr  // Destination Address
-	OA   TPAddr  // Originating Address
-	RA   TPAddr  // Recipient Address
-	SCTS [7]byte // Service Centre Time Stamp
-	DT   [7]byte // Discharge Time
-	ST   byte    // Status
-	PI   byte    // Parameter Indicator
-	PID  byte    // Protocol Identifier
-	DCS  byte    // Data Coding Scheme
-	VP   []byte  // Validity Period
-	CDL  byte    // User Data Length
-	UD   string  // User Data
-	CT   byte    // Command Type
-	MN   byte    // Message Number
-	CD   []byte  // Command Data
-
-	// User Data
-	UDh []byte
-}
-
-*/
-
 func writeBytes(w io.Writer, n int64, b []byte) (int64, error) {
 	i, e := w.Write(b)
 	n += int64(i)
+	return n, e
+}
+
+func readBytes(r io.Reader, n int64, b []byte) (int64, error) {
+	i, e := r.Read(b)
+	n += int64(i)
+	if e == nil && i != len(b) {
+		e = fmt.Errorf("more data required")
+	}
 	return n, e
 }
 

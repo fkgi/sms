@@ -211,8 +211,7 @@ func (d *Submit) PrintStack(w io.Writer) {
 
 // SubmitReport is TPDU message from SC to MS
 type SubmitReport struct {
-	FCS *byte // Failure Cause
-	// PI   byte      // Parameter Indicator
+	FCS  *byte     // Failure Cause
 	SCTS time.Time // Service Centre Time Stamp
 	PID  *byte     // Protocol Identifier
 	DCS  dcs       // Data Coding Scheme
@@ -282,6 +281,66 @@ func (d *SubmitReport) WriteTo(w io.Writer) (n int64, e error) {
 			return
 		}
 		n, e = writeBytes(w, n, d.UD)
+	}
+	return
+}
+
+func (d *SubmitReport) readFrom(h byte, r io.Reader) (n int64, e error) {
+	b := make([]byte, 1)
+	if d.FCS != nil {
+		if n, e = readBytes(r, n, b); e != nil {
+			return
+		}
+		*d.FCS = b[0]
+	}
+
+	if n, e = readBytes(r, n, b); e != nil {
+		return
+	}
+	pi := b[0]
+
+	if pi&0x01 == 0x01 {
+		if n, e = readBytes(r, n, b); e != nil {
+			return
+		}
+		d.PID = &b[0]
+	}
+	if pi&0x02 == 0x02 {
+		if n, e = readBytes(r, n, b); e != nil {
+			return
+		}
+		d.DCS = decodeDCS(b[0])
+		if d.DCS == nil {
+			e = fmt.Errorf("invalid TP-DCS data: % x", b[0])
+			return
+		}
+	}
+	if pi&0x04 == 0x04 {
+		if d.DCS == nil {
+			d.DCS = &GeneralDataCoding{
+				AutoDelete: false,
+				Compressed: false,
+				MsgClass:   NoMessageClass,
+				Charset:    GSM7bitAlphabet}
+		}
+		if n, e = readBytes(r, n, b); e != nil {
+			return
+		}
+		l := d.DCS.unitSize()
+		l *= int(b[0])
+		if l%8 != 0 {
+			l += 8 - l%8
+		}
+
+		d.UD = make([]byte, l/8)
+		if n, e = readBytes(r, n, d.UD); e != nil {
+			return
+		}
+
+		if h&0x40 == 0x40 {
+			d.UDH = decodeUDH(d.UD[0 : d.UD[0]+1])
+			d.UD = d.UD[d.UD[0]+1:]
+		}
 	}
 	return
 }
