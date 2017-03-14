@@ -51,3 +51,32 @@ func TestDecodeDeliver(t *testing.T) {
 
 	t.Logf("% x", b)
 }
+
+func TestEncodeDeliverReport(t *testing.T) {
+	bytedata := []byte{
+		0x00, 0x00}
+	buf := bytes.NewBuffer(bytedata)
+	p, _, e := ReadAsSC(buf, false)
+	if e != nil {
+		t.Fatalf("encode failed: %s", e)
+	}
+	b := new(bytes.Buffer)
+	p.PrintStack(b)
+	t.Log(b.String())
+}
+
+func TestDecodeDeliverReport(t *testing.T) {
+	p := &DeliverReport{}
+	p.PID = nil
+	p.DCS = nil
+	p.UDH = nil
+	p.UD = nil
+
+	b := new(bytes.Buffer)
+	_, e := p.WriteTo(b)
+	if e != nil {
+		t.Fatalf("deecode failed: %s", e)
+	}
+
+	t.Logf("% x", b)
+}

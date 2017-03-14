@@ -151,9 +151,164 @@ func (d *Deliver) PrintStack(w io.Writer) {
 
 // DeliverReport is TPDU message from MS to SC
 type DeliverReport struct {
-	FCS *byte           // Failure Cause
-	PID *byte           // Protocol Identifier
-	DCS dcs             // Data Coding Scheme
-	UDH map[byte][]byte // User Data Header
-	UD  []byte          // User Data
+	FCS *byte  // Failure Cause
+	PID *byte  // Protocol Identifier
+	DCS dcs    // Data Coding Scheme
+	UDH []udh  // User Data Header
+	UD  []byte // User Data
+}
+
+// WriteTo output byte data of this TPDU
+func (d *DeliverReport) WriteTo(w io.Writer) (n int64, e error) {
+	b := []byte{0x00}
+	if len(d.UDH) != 0 {
+		b[0] = b[0] | 0x40
+	}
+	if n, e = writeBytes(w, n, b); e != nil {
+		return
+	}
+
+	if d.FCS != nil {
+		b = []byte{*d.FCS}
+		if n, e = writeBytes(w, n, b); e != nil {
+			return
+		}
+	}
+
+	b = []byte{0x00}
+	if d.PID != nil {
+		b[0] = b[0] | 0x01
+	}
+	if d.DCS != nil {
+		b[0] = b[0] | 0x02
+	}
+	if len(d.UDH)+len(d.UD) != 0 {
+		b[0] = b[0] | 0x04
+	}
+	if n, e = writeBytes(w, n, b); e != nil {
+		return
+	}
+
+	if d.PID != nil {
+		b = []byte{*d.PID}
+		if n, e = writeBytes(w, n, b); e != nil {
+			return
+		}
+	}
+	if d.DCS != nil {
+		b = []byte{d.DCS.encode()}
+		if n, e = writeBytes(w, n, b); e != nil {
+			return
+		}
+	}
+
+	if len(d.UDH)+len(d.UD) != 0 {
+		udh := encodeUDH(d.UDH)
+		u := d.DCS.unitSize()
+		l := len(udh) + len(d.UD)
+		l = ((l * 8) - (l * 8 % u)) / u
+		b = []byte{byte(l)}
+		if n, e = writeBytes(w, n, b); e != nil {
+			return
+		}
+		if n, e = writeBytes(w, n, udh); e != nil {
+			return
+		}
+		n, e = writeBytes(w, n, d.UD)
+	}
+	return
+}
+
+func (d *DeliverReport) readFrom(h byte, r io.Reader) (n int64, e error) {
+	var b []byte
+	if d.FCS != nil {
+		b = make([]byte, 2)
+		if n, e = readBytes(r, n, b); e != nil {
+			return
+		}
+		*d.FCS = b[0]
+		b = b[1:]
+	} else {
+		b = make([]byte, 1)
+		if n, e = readBytes(r, n, b); e != nil {
+			return
+		}
+	}
+	pi := b[0]
+
+	if pi&0x01 == 0x01 {
+		if n, e = readBytes(r, n, b); e != nil {
+			return
+		}
+		d.PID = &b[0]
+	}
+	if pi&0x02 == 0x02 {
+		if n, e = readBytes(r, n, b); e != nil {
+			return
+		}
+		d.DCS = decodeDCS(b[0])
+		if d.DCS == nil {
+			e = fmt.Errorf("invalid TP-DCS data: % x", b[0])
+			return
+		}
+	}
+	if pi&0x04 == 0x04 {
+		if d.DCS == nil {
+			d.DCS = &GeneralDataCoding{
+				AutoDelete: false,
+				Compressed: false,
+				MsgClass:   NoMessageClass,
+				Charset:    GSM7bitAlphabet}
+		}
+		if n, e = readBytes(r, n, b); e != nil {
+			return
+		}
+		l := d.DCS.unitSize()
+		l *= int(b[0])
+		if l%8 != 0 {
+			l += 8 - l%8
+		}
+
+		d.UD = make([]byte, l/8)
+		if n, e = readBytes(r, n, d.UD); e != nil {
+			return
+		}
+
+		if h&0x40 == 0x40 {
+			d.UDH = decodeUDH(d.UD[0 : d.UD[0]+1])
+			d.UD = d.UD[d.UD[0]+1:]
+		}
+	}
+	return
+}
+
+// PrintStack show PDU parameter
+func (d *DeliverReport) PrintStack(w io.Writer) {
+	fmt.Fprintf(w, "SMS message stack: Deliver Report")
+	if d.FCS != nil {
+		fmt.Fprintf(w, " for RP-ERROR\n")
+		v, ok := fcsStr[*d.FCS]
+		if !ok {
+			v = fmt.Sprintf("Reserved(%d)", *d.FCS)
+		}
+		fmt.Fprintf(w, "TP-FCS:  %s\n", v)
+	} else {
+		fmt.Fprintf(w, " for RP-ACK\n")
+	}
+
+	if d.PID != nil {
+		fmt.Fprintf(w, "TP-PID:  %d\n", *d.PID)
+	}
+	if d.DCS != nil {
+		fmt.Fprintf(w, "TP-DCS:  %s\n", d.DCS)
+	}
+	if len(d.UDH)+len(d.UD) != 0 {
+		fmt.Fprintf(w, "TP-UD:\n")
+		for _, h := range d.UDH {
+			fmt.Fprintf(w, "%s\n", h)
+		}
+		if len(d.UD) != 0 {
+			fmt.Fprintf(w, "%s\n", d.DCS.decodeData(d.UD))
+		}
+	}
 }

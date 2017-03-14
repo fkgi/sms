@@ -3,6 +3,7 @@ package sms
 import (
 	"bytes"
 	"testing"
+	"time"
 )
 
 func TestEncodeSubmit(t *testing.T) {
@@ -40,6 +41,38 @@ func TestDecodeSubmit(t *testing.T) {
 	p.VP = nil
 	p.UDH = []udh{&ConcatenatedSM{0x84, 0x0a, 0x01}}
 	p.UD, _ = p.DCS.encodeData("あいうえお")
+
+	b := new(bytes.Buffer)
+	_, e := p.WriteTo(b)
+	if e != nil {
+		t.Fatalf("deecode failed: %s", e)
+	}
+
+	t.Logf("% x", b)
+}
+
+func TestEncodeSubmitReport(t *testing.T) {
+	bytedata := []byte{
+		0x01, 0x00, 0x11, 0x30, 0x22, 0x41, 0x52, 0x04, 0x63}
+	buf := bytes.NewBuffer(bytedata)
+	p, _, e := ReadAsSM(buf, false)
+	if e != nil {
+		t.Fatalf("encode failed: %s", e)
+	}
+	b := new(bytes.Buffer)
+	p.PrintStack(b)
+	t.Log(b.String())
+}
+
+func TestDecodeSubmitReport(t *testing.T) {
+	p := &SubmitReport{}
+	p.SCTS = time.Date(
+		2011, time.March, 22, 14, 25, 40, 0,
+		time.FixedZone("unknown", 9*60*60))
+	p.PID = nil
+	p.DCS = nil
+	p.UDH = nil
+	p.UD = nil
 
 	b := new(bytes.Buffer)
 	_, e := p.WriteTo(b)

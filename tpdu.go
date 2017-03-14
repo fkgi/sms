@@ -98,7 +98,12 @@ func ReadAsSC(r io.Reader, nack bool) (t TPDU, n int64, e error) {
 
 	switch h[0] & 0x03 {
 	case 0x00:
-		// t = &DeliverReport{}
+		if nack {
+			var fcs byte = 0x00
+			t = &DeliverReport{FCS: &fcs}
+		} else {
+			t = &DeliverReport{FCS: nil}
+		}
 	case 0x01:
 		t = &Submit{}
 	case 0x02:
