@@ -49,65 +49,41 @@ type TPDU interface {
 	PrintStack(w io.Writer)
 }
 
-// ReadAsSM parse byte data to TPDU as SM side
-func ReadAsSM(r io.Reader, nack bool) (t TPDU, n int64, e error) {
+// Read parse byte data to TPDU.
+// r is input byte stream.
+// nack is true when Submit/DeliverReport with nack.
+// sc is true when decode data as SC, false when decode as MS,
+func Read(r io.Reader, nack bool, sc bool) (t TPDU, n int64, e error) {
 	h := make([]byte, 1)
-	i := 0
-	if i, e = r.Read(h); e != nil {
-		return
-	} else if i != 1 {
-		e = fmt.Errorf("no data")
+	if n, e = readBytes(r, n, h); e != nil {
 		return
 	}
 
 	switch h[0] & 0x03 {
 	case 0x00:
-		t = &Deliver{}
-	case 0x01:
-		if nack {
-			var fcs byte = 0x00
-			t = &SubmitReport{FCS: &fcs}
-		} else {
-			t = &SubmitReport{FCS: nil}
-		}
-	case 0x02:
-		// t = &StatusReport{}
-	case 0x03:
-		e = fmt.Errorf("invalid data: reserved TPDU type")
-		return
-	}
-
-	if n, e = t.readFrom(h[0], r); e != nil {
-		return
-	}
-	n++
-
-	return
-}
-
-// ReadAsSC parse byte data to TPDU as SC side
-func ReadAsSC(r io.Reader, nack bool) (t TPDU, n int64, e error) {
-	h := make([]byte, 1)
-	i := 0
-	if i, e = r.Read(h); e != nil {
-		return
-	} else if i != 1 {
-		e = fmt.Errorf("no data")
-		return
-	}
-
-	switch h[0] & 0x03 {
-	case 0x00:
-		if nack {
+		if !sc {
+			t = &Deliver{}
+		} else if nack {
 			var fcs byte = 0x00
 			t = &DeliverReport{FCS: &fcs}
 		} else {
 			t = &DeliverReport{FCS: nil}
 		}
 	case 0x01:
-		t = &Submit{}
+		if sc {
+			t = &Submit{}
+		} else if nack {
+			var fcs byte = 0x00
+			t = &SubmitReport{FCS: &fcs}
+		} else {
+			t = &SubmitReport{FCS: nil}
+		}
 	case 0x02:
-		// t = &Command{}
+		if sc {
+			// t = &Command{}
+		} else {
+			// t = &StatusReport{}
+		}
 	case 0x03:
 		e = fmt.Errorf("invalid data: reserved TPDU type")
 		return
@@ -197,6 +173,12 @@ func sriStat(b bool) string {
 		return "Status report shall be returned"
 	}
 	return "Status report shall not be returned"
+}
+func srqStat(b bool) string {
+	if b {
+		return "This is result of an SMS-COMMAND"
+	}
+	return "This is result of a SMS-SUBMIT"
 }
 func rpStat(b bool) string {
 	if b {

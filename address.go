@@ -50,13 +50,12 @@ func (a Address) WriteTo(w io.Writer) (n int64, e error) {
 	b := []byte{byte(i), 0x80}
 	b[1] = b[1] | (a.TON&0x07)<<4
 	b[1] = b[1] | (a.NPI & 0x0f)
-	if i, e = w.Write(b); e != nil {
-		n = int64(i)
+	if n, e = writeBytes(w, n, b); e != nil {
 		return
 	}
 
-	n, e = a.Addr.WriteTo(w)
-	n += int64(i)
+	nn, e := a.Addr.WriteTo(w)
+	n += nn
 
 	if e == nil && n > 12 {
 		e = fmt.Errorf("too much long address data %d", n)
@@ -66,37 +65,25 @@ func (a Address) WriteTo(w io.Writer) (n int64, e error) {
 
 // ReadFrom read byte data and set parameter of the Address
 func (a *Address) ReadFrom(r io.Reader) (n int64, e error) {
-	i := 0
 	b := make([]byte, 2)
-	if i, e = r.Read(b); e != nil {
-		return
-	} else if i != 2 {
-		e = fmt.Errorf("more data required")
+	if n, e = readBytes(r, n, b); e != nil {
 		return
 	}
-
 	l := int(b[0])
 	a.TON = (b[1] >> 4) & 0x07
 	a.NPI = b[1] & 0x0f
 
+	if l%2 == 1 {
+		l++
+	}
+	b = make([]byte, l/2)
+	if n, e = readBytes(r, n, b); e != nil {
+		return
+	}
 	if a.TON == 0x05 {
-		l /= 2
-		b := make([]byte, l)
-		i, e = r.Read(b)
 		a.Addr = GSM7bitString(b)
 	} else {
-		if l%2 == 1 {
-			l++
-		}
-		l /= 2
-		b := make([]byte, l)
-		i, e = r.Read(b)
 		a.Addr = TBCD(b)
-	}
-
-	n = int64(i + 2)
-	if i != l {
-		e = fmt.Errorf("more data required")
 	}
 	return
 }

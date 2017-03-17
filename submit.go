@@ -88,29 +88,23 @@ func (d *Submit) readFrom(h byte, r io.Reader) (n int64, e error) {
 	d.SRR = h&0x20 == 0x20
 	d.RP = h&0x80 == 0x80
 
-	i := 0
 	b := make([]byte, 1)
-	if i, e = r.Read(b); e != nil {
-		return
-	} else if i != len(b) {
-		e = fmt.Errorf("more data required")
+	if n, e = readBytes(r, n, b); e != nil {
 		return
 	}
 	d.MR = b[0]
 
 	d.DA = Address{}
-	if n, e = d.DA.ReadFrom(r); e != nil {
+	var nn int64
+	if nn, e = d.DA.ReadFrom(r); e != nil {
 		return
 	}
+	n += nn
 
 	b = make([]byte, 2)
-	if i, e = r.Read(b); e != nil {
-		return
-	} else if i != len(b) {
-		e = fmt.Errorf("more data required")
+	if n, e = readBytes(r, n, b); e != nil {
 		return
 	}
-	n += int64(i) + 1
 	d.PID = b[0]
 	d.DCS = decodeDCS(b[1])
 	if d.DCS == nil {
@@ -123,41 +117,28 @@ func (d *Submit) readFrom(h byte, r io.Reader) (n int64, e error) {
 		d.VP = nil
 	case 0x10:
 		b = make([]byte, 1)
-		if i, e = r.Read(b); e != nil {
-			return
-		} else if i != len(b) {
-			e = fmt.Errorf("more data required")
+		if n, e = readBytes(r, n, b); e != nil {
 			return
 		}
-		n++
 		d.VP = VPRelative([1]byte{b[0]})
 	case 0x08:
 		b = make([]byte, 7)
-		if i, e = r.Read(b); e != nil {
-			return
-		} else if i != len(b) {
-			e = fmt.Errorf("more data required")
+		if n, e = readBytes(r, n, b); e != nil {
 			return
 		}
-		n += int64(i) + 1
-		d.VP = VPEnhanced([7]byte{b[0], b[1], b[2], b[3], b[4], b[5], b[6]})
+		d.VP = VPEnhanced([7]byte{
+			b[0], b[1], b[2], b[3], b[4], b[5], b[6]})
 	case 0x18:
 		b = make([]byte, 7)
-		if i, e = r.Read(b); e != nil {
-			return
-		} else if i != len(b) {
-			e = fmt.Errorf("more data required")
+		if n, e = readBytes(r, n, b); e != nil {
 			return
 		}
-		n += int64(i) + 1
-		d.VP = VPAbsolute([7]byte{b[0], b[1], b[2], b[3], b[4], b[5], b[6]})
+		d.VP = VPAbsolute([7]byte{
+			b[0], b[1], b[2], b[3], b[4], b[5], b[6]})
 	}
 
 	b = make([]byte, 1)
-	if i, e = r.Read(b); e != nil {
-		return
-	} else if i != len(b) {
-		e = fmt.Errorf("more data required")
+	if n, e = readBytes(r, n, b); e != nil {
 		return
 	}
 	l := d.DCS.unitSize()
@@ -167,13 +148,9 @@ func (d *Submit) readFrom(h byte, r io.Reader) (n int64, e error) {
 	}
 
 	d.UD = make([]byte, l/8)
-	if i, e = r.Read(d.UD); e != nil {
-		return
-	} else if i != len(d.UD) {
-		e = fmt.Errorf("more data required")
+	if n, e = readBytes(r, n, b); e != nil {
 		return
 	}
-	n += int64(i)
 
 	if h&0x40 == 0x40 {
 		d.UDH = decodeUDH(d.UD[0 : d.UD[0]+1])
@@ -303,6 +280,7 @@ func (d *SubmitReport) readFrom(h byte, r io.Reader) (n int64, e error) {
 	pi := b[0]
 	d.SCTS = decodeSCTimeStamp([7]byte{b[1], b[2], b[3], b[4], b[5], b[6], b[7]})
 
+	b = make([]byte, 1)
 	if pi&0x01 == 0x01 {
 		if n, e = readBytes(r, n, b); e != nil {
 			return

@@ -84,24 +84,18 @@ func (d *Deliver) readFrom(h byte, r io.Reader) (n int64, e error) {
 		return
 	}
 
-	i := 0
 	b := make([]byte, 10)
-	if i, e = r.Read(b); e != nil {
-		return
-	} else if i != len(b) {
-		e = fmt.Errorf("more data required")
+	if n, e = readBytes(r, n, b); e != nil {
 		return
 	}
-	n += int64(i)
-
 	d.PID = b[0]
 	d.DCS = decodeDCS(b[1])
 	if d.DCS == nil {
 		e = fmt.Errorf("invalid TP-DCS data: % x", b[1])
 		return
 	}
-	d.SCTS = decodeSCTimeStamp([7]byte{b[2], b[3], b[4], b[5], b[6], b[7], b[8]})
-
+	d.SCTS = decodeSCTimeStamp(
+		[7]byte{b[2], b[3], b[4], b[5], b[6], b[7], b[8]})
 	l := d.DCS.unitSize()
 	l *= int(b[9])
 	if l%8 != 0 {
@@ -109,13 +103,9 @@ func (d *Deliver) readFrom(h byte, r io.Reader) (n int64, e error) {
 	}
 
 	d.UD = make([]byte, l/8)
-	if i, e = r.Read(d.UD); e != nil {
-		return
-	} else if i != len(d.UD) {
-		e = fmt.Errorf("more data required")
+	if n, e = readBytes(r, n, b); e != nil {
 		return
 	}
-	n += int64(i)
 
 	if h&0x40 == 0x40 {
 		d.UDH = decodeUDH(d.UD[0 : d.UD[0]+1])
@@ -236,6 +226,7 @@ func (d *DeliverReport) readFrom(h byte, r io.Reader) (n int64, e error) {
 	}
 	pi := b[0]
 
+	b = make([]byte, 1)
 	if pi&0x01 == 0x01 {
 		if n, e = readBytes(r, n, b); e != nil {
 			return

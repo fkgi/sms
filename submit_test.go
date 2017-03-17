@@ -14,7 +14,7 @@ func TestEncodeSubmit(t *testing.T) {
 		0x84, 0x0a, 0x01, 0x30, 0x42, 0x30, 0x44, 0x30,
 		0x46, 0x30, 0x48, 0x30, 0x4a, 0xff, 0xff, 0xff}
 	buf := bytes.NewBuffer(bytedata)
-	p, _, e := ReadAsSC(buf, false)
+	p, _, e := Read(buf, false, true)
 	if e != nil {
 		t.Fatalf("encode failed: %s", e)
 	}
@@ -55,7 +55,7 @@ func TestEncodeSubmitReport(t *testing.T) {
 	bytedata := []byte{
 		0x01, 0x00, 0x11, 0x30, 0x22, 0x41, 0x52, 0x04, 0x63}
 	buf := bytes.NewBuffer(bytedata)
-	p, _, e := ReadAsSM(buf, false)
+	p, _, e := Read(buf, false, false)
 	if e != nil {
 		t.Fatalf("encode failed: %s", e)
 	}
