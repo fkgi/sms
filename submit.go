@@ -263,22 +263,23 @@ func (d *SubmitReport) WriteTo(w io.Writer) (n int64, e error) {
 }
 
 func (d *SubmitReport) readFrom(h byte, r io.Reader) (n int64, e error) {
-	var b []byte
-	if d.FCS != nil {
-		b = make([]byte, 9)
-		if n, e = readBytes(r, n, b); e != nil {
-			return
-		}
+	b := make([]byte, 1)
+	if n, e = readBytes(r, n, b); e != nil {
+		return
+	}
+	if b[0]&0x80 == 0x80 {
 		*d.FCS = b[0]
-		b = b[1:]
-	} else {
-		b = make([]byte, 8)
 		if n, e = readBytes(r, n, b); e != nil {
 			return
 		}
 	}
 	pi := b[0]
-	d.SCTS = decodeSCTimeStamp([7]byte{b[1], b[2], b[3], b[4], b[5], b[6], b[7]})
+
+	b = make([]byte, 7)
+	if n, e = readBytes(r, n, b); e != nil {
+		return
+	}
+	d.SCTS = decodeSCTimeStamp([7]byte{b[0], b[1], b[2], b[3], b[4], b[5], b[6]})
 
 	b = make([]byte, 1)
 	if pi&0x01 == 0x01 {

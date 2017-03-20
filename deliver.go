@@ -210,23 +210,18 @@ func (d *DeliverReport) WriteTo(w io.Writer) (n int64, e error) {
 }
 
 func (d *DeliverReport) readFrom(h byte, r io.Reader) (n int64, e error) {
-	var b []byte
-	if d.FCS != nil {
-		b = make([]byte, 2)
-		if n, e = readBytes(r, n, b); e != nil {
-			return
-		}
+	b := make([]byte, 1)
+	if n, e = readBytes(r, n, b); e != nil {
+		return
+	}
+	if b[0]&0x80 == 0x80 {
 		*d.FCS = b[0]
-		b = b[1:]
-	} else {
-		b = make([]byte, 1)
 		if n, e = readBytes(r, n, b); e != nil {
 			return
 		}
 	}
 	pi := b[0]
 
-	b = make([]byte, 1)
 	if pi&0x01 == 0x01 {
 		if n, e = readBytes(r, n, b); e != nil {
 			return

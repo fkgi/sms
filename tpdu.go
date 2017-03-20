@@ -51,9 +51,8 @@ type TPDU interface {
 
 // Read parse byte data to TPDU.
 // r is input byte stream.
-// nack is true when Submit/DeliverReport with nack.
 // sc is true when decode data as SC, false when decode as MS,
-func Read(r io.Reader, nack bool, sc bool) (t TPDU, n int64, e error) {
+func Read(r io.Reader, sc bool) (t TPDU, n int64, e error) {
 	h := make([]byte, 1)
 	if n, e = readBytes(r, n, h); e != nil {
 		return
@@ -63,26 +62,20 @@ func Read(r io.Reader, nack bool, sc bool) (t TPDU, n int64, e error) {
 	case 0x00:
 		if !sc {
 			t = &Deliver{}
-		} else if nack {
-			var fcs byte = 0x00
-			t = &DeliverReport{FCS: &fcs}
 		} else {
-			t = &DeliverReport{FCS: nil}
+			t = &DeliverReport{}
 		}
 	case 0x01:
 		if sc {
 			t = &Submit{}
-		} else if nack {
-			var fcs byte = 0x00
-			t = &SubmitReport{FCS: &fcs}
 		} else {
-			t = &SubmitReport{FCS: nil}
+			t = &SubmitReport{}
 		}
 	case 0x02:
 		if sc {
 			// t = &Command{}
 		} else {
-			// t = &StatusReport{}
+			t = &StatusReport{}
 		}
 	case 0x03:
 		e = fmt.Errorf("invalid data: reserved TPDU type")

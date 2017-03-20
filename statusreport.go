@@ -74,6 +74,9 @@ func (d *StatusReport) WriteTo(w io.Writer) (n int64, e error) {
 	if len(d.UDH)+len(d.UD) != 0 {
 		b[0] = b[0] | 0x04
 	}
+	if b[0] == 0x00 {
+		return
+	}
 	if n, e = writeBytes(w, n, b); e != nil {
 		return
 	}
@@ -124,7 +127,7 @@ func (d *StatusReport) readFrom(h byte, r io.Reader) (n int64, e error) {
 		return
 	}
 
-	b = make([]byte, 16)
+	b = make([]byte, 15)
 	if n, e = readBytes(r, n, b); e != nil {
 		return
 	}
@@ -133,7 +136,15 @@ func (d *StatusReport) readFrom(h byte, r io.Reader) (n int64, e error) {
 	d.DT = decodeSCTimeStamp(
 		[7]byte{b[7], b[8], b[9], b[10], b[11], b[12], b[13]})
 	d.ST = b[14]
-	pi := b[15]
+
+	b = make([]byte, 1)
+	i := 0
+	i, e = r.Read(b)
+	n += int64(i)
+	if e == nil && i != len(b) {
+		return
+	}
+	pi := b[0]
 
 	b = make([]byte, 1)
 	if pi&0x01 == 0x01 {
