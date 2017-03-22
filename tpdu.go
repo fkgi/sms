@@ -9,6 +9,7 @@ import (
 var (
 	msgRef byte
 	fcsStr map[byte]string
+	stStr  map[byte]string
 )
 
 func init() {
@@ -40,6 +41,32 @@ func init() {
 		0xD4: "(U)SIM Application Toolkit Busy",
 		0xD5: "(U)SIM data download error",
 		0xFF: "Unspecified error cause"}
+	stStr = map[byte]string{
+		0x00: "Short message received by the SME",
+		0x01: "Short message forwarded by the SC to the SME but the SC is unable to confirm delivery",
+		0x02: "Short message replaced by the SC",
+		0x20: "Congestion",
+		0x21: "SME busy",
+		0x22: "No response from SME",
+		0x23: "Service rejected",
+		0x24: "Quality of service not available",
+		0x25: "Error in SME",
+		0x40: "Remote procedure error",
+		0x41: "Incompatible destination",
+		0x42: "Connection rejected by SME",
+		0x43: "Not obtainable",
+		0x44: "Quality of service not available",
+		0x45: "No interworking available",
+		0x46: "SM Validity Period Expired",
+		0x47: "SM Deleted by originating SME",
+		0x48: "SM Deleted by SC Administration",
+		0x49: "SM does not exist",
+		0x60: "Congestion",
+		0x61: "SME busy",
+		0x62: "No response from SME",
+		0x63: "Service rejected",
+		0x64: "Quality of service not available",
+		0x65: "Error in SME"}
 }
 
 // TPDU represents a SMS PDU

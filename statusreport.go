@@ -138,10 +138,8 @@ func (d *StatusReport) readFrom(h byte, r io.Reader) (n int64, e error) {
 	d.ST = b[14]
 
 	b = make([]byte, 1)
-	i := 0
-	i, e = r.Read(b)
-	n += int64(i)
-	if e == nil && i != len(b) {
+	if n, e = readBytes(r, n, b); e != nil {
+		e = nil
 		return
 	}
 	pi := b[0]
@@ -204,7 +202,13 @@ func (d *StatusReport) PrintStack(w io.Writer) {
 	fmt.Fprintf(w, "TP-RA:   %s\n", d.RA)
 	fmt.Fprintf(w, "TP-SCTS: %s\n", d.SCTS)
 	fmt.Fprintf(w, "TP-DT:   %s\n", d.SCTS)
-	fmt.Fprintf(w, "TP-ST:   %d\n", d.ST)
+
+	v, ok := stStr[d.ST]
+	if !ok {
+		v = fmt.Sprintf("Reserved(%d)", d.ST)
+	}
+	fmt.Fprintf(w, "TP-ST:   %s\n", v)
+
 	if d.PID != nil {
 		fmt.Fprintf(w, "TP-PID:  %d\n", *d.PID)
 	}
