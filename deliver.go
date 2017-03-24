@@ -103,7 +103,7 @@ func (d *Deliver) readFrom(h byte, r io.Reader) (n int64, e error) {
 	}
 
 	d.UD = make([]byte, l/8)
-	if n, e = readBytes(r, n, b); e != nil {
+	if n, e = readBytes(r, n, d.UD); e != nil {
 		return
 	}
 
@@ -131,7 +131,7 @@ func (d *Deliver) PrintStack(w io.Writer) {
 	if len(d.UDH)+len(d.UD) != 0 {
 		fmt.Fprintf(w, "TP-UD:\n")
 		for _, h := range d.UDH {
-			fmt.Fprintf(w, " %s\n", h)
+			fmt.Fprintf(w, "%s\n", h)
 		}
 		if len(d.UD) != 0 {
 			fmt.Fprintf(w, "%s\n", d.DCS.decodeData(d.UD))

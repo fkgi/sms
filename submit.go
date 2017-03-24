@@ -148,7 +148,7 @@ func (d *Submit) readFrom(h byte, r io.Reader) (n int64, e error) {
 	}
 
 	d.UD = make([]byte, l/8)
-	if n, e = readBytes(r, n, b); e != nil {
+	if n, e = readBytes(r, n, d.UD); e != nil {
 		return
 	}
 
