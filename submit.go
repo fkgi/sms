@@ -169,7 +169,7 @@ func (d *Submit) PrintStack(w io.Writer) {
 
 	fmt.Fprintf(w, "TP-MR:   %d\n", d.MR)
 	fmt.Fprintf(w, "TP-DA:   %s\n", d.DA)
-	fmt.Fprintf(w, "TP-PID:  %d\n", d.PID)
+	fmt.Fprintf(w, "TP-PID:  %s\n", pidStat(d.PID))
 	fmt.Fprintf(w, "TP-DCS:  %s\n", d.DCS)
 	if d.VP != nil {
 		fmt.Fprintf(w, "TP-VP:   %s\n", d.VP)
@@ -333,18 +333,14 @@ func (d *SubmitReport) PrintStack(w io.Writer) {
 	fmt.Fprintf(w, "SMS message stack: Submit Report")
 	if d.FCS != nil {
 		fmt.Fprintf(w, " for RP-ERROR\n")
-		v, ok := fcsStr[*d.FCS]
-		if !ok {
-			v = fmt.Sprintf("Reserved(%d)", *d.FCS)
-		}
-		fmt.Fprintf(w, "TP-FCS:  %s\n", v)
+		fmt.Fprintf(w, "TP-FCS:  %s\n", fcsStat(*d.FCS))
 	} else {
 		fmt.Fprintf(w, " for RP-ACK\n")
 	}
 
 	fmt.Fprintf(w, "TP-SCTS: %s\n", d.SCTS)
 	if d.PID != nil {
-		fmt.Fprintf(w, "TP-PID:  %d\n", *d.PID)
+		fmt.Fprintf(w, "TP-PID:  %s\n", pidStat(*d.PID))
 	}
 	if d.DCS != nil {
 		fmt.Fprintf(w, "TP-DCS:  %s\n", d.DCS)

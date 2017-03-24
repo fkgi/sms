@@ -202,15 +202,10 @@ func (d *StatusReport) PrintStack(w io.Writer) {
 	fmt.Fprintf(w, "TP-RA:   %s\n", d.RA)
 	fmt.Fprintf(w, "TP-SCTS: %s\n", d.SCTS)
 	fmt.Fprintf(w, "TP-DT:   %s\n", d.SCTS)
-
-	v, ok := stStr[d.ST]
-	if !ok {
-		v = fmt.Sprintf("Reserved(%d)", d.ST)
-	}
-	fmt.Fprintf(w, "TP-ST:   %s\n", v)
+	fmt.Fprintf(w, "TP-ST:   %s\n", stStat(d.ST))
 
 	if d.PID != nil {
-		fmt.Fprintf(w, "TP-PID:  %d\n", *d.PID)
+		fmt.Fprintf(w, "TP-PID:  %s\n", pidStat(*d.PID))
 	}
 	if d.DCS != nil {
 		fmt.Fprintf(w, "TP-DCS:  %s\n", d.DCS)
