@@ -279,7 +279,8 @@ func (d *SubmitReport) readFrom(h byte, r io.Reader) (n int64, e error) {
 	if n, e = readBytes(r, n, b); e != nil {
 		return
 	}
-	d.SCTS = decodeSCTimeStamp([7]byte{b[0], b[1], b[2], b[3], b[4], b[5], b[6]})
+	d.SCTS = decodeSCTimeStamp(
+		[7]byte{b[0], b[1], b[2], b[3], b[4], b[5], b[6]})
 
 	b = make([]byte, 1)
 	if pi&0x01 == 0x01 {

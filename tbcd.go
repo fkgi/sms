@@ -82,72 +82,44 @@ func (t TBCD) ByteLength() int {
 // String return string value of the TBCD digit
 func (t TBCD) String() string {
 	var b bytes.Buffer
+	so := [2]byte{}
 	for _, c := range t {
-		switch c & 0x0f {
-		case 0x00:
-			b.WriteRune('0')
-		case 0x01:
-			b.WriteRune('1')
-		case 0x02:
-			b.WriteRune('2')
-		case 0x03:
-			b.WriteRune('3')
-		case 0x04:
-			b.WriteRune('4')
-		case 0x05:
-			b.WriteRune('5')
-		case 0x06:
-			b.WriteRune('6')
-		case 0x07:
-			b.WriteRune('7')
-		case 0x08:
-			b.WriteRune('8')
-		case 0x09:
-			b.WriteRune('9')
-		case 0x0a:
-			b.WriteRune('*')
-		case 0x0b:
-			b.WriteRune('#')
-		case 0x0c:
-			b.WriteRune('a')
-		case 0x0d:
-			b.WriteRune('b')
-		case 0x0e:
-			b.WriteRune('c')
-		case 0x0f:
-		}
-		switch c & 0xf0 {
-		case 0x00:
-			b.WriteRune('0')
-		case 0x10:
-			b.WriteRune('1')
-		case 0x20:
-			b.WriteRune('2')
-		case 0x30:
-			b.WriteRune('3')
-		case 0x40:
-			b.WriteRune('4')
-		case 0x50:
-			b.WriteRune('5')
-		case 0x60:
-			b.WriteRune('6')
-		case 0x70:
-			b.WriteRune('7')
-		case 0x80:
-			b.WriteRune('8')
-		case 0x90:
-			b.WriteRune('9')
-		case 0xa0:
-			b.WriteRune('*')
-		case 0xb0:
-			b.WriteRune('#')
-		case 0xc0:
-			b.WriteRune('a')
-		case 0xd0:
-			b.WriteRune('b')
-		case 0xe0:
-			b.WriteRune('c')
-		case 0xf0:
+		so[0] = c & 0x0f
+		so[1] = (c & 0xf0) >> 4
+		for _, s := range so {
+			switch s {
+			case 0x00:
+				b.WriteRune('0')
+			case 0x01:
+				b.WriteRune('1')
+			case 0x02:
+				b.WriteRune('2')
+			case 0x03:
+				b.WriteRune('3')
+			case 0x04:
+				b.WriteRune('4')
+			case 0x05:
+				b.WriteRune('5')
+			case 0x06:
+				b.WriteRune('6')
+			case 0x07:
+				b.WriteRune('7')
+			case 0x08:
+				b.WriteRune('8')
+			case 0x09:
+				b.WriteRune('9')
+			case 0x0a:
+				b.WriteRune('*')
+			case 0x0b:
+				b.WriteRune('#')
+			case 0x0c:
+				b.WriteRune('a')
+			case 0x0d:
+				b.WriteRune('b')
+			case 0x0e:
+				b.WriteRune('c')
+			case 0x0f:
+			}
 		}
 	}
 	return b.String()

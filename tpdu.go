@@ -21,43 +21,50 @@ type TPDU interface {
 	PrintStack(w io.Writer)
 }
 
-// Read parse byte data to TPDU.
-// r is input byte stream.
-// sc is true when decode data as SC, false when decode as MS,
-func Read(r io.Reader, sc bool) (t TPDU, n int64, e error) {
+// ReadAsSC parse byte data to TPDU as SC.
+func ReadAsSC(r io.Reader, sc bool) (t TPDU, n int64, e error) {
+	return read(r, true)
+}
+
+// ReadAsMS parse byte data to TPDU as MS.
+func ReadAsMS(r io.Reader, sc bool) (t TPDU, n int64, e error) {
+	return read(r, false)
+}
+
+func read(r io.Reader, sc bool) (t TPDU, n int64, e error) {
 	h := make([]byte, 1)
 	if n, e = readBytes(r, n, h); e != nil {
 		return
 	}
 
-	switch h[0] & 0x03 {
-	case 0x00:
-		if !sc {
-			t = &Deliver{}
-		} else {
+	if sc {
+		switch h[0] & 0x03 {
+		case 0x00:
 			t = &DeliverReport{}
-		}
-	case 0x01:
-		if sc {
+		case 0x01:
 			t = &Submit{}
-		} else {
-			t = &SubmitReport{}
-		}
-	case 0x02:
-		if sc {
+		case 0x02:
 			// t = &Command{}
-		} else {
-			t = &StatusReport{}
+		case 0x03:
+			e = fmt.Errorf("invalid data: reserved TPDU type")
 		}
-	case 0x03:
-		e = fmt.Errorf("invalid data: reserved TPDU type")
-		return
+	} else {
+		switch h[0] & 0x03 {
+		case 0x00:
+			t = &Deliver{}
+		case 0x01:
+			t = &SubmitReport{}
+		case 0x02:
+			t = &StatusReport{}
+		case 0x03:
+			e = fmt.Errorf("invalid data: reserved TPDU type")
+		}
 	}
-
-	if n, e = t.readFrom(h[0], r); e != nil {
-		return
+	if e != nil {
+		var m int64
+		m, e = t.readFrom(h[0], r)
+		n += m
 	}
-	n++
 
 	return
 }
@@ -105,7 +112,8 @@ func decodeSCTimeStamp(t [7]byte) time.Time {
 	if t[6]&0x80 == 0x80 {
 		l = -l
 	}
-	return time.Date(2000+d[0], time.Month(d[1]), d[2], d[3], d[4], d[5], 0,
+	return time.Date(2000+d[0],
+		time.Month(d[1]), d[2], d[3], d[4], d[5], 0,
 		time.FixedZone("unknown", l*15*60))
 }
 
@@ -225,7 +233,8 @@ func stStat(b byte) string {
 	case 0x00:
 		return "Short message received by the SME"
 	case 0x01:
-		return "Short message forwarded by the SC to the SME but the SC is unable to confirm delivery"
+		return "Short message forwarded by the SC to the SME" +
+			" but the SC is unable to confirm delivery"
 	case 0x02:
 		return "Short message replaced by the SC"
 	case 0x20:
