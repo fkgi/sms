@@ -22,12 +22,12 @@ type TPDU interface {
 }
 
 // ReadAsSC parse byte data to TPDU as SC.
-func ReadAsSC(r io.Reader, sc bool) (t TPDU, n int64, e error) {
+func ReadAsSC(r io.Reader) (t TPDU, n int64, e error) {
 	return read(r, true)
 }
 
 // ReadAsMS parse byte data to TPDU as MS.
-func ReadAsMS(r io.Reader, sc bool) (t TPDU, n int64, e error) {
+func ReadAsMS(r io.Reader) (t TPDU, n int64, e error) {
 	return read(r, false)
 }
 
