@@ -12,9 +12,8 @@ func TestEncodeDeliver(t *testing.T) {
 		0x40, 0x04, 0x80, 0x21, 0x43, 0x00, 0x08, 0x11,
 		0x30, 0x22, 0x41, 0x52, 0x04, 0x63, 0x10, 0x05,
 		0x00, 0x03, 0x87, 0x02, 0x01, 0x30, 0x42, 0x30,
-		0x44, 0x30, 0x46, 0x30, 0x48, 0x30, 0x4a, 0xff}
-	buf := bytes.NewBuffer(bytedata)
-	p, _, e := Read(buf, false)
+		0x44, 0x30, 0x46, 0x30, 0x48, 0x30, 0x4a}
+	p, e := DecodeAsMS(bytedata)
 	if e != nil {
 		t.Fatalf("encode failed: %s", e)
 	}
@@ -43,20 +42,14 @@ func TestDecodeDeliver(t *testing.T) {
 	p.UDH = []udh{&ConcatenatedSM{0x84, 0x0a, 0x01}}
 	p.UD, _ = p.DCS.encodeData("あいうえお")
 
-	b := new(bytes.Buffer)
-	_, e := p.WriteTo(b)
-	if e != nil {
-		t.Fatalf("deecode failed: %s", e)
-	}
-
+	b := p.Encode()
 	t.Logf("% x", b)
 }
 
 func TestEncodeDeliverReport(t *testing.T) {
 	bytedata := []byte{
 		0x00, 0x00}
-	buf := bytes.NewBuffer(bytedata)
-	p, _, e := Read(buf, true)
+	p, e := DecodeAsSC(bytedata)
 	if e != nil {
 		t.Fatalf("encode failed: %s", e)
 	}
@@ -72,11 +65,6 @@ func TestDecodeDeliverReport(t *testing.T) {
 	p.UDH = nil
 	p.UD = nil
 
-	b := new(bytes.Buffer)
-	_, e := p.WriteTo(b)
-	if e != nil {
-		t.Fatalf("deecode failed: %s", e)
-	}
-
+	b := p.Encode()
 	t.Logf("% x", b)
 }

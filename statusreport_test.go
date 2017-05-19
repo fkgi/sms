@@ -6,14 +6,13 @@ import (
 	"time"
 )
 
-func TestEncodeStatusReport(t *testing.T) {
+var bytedata = []byte{
+	0x06, 0x00, 0x04, 0x80, 0x21, 0x43, 0x11, 0x30,
+	0x22, 0x41, 0x52, 0x04, 0x63, 0x11, 0x30, 0x22,
+	0x41, 0x52, 0x04, 0x63, 0x00}
 
-	bytedata := []byte{
-		0x06, 0x00, 0x04, 0x80, 0x21, 0x43, 0x11, 0x30,
-		0x22, 0x41, 0x52, 0x04, 0x63, 0x11, 0x30, 0x22,
-		0x41, 0x52, 0x04, 0x63, 0x00}
-	buf := bytes.NewBuffer(bytedata)
-	p, _, e := Read(buf, false)
+func TestEncodeStatusReport(t *testing.T) {
+	p, e := DecodeAsMS(bytedata)
 	if e != nil {
 		t.Fatalf("encode failed: %s", e)
 	}
@@ -38,11 +37,6 @@ func TestDecodeStatusReport(t *testing.T) {
 		time.FixedZone("unknown", 9*60*60))
 	p.ST = 0x00
 
-	b := new(bytes.Buffer)
-	_, e := p.WriteTo(b)
-	if e != nil {
-		t.Fatalf("deecode failed: %s", e)
-	}
-
+	b := p.Encode()
 	t.Logf("% x", b)
 }

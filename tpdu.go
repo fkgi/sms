@@ -1,6 +1,7 @@
 package sms
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"time"
@@ -16,29 +17,26 @@ func init() {
 
 // TPDU represents a SMS PDU
 type TPDU interface {
-	WriteTo(w io.Writer) (n int64, e error)
-	readFrom(h byte, r io.Reader) (n int64, e error)
-	PrintStack(w io.Writer)
+	Encode() []byte
+	decode([]byte) error
+	PrintStack(io.Writer)
 }
 
-// ReadAsSC parse byte data to TPDU as SC.
-func ReadAsSC(r io.Reader) (t TPDU, n int64, e error) {
-	return read(r, true)
+// DecodeAsSC parse byte data to TPDU as SC.
+func DecodeAsSC(b []byte) (t TPDU, e error) {
+	return decode(b, true)
 }
 
-// ReadAsMS parse byte data to TPDU as MS.
-func ReadAsMS(r io.Reader) (t TPDU, n int64, e error) {
-	return read(r, false)
+// DecodeAsMS parse byte data to TPDU as MS.
+func DecodeAsMS(b []byte) (t TPDU, e error) {
+	return decode(b, false)
 }
 
-func read(r io.Reader, sc bool) (t TPDU, n int64, e error) {
-	h := make([]byte, 1)
-	if n, e = readBytes(r, n, h); e != nil {
-		return
-	}
-
-	if sc {
-		switch h[0] & 0x03 {
+func decode(b []byte, sc bool) (t TPDU, e error) {
+	if len(b) == 0 {
+		e = fmt.Errorf("invalid data")
+	} else if sc {
+		switch b[0] & 0x03 {
 		case 0x00:
 			t = &DeliverReport{}
 		case 0x01:
@@ -49,7 +47,7 @@ func read(r io.Reader, sc bool) (t TPDU, n int64, e error) {
 			e = fmt.Errorf("invalid data: reserved TPDU type")
 		}
 	} else {
-		switch h[0] & 0x03 {
+		switch b[0] & 0x03 {
 		case 0x00:
 			t = &Deliver{}
 		case 0x01:
@@ -60,12 +58,10 @@ func read(r io.Reader, sc bool) (t TPDU, n int64, e error) {
 			e = fmt.Errorf("invalid data: reserved TPDU type")
 		}
 	}
-	if e != nil {
-		var m int64
-		m, e = t.readFrom(h[0], r)
-		n += m
-	}
 
+	if e == nil {
+		e = t.decode(b)
+	}
 	return
 }
 
@@ -82,6 +78,63 @@ func readBytes(r io.Reader, n int64, b []byte) (int64, error) {
 		e = fmt.Errorf("more data required")
 	}
 	return n, e
+}
+
+func readDCS(r *bytes.Reader) (dcs, error) {
+	p, e := r.ReadByte()
+	if e != nil {
+		return nil, e
+	}
+	d := decodeDCS(p)
+	if d == nil {
+		return nil, fmt.Errorf("invalid TP-DCS data: % x", p)
+	}
+	return d, nil
+}
+
+func read7Bytes(r *bytes.Reader) ([7]byte, error) {
+	if r.Len() < 7 {
+		return [7]byte{}, io.EOF
+	}
+	b := make([]byte, 7)
+	r.Read(b)
+	return [7]byte{
+		b[0], b[1], b[2], b[3], b[4], b[5], b[6]}, nil
+}
+
+func readUD(r *bytes.Reader, d dcs, h bool) ([]byte, []udh, error) {
+	p, e := r.ReadByte()
+	if e != nil {
+		return nil, nil, e
+	}
+	l := d.unitSize()
+	l *= int(p)
+	if l%8 != 0 {
+		l += 8 - l%8
+	}
+
+	ud := make([]byte, l/8)
+	if r.Len() < len(ud) {
+		return nil, nil, io.EOF
+	}
+	r.Read(ud)
+
+	if h {
+		return ud[ud[0]+1:], decodeUDH(ud[0 : ud[0]+1]), nil
+	}
+	return ud, nil, nil
+}
+
+func writeUD(w *bytes.Buffer, ud []byte, h []udh, d dcs) {
+	udh := encodeUDH(h)
+
+	u := d.unitSize()
+	l := len(udh) + len(ud)
+	l = ((l * 8) - (l * 8 % u)) / u
+
+	w.WriteByte(byte(l))
+	w.Write(udh)
+	w.Write(ud)
 }
 
 func encodeSCTimeStamp(t time.Time) (r []byte) {
