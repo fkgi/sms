@@ -18,7 +18,7 @@ func init() {
 // TPDU represents a SMS PDU
 type TPDU interface {
 	Encode() []byte
-	decode([]byte) error
+	Decode([]byte) error
 	PrintStack(io.Writer)
 }
 
@@ -60,7 +60,7 @@ func decode(b []byte, sc bool) (t TPDU, e error) {
 	}
 
 	if e == nil {
-		e = t.decode(b)
+		e = t.Decode(b)
 	}
 	return
 }

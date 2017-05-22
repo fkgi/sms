@@ -42,16 +42,11 @@ func (d *StatusReport) Encode() []byte {
 		b = b | 0x40
 	}
 	w.WriteByte(b)
-
 	w.WriteByte(d.MR)
-
 	d.RA.WriteTo(w)
-
 	w.Write(encodeSCTimeStamp(d.SCTS))
 	w.Write(encodeSCTimeStamp(d.DT))
-
 	w.WriteByte(d.ST)
-
 	b = byte(0x00)
 	if d.PID != nil {
 		b = b | 0x01
@@ -66,21 +61,20 @@ func (d *StatusReport) Encode() []byte {
 		return w.Bytes()
 	}
 	w.WriteByte(b)
-
 	if d.PID != nil {
 		w.WriteByte(*d.PID)
 	}
 	if d.DCS != nil {
 		w.WriteByte(d.DCS.encode())
 	}
-
 	if len(d.UDH)+len(d.UD) != 0 {
 		writeUD(w, d.UD, d.UDH, d.DCS)
 	}
 	return w.Bytes()
 }
 
-func (d *StatusReport) decode(b []byte) (e error) {
+// Decode get data of this TPDU
+func (d *StatusReport) Decode(b []byte) (e error) {
 	d.MMS = b[0]&0x04 != 0x04
 	d.LP = b[0]&0x08 == 0x08
 	d.SRQ = b[0]&0x20 == 0x20
@@ -90,26 +84,21 @@ func (d *StatusReport) decode(b []byte) (e error) {
 	if d.MR, e = r.ReadByte(); e != nil {
 		return
 	}
-
 	if _, e = d.RA.ReadFrom(r); e != nil {
 		return
 	}
-
 	var p [7]byte
 	if p, e = read7Bytes(r); e != nil {
 		return
 	}
 	d.SCTS = decodeSCTimeStamp(p)
-
 	if p, e = read7Bytes(r); e != nil {
 		return
 	}
 	d.DT = decodeSCTimeStamp(p)
-
 	if d.ST, e = r.ReadByte(); e != nil {
 		return
 	}
-
 	if r.Len() == 0 {
 		return
 	}
@@ -118,7 +107,6 @@ func (d *StatusReport) decode(b []byte) (e error) {
 		e = nil
 		return
 	}
-
 	b = make([]byte, 1)
 	if pi&0x01 == 0x01 {
 		var p byte
@@ -151,29 +139,28 @@ func (d *StatusReport) decode(b []byte) (e error) {
 // PrintStack show PDU parameter
 func (d *StatusReport) PrintStack(w io.Writer) {
 	fmt.Fprintf(w, "SMS message stack: Status Report\n")
-	fmt.Fprintf(w, "TP-MMS:  %s\n", mmsStat(d.MMS))
-	fmt.Fprintf(w, "TP-LP:   %s\n", lpStat(d.LP))
-	fmt.Fprintf(w, "TP-SRQ:  %s\n", srqStat(d.SRQ))
-
-	fmt.Fprintf(w, "TP-MR:   %d\n", d.MR)
-	fmt.Fprintf(w, "TP-RA:   %s\n", d.RA)
-	fmt.Fprintf(w, "TP-SCTS: %s\n", d.SCTS)
-	fmt.Fprintf(w, "TP-DT:   %s\n", d.SCTS)
-	fmt.Fprintf(w, "TP-ST:   %s\n", stStat(d.ST))
+	fmt.Fprintf(w, " | TP-MMS:  %s\n", mmsStat(d.MMS))
+	fmt.Fprintf(w, " | TP-LP:   %s\n", lpStat(d.LP))
+	fmt.Fprintf(w, " | TP-SRQ:  %s\n", srqStat(d.SRQ))
+	fmt.Fprintf(w, " | TP-MR:   %d\n", d.MR)
+	fmt.Fprintf(w, " | TP-RA:   %s\n", d.RA)
+	fmt.Fprintf(w, " | TP-SCTS: %s\n", d.SCTS)
+	fmt.Fprintf(w, " | TP-DT:   %s\n", d.SCTS)
+	fmt.Fprintf(w, " | TP-ST:   %s\n", stStat(d.ST))
 
 	if d.PID != nil {
-		fmt.Fprintf(w, "TP-PID:  %s\n", pidStat(*d.PID))
+		fmt.Fprintf(w, " | TP-PID:  %s\n", pidStat(*d.PID))
 	}
 	if d.DCS != nil {
-		fmt.Fprintf(w, "TP-DCS:  %s\n", d.DCS)
+		fmt.Fprintf(w, " | TP-DCS:  %s\n", d.DCS)
 	}
 	if len(d.UDH)+len(d.UD) != 0 {
-		fmt.Fprintf(w, "TP-UD:\n")
+		fmt.Fprintf(w, " | TP-UD:\n")
 		for _, h := range d.UDH {
-			fmt.Fprintf(w, "%s\n", h)
+			fmt.Fprintf(w, "   | %s\n", h)
 		}
 		if len(d.UD) != 0 {
-			fmt.Fprintf(w, "%s\n", d.DCS.decodeData(d.UD))
+			fmt.Fprintf(w, "   | %s\n", d.DCS.decodeData(d.UD))
 		}
 	}
 }
