@@ -22,20 +22,20 @@ func TestEncodeStatusReport(t *testing.T) {
 }
 
 func TestDecodeStatusReport(t *testing.T) {
-	p := &StatusReport{}
-	p.MMS = false
-	p.LP = false
-	p.SRQ = false
-	p.MR = 0x00
-	p.RA = Address{TON: 0, NPI: 0}
+	p := &StatusReport{
+		MMS: false,
+		LP:  false,
+		SRQ: false,
+		MR:  0x00,
+		RA:  Address{TON: 0, NPI: 0},
+		SCTS: time.Date(
+			2011, time.March, 22, 14, 25, 40, 0,
+			time.FixedZone("unknown", 9*60*60)),
+		DT: time.Date(
+			2011, time.March, 22, 14, 25, 40, 0,
+			time.FixedZone("unknown", 9*60*60)),
+		ST: 0x00}
 	p.RA.Addr, _ = ParseTBCD("1234")
-	p.SCTS = time.Date(
-		2011, time.March, 22, 14, 25, 40, 0,
-		time.FixedZone("unknown", 9*60*60))
-	p.DT = time.Date(
-		2011, time.March, 22, 14, 25, 40, 0,
-		time.FixedZone("unknown", 9*60*60))
-	p.ST = 0x00
 
 	b := p.Encode()
 	t.Logf("% x", b)

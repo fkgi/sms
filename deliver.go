@@ -102,7 +102,7 @@ func (d *Deliver) PrintStack(w io.Writer) {
 			fmt.Fprintf(w, "   | %s\n", h)
 		}
 		if len(d.UD) != 0 {
-			fmt.Fprintf(w, "   | %s\n", d.DCS.decodeData(d.UD))
+			fmt.Fprintf(w, "   | %s\n", d.DCS.Decode(d.UD))
 		}
 	}
 }
@@ -213,7 +213,7 @@ func (d *DeliverReport) PrintStack(w io.Writer) {
 			fmt.Fprintf(w, "   | %s\n", h)
 		}
 		if len(d.UD) != 0 {
-			fmt.Fprintf(w, "   | %s\n", d.DCS.decodeData(d.UD))
+			fmt.Fprintf(w, "   | %s\n", d.DCS.Decode(d.UD))
 		}
 	}
 }

@@ -24,22 +24,22 @@ func TestEncodeSubmit(t *testing.T) {
 }
 
 func TestDecodeSubmit(t *testing.T) {
-	p := &Submit{}
-	p.RD = false
-	p.SRR = false
-	p.RP = false
-	p.MR = 64
-	p.DA = Address{TON: 0, NPI: 1}
+	p := &Submit{
+		RD:  false,
+		SRR: false,
+		RP:  false,
+		MR:  64,
+		DA:  Address{TON: 0, NPI: 1},
+		PID: 0,
+		DCS: &GeneralDataCoding{
+			AutoDelete: false,
+			Compressed: false,
+			MsgClass:   NoMessageClass,
+			Charset:    UCS2},
+		VP:  nil,
+		UDH: []udh{&ConcatenatedSM{0x84, 0x0a, 0x01}}}
 	p.DA.Addr, _ = ParseTBCD("09012345678")
-	p.PID = 0
-	p.DCS = &GeneralDataCoding{
-		AutoDelete: false,
-		Compressed: false,
-		MsgClass:   NoMessageClass,
-		Charset:    UCS2}
-	p.VP = nil
-	p.UDH = []udh{&ConcatenatedSM{0x84, 0x0a, 0x01}}
-	p.UD, _ = p.DCS.encodeData("あいうえお")
+	p.UD, _ = p.DCS.Encode("あいうえお")
 
 	b := p.Encode()
 	t.Logf("% x", b)
@@ -58,14 +58,14 @@ func TestEncodeSubmitReport(t *testing.T) {
 }
 
 func TestDecodeSubmitReport(t *testing.T) {
-	p := &SubmitReport{}
-	p.SCTS = time.Date(
-		2011, time.March, 22, 14, 25, 40, 0,
-		time.FixedZone("unknown", 9*60*60))
-	p.PID = nil
-	p.DCS = nil
-	p.UDH = nil
-	p.UD = nil
+	p := &SubmitReport{
+		SCTS: time.Date(
+			2011, time.March, 22, 14, 25, 40, 0,
+			time.FixedZone("unknown", 9*60*60)),
+		PID: nil,
+		DCS: nil,
+		UDH: nil,
+		UD:  nil}
 
 	b := p.Encode()
 	t.Logf("% x", b)
