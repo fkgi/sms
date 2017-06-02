@@ -19,7 +19,7 @@ func init() {
 type TPDU interface {
 	Encode() []byte
 	Decode([]byte) error
-	PrintStack(io.Writer)
+	String() string
 }
 
 // DecodeAsSC parse byte data to TPDU as SC.
@@ -63,21 +63,6 @@ func decode(b []byte, sc bool) (t TPDU, e error) {
 		e = t.Decode(b)
 	}
 	return
-}
-
-func writeBytes(w io.Writer, n int64, b []byte) (int64, error) {
-	i, e := w.Write(b)
-	n += int64(i)
-	return n, e
-}
-
-func readBytes(r io.Reader, n int64, b []byte) (int64, error) {
-	i, e := r.Read(b)
-	n += int64(i)
-	if e == nil && i != len(b) {
-		e = fmt.Errorf("more data required")
-	}
-	return n, e
 }
 
 func readDCS(r *bytes.Reader) (dcs, error) {

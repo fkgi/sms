@@ -1,7 +1,6 @@
 package sms
 
 import (
-	"bytes"
 	"testing"
 	"time"
 )
@@ -16,9 +15,7 @@ func TestEncodeStatusReport(t *testing.T) {
 	if e != nil {
 		t.Fatalf("encode failed: %s", e)
 	}
-	b := new(bytes.Buffer)
-	p.PrintStack(b)
-	t.Log(b.String())
+	t.Log(p.String())
 }
 
 func TestDecodeStatusReport(t *testing.T) {

@@ -3,7 +3,6 @@ package sms
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"time"
 )
 
@@ -136,8 +135,8 @@ func (d *StatusReport) Decode(b []byte) (e error) {
 	return
 }
 
-// PrintStack show PDU parameter
-func (d *StatusReport) PrintStack(w io.Writer) {
+func (d *StatusReport) String() string {
+	w := new(bytes.Buffer)
 	fmt.Fprintf(w, "SMS message stack: Status Report\n")
 	fmt.Fprintf(w, " | TP-MMS:  %s\n", mmsStat(d.MMS))
 	fmt.Fprintf(w, " | TP-LP:   %s\n", lpStat(d.LP))
@@ -163,4 +162,5 @@ func (d *StatusReport) PrintStack(w io.Writer) {
 			fmt.Fprintf(w, "   | %s\n", d.DCS.Decode(d.UD))
 		}
 	}
+	return w.String()
 }

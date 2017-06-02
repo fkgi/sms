@@ -3,7 +3,6 @@ package sms
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"time"
 )
 
@@ -114,8 +113,8 @@ func (d *Submit) Decode(b []byte) (e error) {
 	return
 }
 
-// PrintStack show PDU parameter
-func (d *Submit) PrintStack(w io.Writer) {
+func (d *Submit) String() string {
+	w := new(bytes.Buffer)
 	fmt.Fprintf(w, "SMS message stack: Submit\n")
 	fmt.Fprintf(w, " | TP-RD:   %s\n", rdStat(d.RD))
 	fmt.Fprintf(w, " | TP-SRR:  %s\n", srrStat(d.SRR))
@@ -137,6 +136,7 @@ func (d *Submit) PrintStack(w io.Writer) {
 			fmt.Fprintf(w, "   | %s\n", d.DCS.Decode(d.UD))
 		}
 	}
+	return w.String()
 }
 
 // SubmitReport is TPDU message from SC to MS
@@ -230,8 +230,8 @@ func (d *SubmitReport) Decode(b []byte) (e error) {
 	return
 }
 
-// PrintStack show PDU parameter
-func (d *SubmitReport) PrintStack(w io.Writer) {
+func (d *SubmitReport) String() string {
+	w := new(bytes.Buffer)
 	fmt.Fprintf(w, "SMS message stack: Submit Report")
 	if d.FCS != nil {
 		fmt.Fprintf(w, " for RP-ERROR\n")
@@ -256,4 +256,5 @@ func (d *SubmitReport) PrintStack(w io.Writer) {
 			fmt.Fprintf(w, "   | %s\n", d.DCS.Decode(d.UD))
 		}
 	}
+	return w.String()
 }

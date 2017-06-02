@@ -1,7 +1,6 @@
 package sms
 
 import (
-	"bytes"
 	"testing"
 	"time"
 )
@@ -18,9 +17,7 @@ func TestEncodeSubmit(t *testing.T) {
 		t.Fatalf("encode failed: %s", e)
 	}
 
-	b := new(bytes.Buffer)
-	p.PrintStack(b)
-	t.Log(b.String())
+	t.Log(p.String())
 }
 
 func TestDecodeSubmit(t *testing.T) {
@@ -52,9 +49,7 @@ func TestEncodeSubmitReport(t *testing.T) {
 	if e != nil {
 		t.Fatalf("encode failed: %s", e)
 	}
-	b := new(bytes.Buffer)
-	p.PrintStack(b)
-	t.Log(b.String())
+	t.Log(p.String())
 }
 
 func TestDecodeSubmitReport(t *testing.T) {

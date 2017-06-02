@@ -87,3 +87,18 @@ func (a *Address) ReadFrom(r io.Reader) (n int64, e error) {
 	}
 	return
 }
+
+func writeBytes(w io.Writer, n int64, b []byte) (int64, error) {
+	i, e := w.Write(b)
+	n += int64(i)
+	return n, e
+}
+
+func readBytes(r io.Reader, n int64, b []byte) (int64, error) {
+	i, e := r.Read(b)
+	n += int64(i)
+	if e == nil && i != len(b) {
+		e = fmt.Errorf("more data required")
+	}
+	return n, e
+}
