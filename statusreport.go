@@ -138,28 +138,28 @@ func (d *StatusReport) Decode(b []byte) (e error) {
 func (d *StatusReport) String() string {
 	w := new(bytes.Buffer)
 	fmt.Fprintf(w, "SMS message stack: Status Report\n")
-	fmt.Fprintf(w, " | TP-MMS:  %s\n", mmsStat(d.MMS))
-	fmt.Fprintf(w, " | TP-LP:   %s\n", lpStat(d.LP))
-	fmt.Fprintf(w, " | TP-SRQ:  %s\n", srqStat(d.SRQ))
-	fmt.Fprintf(w, " | TP-MR:   %d\n", d.MR)
-	fmt.Fprintf(w, " | TP-RA:   %s\n", d.RA)
-	fmt.Fprintf(w, " | TP-SCTS: %s\n", d.SCTS)
-	fmt.Fprintf(w, " | TP-DT:   %s\n", d.SCTS)
-	fmt.Fprintf(w, " | TP-ST:   %s\n", stStat(d.ST))
+	fmt.Fprintf(w, "%sTP-MMS:  %s\n", Indent, mmsStat(d.MMS))
+	fmt.Fprintf(w, "%sTP-LP:   %s\n", Indent, lpStat(d.LP))
+	fmt.Fprintf(w, "%sTP-SRQ:  %s\n", Indent, srqStat(d.SRQ))
+	fmt.Fprintf(w, "%sTP-MR:   %d\n", Indent, d.MR)
+	fmt.Fprintf(w, "%sTP-RA:   %s\n", Indent, d.RA)
+	fmt.Fprintf(w, "%sTP-SCTS: %s\n", Indent, d.SCTS)
+	fmt.Fprintf(w, "%sTP-DT:   %s\n", Indent, d.SCTS)
+	fmt.Fprintf(w, "%sTP-ST:   %s\n", Indent, stStat(d.ST))
 
 	if d.PID != nil {
-		fmt.Fprintf(w, " | TP-PID:  %s\n", pidStat(*d.PID))
+		fmt.Fprintf(w, "%sTP-PID:  %s\n", Indent, pidStat(*d.PID))
 	}
 	if d.DCS != nil {
-		fmt.Fprintf(w, " | TP-DCS:  %s\n", d.DCS)
+		fmt.Fprintf(w, "%sTP-DCS:  %s\n", Indent, d.DCS)
 	}
 	if len(d.UDH)+len(d.UD) != 0 {
-		fmt.Fprintf(w, " | TP-UD:\n")
+		fmt.Fprintf(w, "%sTP-UD:\n", Indent)
 		for _, h := range d.UDH {
-			fmt.Fprintf(w, "   | %s\n", h)
+			fmt.Fprintf(w, "%s%s%s\n", Indent, Indent, h)
 		}
 		if len(d.UD) != 0 {
-			fmt.Fprintf(w, "   | %s\n", d.DCS.Decode(d.UD))
+			fmt.Fprintf(w, "%s%s%s\n", Indent, Indent, d.DCS.Decode(d.UD))
 		}
 	}
 	return w.String()

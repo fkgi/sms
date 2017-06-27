@@ -9,6 +9,8 @@ import (
 
 var (
 	msgRef byte
+	// Indent for String() output for each TPDU
+	Indent = " | "
 )
 
 func init() {

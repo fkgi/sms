@@ -116,24 +116,24 @@ func (d *Submit) Decode(b []byte) (e error) {
 func (d *Submit) String() string {
 	w := new(bytes.Buffer)
 	fmt.Fprintf(w, "SMS message stack: Submit\n")
-	fmt.Fprintf(w, " | TP-RD:   %s\n", rdStat(d.RD))
-	fmt.Fprintf(w, " | TP-SRR:  %s\n", srrStat(d.SRR))
-	fmt.Fprintf(w, " | TP-RP:   %s\n", rpStat(d.RP))
-	fmt.Fprintf(w, " | TP-MR:   %d\n", d.MR)
-	fmt.Fprintf(w, " | TP-DA:   %s\n", d.DA)
-	fmt.Fprintf(w, " | TP-PID:  %s\n", pidStat(d.PID))
-	fmt.Fprintf(w, " | TP-DCS:  %s\n", d.DCS)
+	fmt.Fprintf(w, "%sTP-RD:   %s\n", Indent, rdStat(d.RD))
+	fmt.Fprintf(w, "%sTP-SRR:  %s\n", Indent, srrStat(d.SRR))
+	fmt.Fprintf(w, "%sTP-RP:   %s\n", Indent, rpStat(d.RP))
+	fmt.Fprintf(w, "%sTP-MR:   %d\n", Indent, d.MR)
+	fmt.Fprintf(w, "%sTP-DA:   %s\n", Indent, d.DA)
+	fmt.Fprintf(w, "%sTP-PID:  %s\n", Indent, pidStat(d.PID))
+	fmt.Fprintf(w, "%sTP-DCS:  %s\n", Indent, d.DCS)
 	if d.VP != nil {
-		fmt.Fprintf(w, " | TP-VP:   %s\n", d.VP)
+		fmt.Fprintf(w, "%sTP-VP:   %s\n", Indent, d.VP)
 	}
 
 	if len(d.UDH)+len(d.UD) != 0 {
-		fmt.Fprintf(w, " | TP-UD:\n")
+		fmt.Fprintf(w, "%sTP-UD:\n", Indent)
 		for _, h := range d.UDH {
-			fmt.Fprintf(w, "   | %s\n", h)
+			fmt.Fprintf(w, "%s%s%s\n", Indent, Indent, h)
 		}
 		if len(d.UD) != 0 {
-			fmt.Fprintf(w, "   | %s\n", d.DCS.Decode(d.UD))
+			fmt.Fprintf(w, "%s%s%s\n", Indent, Indent, d.DCS.Decode(d.UD))
 		}
 	}
 	return w.String()
@@ -235,25 +235,25 @@ func (d *SubmitReport) String() string {
 	fmt.Fprintf(w, "SMS message stack: Submit Report")
 	if d.FCS != nil {
 		fmt.Fprintf(w, " for RP-ERROR\n")
-		fmt.Fprintf(w, " | TP-FCS:  %s\n", fcsStat(*d.FCS))
+		fmt.Fprintf(w, "%sTP-FCS:  %s\n", Indent, fcsStat(*d.FCS))
 	} else {
 		fmt.Fprintf(w, " for RP-ACK\n")
 	}
 
-	fmt.Fprintf(w, " | TP-SCTS: %s\n", d.SCTS)
+	fmt.Fprintf(w, "%sTP-SCTS: %s\n", Indent, d.SCTS)
 	if d.PID != nil {
-		fmt.Fprintf(w, " | TP-PID:  %s\n", pidStat(*d.PID))
+		fmt.Fprintf(w, "%sTP-PID:  %s\n", Indent, pidStat(*d.PID))
 	}
 	if d.DCS != nil {
-		fmt.Fprintf(w, " | TP-DCS:  %s\n", d.DCS)
+		fmt.Fprintf(w, "%sTP-DCS:  %s\n", Indent, d.DCS)
 	}
 	if len(d.UDH)+len(d.UD) != 0 {
-		fmt.Fprintf(w, " | TP-UD:\n")
+		fmt.Fprintf(w, "%sTP-UD:\n", Indent)
 		for _, h := range d.UDH {
-			fmt.Fprintf(w, "   | %s\n", h)
+			fmt.Fprintf(w, "%s%s%s\n", Indent, Indent, h)
 		}
 		if len(d.UD) != 0 {
-			fmt.Fprintf(w, "   | %s\n", d.DCS.Decode(d.UD))
+			fmt.Fprintf(w, "%s%s%s\n", Indent, Indent, d.DCS.Decode(d.UD))
 		}
 	}
 	return w.String()
