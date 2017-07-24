@@ -25,7 +25,7 @@ type Deliver struct {
 func (d *Deliver) Encode() []byte {
 	w := new(bytes.Buffer)
 
-	b := byte(0x01)
+	b := byte(0x00)
 	if !d.MMS {
 		b = b | 0x04
 	}
