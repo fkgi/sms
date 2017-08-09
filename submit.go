@@ -54,7 +54,9 @@ func (d *Submit) Encode() []byte {
 
 	w.WriteByte(d.MR)
 
-	d.DA.WriteTo(w)
+	b, a := d.DA.Encode()
+	w.WriteByte(b)
+	w.Write(a)
 
 	w.WriteByte(d.PID)
 	w.WriteByte(d.DCS.encode())
@@ -76,7 +78,7 @@ func (d *Submit) Decode(b []byte) (e error) {
 	if d.MR, e = r.ReadByte(); e != nil {
 		return
 	}
-	if _, e = d.DA.ReadFrom(r); e != nil {
+	if d.DA, e = readAddr(r); e != nil {
 		return
 	}
 	if d.PID, e = r.ReadByte(); e != nil {

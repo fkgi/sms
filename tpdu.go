@@ -67,18 +67,6 @@ func decode(b []byte, sc bool) (t TPDU, e error) {
 	return
 }
 
-func readDCS(r *bytes.Reader) (dcs, error) {
-	p, e := r.ReadByte()
-	if e != nil {
-		return nil, e
-	}
-	d := decodeDCS(p)
-	if d == nil {
-		return nil, fmt.Errorf("invalid TP-DCS data: % x", p)
-	}
-	return d, nil
-}
-
 func read7Bytes(r *bytes.Reader) ([7]byte, error) {
 	if r.Len() < 7 {
 		return [7]byte{}, io.EOF

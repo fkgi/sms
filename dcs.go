@@ -53,6 +53,18 @@ func decodeDCS(b byte) dcs {
 	return nil
 }
 
+func readDCS(r *bytes.Reader) (dcs, error) {
+	p, e := r.ReadByte()
+	if e != nil {
+		return nil, e
+	}
+	d := decodeDCS(p)
+	if d == nil {
+		return nil, fmt.Errorf("invalid TP-DCS data: % x", p)
+	}
+	return d, nil
+}
+
 type msgClass byte
 type charset byte
 

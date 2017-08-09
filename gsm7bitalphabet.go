@@ -3,7 +3,6 @@ package sms
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"unicode/utf8"
 )
 
@@ -108,9 +107,7 @@ func (s GSM7bitString) String() string {
 	return b.String()
 }
 
-// WriteTo wite binary data to io.Writer
-func (s GSM7bitString) WriteTo(w io.Writer) (n int64, e error) {
-	i := 0
-	i, e = w.Write(s)
-	return int64(i), e
+// Bytes return byte data
+func (s GSM7bitString) Bytes() []byte {
+	return []byte(s)
 }

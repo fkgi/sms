@@ -3,7 +3,6 @@ package sms
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"strings"
 )
 
@@ -125,9 +124,7 @@ func (t TBCD) String() string {
 	return b.String()
 }
 
-// WriteTo wite binary data to io.Writer
-func (t TBCD) WriteTo(w io.Writer) (n int64, e error) {
-	i := 0
-	i, e = w.Write(t)
-	return int64(i), e
+// Bytes return byte data
+func (t TBCD) Bytes() []byte {
+	return []byte(t)
 }

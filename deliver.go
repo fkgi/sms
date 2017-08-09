@@ -42,7 +42,9 @@ func (d *Deliver) Encode() []byte {
 		b = b | 0x80
 	}
 	w.WriteByte(b)
-	d.OA.WriteTo(w)
+	b, a := d.OA.Encode()
+	w.WriteByte(b)
+	w.Write(a)
 	w.WriteByte(d.PID)
 	w.WriteByte(d.DCS.encode())
 	w.Write(encodeSCTimeStamp(d.SCTS))
@@ -59,8 +61,7 @@ func (d *Deliver) Decode(b []byte) (e error) {
 	d.RP = b[0]&0x80 == 0x80
 
 	r := bytes.NewReader(b[1:])
-
-	if _, e = d.OA.ReadFrom(r); e != nil {
+	if d.OA, e = readAddr(r); e != nil {
 		return
 	}
 	if d.PID, e = r.ReadByte(); e != nil {

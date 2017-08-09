@@ -1,8 +1,8 @@
 package sms
 
 import (
+	"bytes"
 	"fmt"
-	"io"
 	"regexp"
 )
 
@@ -17,7 +17,8 @@ type addrValue interface {
 	Length() int
 	ByteLength() int
 	String() string
-	WriteTo(w io.Writer) (n int64, e error)
+	Bytes() []byte
+	//	WriteTo(w io.Writer) (n int64, e error)
 }
 
 func (a Address) String() string {
@@ -29,76 +30,56 @@ func (a Address) RegexpMatch(re *regexp.Regexp) bool {
 	return re.MatchString(a.Addr.String())
 }
 
-// WriteTo wite binary data to io.Writer
-func (a Address) WriteTo(w io.Writer) (n int64, e error) {
-	i := 0
+// Encode generate binary data of this Address
+func (a Address) Encode() (l byte, b []byte) {
 	switch a.Addr.(type) {
 	case TBCD:
-		i = a.Addr.Length()
+		l = byte(a.Addr.Length())
 		if a.TON == 0x05 {
-			e = fmt.Errorf("invalid TON for digit address")
-			return
+			a.TON = 0x00
 		}
 	case GSM7bitString:
-		i = a.Addr.ByteLength() * 2
-		if a.TON != 0x05 || a.NPI != 0x00 {
-			e = fmt.Errorf("invalid TON/NPI for alphanumeric address")
-			return
-		}
+		l = byte(a.Addr.ByteLength() * 2)
+		a.TON = 0x05
+		a.NPI = 0x00
 	}
 
-	b := []byte{byte(i), 0x80}
-	b[1] = b[1] | (a.TON&0x07)<<4
-	b[1] = b[1] | (a.NPI & 0x0f)
-	if n, e = writeBytes(w, n, b); e != nil {
-		return
-	}
+	b = []byte{0x80}
+	b[0] = b[0] | (a.TON&0x07)<<4
+	b[0] = b[0] | (a.NPI & 0x0f)
+	b = append(b, a.Addr.Bytes()...)
 
-	nn, e := a.Addr.WriteTo(w)
-	n += nn
+	return
+}
 
-	if e == nil && n > 12 {
-		e = fmt.Errorf("too much long address data %d", n)
+// Decode make Address from binary data
+func (a *Address) Decode(b []byte) {
+	a.TON = (b[0] >> 4) & 0x07
+	a.NPI = b[0] & 0x0f
+	if a.TON == 0x05 {
+		a.Addr = GSM7bitString(b[1:])
+	} else {
+		a.Addr = TBCD(b[1:])
 	}
 	return
 }
 
-// ReadFrom read byte data and set parameter of the Address
-func (a *Address) ReadFrom(r io.Reader) (n int64, e error) {
-	b := make([]byte, 2)
-	if n, e = readBytes(r, n, b); e != nil {
+func readAddr(r *bytes.Reader) (a Address, e error) {
+	var l byte
+	if l, e = r.ReadByte(); e != nil {
 		return
 	}
-	l := int(b[0])
-	a.TON = (b[1] >> 4) & 0x07
-	a.NPI = b[1] & 0x0f
-
 	if l%2 == 1 {
 		l++
 	}
-	b = make([]byte, l/2)
-	if n, e = readBytes(r, n, b); e != nil {
-		return
-	}
-	if a.TON == 0x05 {
-		a.Addr = GSM7bitString(b)
-	} else {
-		a.Addr = TBCD(b)
+	b := make([]byte, l/2+1)
+	var i int
+	if i, e = r.Read(b); e == nil {
+		if i != len(b) {
+			e = fmt.Errorf("more data required")
+		} else {
+			a.Decode(b)
+		}
 	}
 	return
-}
-
-func writeBytes(w io.Writer, n int64, b []byte) (int64, error) {
-	i, e := w.Write(b)
-	n += int64(i)
-	return n, e
-}
-
-func readBytes(r io.Reader, n int64, b []byte) (int64, error) {
-	i, e := r.Read(b)
-	n += int64(i)
-	if e == nil && i != len(b) {
-		e = fmt.Errorf("more data required")
-	}
-	return n, e
 }

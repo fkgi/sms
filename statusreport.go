@@ -42,7 +42,9 @@ func (d *StatusReport) Encode() []byte {
 	}
 	w.WriteByte(b)
 	w.WriteByte(d.MR)
-	d.RA.WriteTo(w)
+	b, a := d.RA.Encode()
+	w.WriteByte(b)
+	w.Write(a)
 	w.Write(encodeSCTimeStamp(d.SCTS))
 	w.Write(encodeSCTimeStamp(d.DT))
 	w.WriteByte(d.ST)
@@ -83,7 +85,7 @@ func (d *StatusReport) Decode(b []byte) (e error) {
 	if d.MR, e = r.ReadByte(); e != nil {
 		return
 	}
-	if _, e = d.RA.ReadFrom(r); e != nil {
+	if d.RA, e = readAddr(r); e != nil {
 		return
 	}
 	var p [7]byte
