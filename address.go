@@ -47,8 +47,10 @@ func (a Address) Encode() (l byte, b []byte) {
 	b = []byte{0x80}
 	b[0] = b[0] | (a.TON&0x07)<<4
 	b[0] = b[0] | (a.NPI & 0x0f)
-	b = append(b, a.Addr.Bytes()...)
 
+	if a.Addr != nil {
+		b = append(b, a.Addr.Bytes()...)
+	}
 	return
 }
 
