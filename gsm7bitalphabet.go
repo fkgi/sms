@@ -2,7 +2,6 @@ package sms
 
 import (
 	"bytes"
-	"fmt"
 	"unicode/utf8"
 )
 
@@ -34,7 +33,9 @@ func GetGSM7bitString(s string) (GSM7bitString, error) {
 	for i, r := range []rune(s) {
 		c := getCode(r)
 		if c == 0x80 {
-			return nil, fmt.Errorf("invalid character %c", r)
+			return nil, &InvalidDataError{
+				Name:  "GSM7bit string",
+				Bytes: []byte(string(r))}
 		}
 
 		switch i % 8 {

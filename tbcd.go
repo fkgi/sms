@@ -2,7 +2,6 @@ package sms
 
 import (
 	"bytes"
-	"fmt"
 	"strings"
 )
 
@@ -12,7 +11,9 @@ type TBCD []byte
 // ParseTBCD create TBCD value from string
 func ParseTBCD(s string) (TBCD, error) {
 	if strings.ContainsRune(s, '\x00') {
-		return nil, fmt.Errorf("invalid charactor")
+		return nil, &InvalidDataError{
+			Name:  "TBCD",
+			Bytes: []byte(s)}
 	} else if len(s)%2 != 0 {
 		s = s + "\x00"
 	}
@@ -54,7 +55,9 @@ func ParseTBCD(s string) (TBCD, error) {
 		case '\x00':
 			v = 0x0f
 		default:
-			return r, fmt.Errorf("invalid charactor %c", c)
+			return r, &InvalidDataError{
+				Name:  "TBCD",
+				Bytes: []byte(string(c))}
 		}
 		if i%2 == 1 {
 			v = v << 4

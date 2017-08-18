@@ -3,6 +3,7 @@ package sms
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"regexp"
 )
 
@@ -78,7 +79,7 @@ func readAddr(r *bytes.Reader) (a Address, e error) {
 	var i int
 	if i, e = r.Read(b); e == nil {
 		if i != len(b) {
-			e = fmt.Errorf("more data required")
+			e = io.EOF
 		} else {
 			a.Decode(b)
 		}

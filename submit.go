@@ -110,7 +110,11 @@ func (d *Submit) Decode(b []byte) (e error) {
 		d.UD, d.UDH, e = readUD(r, d.DCS, b[0]&0x40 == 0x40)
 	}
 	if e == nil && r.Len() != 0 {
-		e = fmt.Errorf("invalid data: extra data")
+		tmp := make([]byte, r.Len())
+		r.Read(tmp)
+		e = &InvalidDataError{
+			Name:  "extra part",
+			Bytes: tmp}
 	}
 	return
 }
@@ -227,7 +231,11 @@ func (d *SubmitReport) Decode(b []byte) (e error) {
 		d.UD, d.UDH, e = readUD(r, d.DCS, b[0]&0x40 == 0x40)
 	}
 	if e == nil && r.Len() != 0 {
-		e = fmt.Errorf("invalid data: extra data")
+		tmp := make([]byte, r.Len())
+		r.Read(tmp)
+		e = &InvalidDataError{
+			Name:  "extra part",
+			Bytes: tmp}
 	}
 	return
 }

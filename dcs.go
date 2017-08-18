@@ -60,7 +60,9 @@ func readDCS(r *bytes.Reader) (dcs, error) {
 	}
 	d := decodeDCS(p)
 	if d == nil {
-		return nil, fmt.Errorf("invalid TP-DCS data: % x", p)
+		return nil, &InvalidDataError{
+			Name:  "TP-DCS",
+			Bytes: []byte{p}}
 	}
 	return d, nil
 }
@@ -140,7 +142,7 @@ func (c *GeneralDataCoding) Encode(s string) ([]byte, error) {
 	case UCS2:
 		return encodeUCS2(s), nil
 	}
-	return nil, nil
+	return []byte(s), nil
 }
 
 func (c *GeneralDataCoding) String() string {

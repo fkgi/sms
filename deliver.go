@@ -78,7 +78,11 @@ func (d *Deliver) Decode(b []byte) (e error) {
 		d.UD, d.UDH, e = readUD(r, d.DCS, b[0]&0x40 == 0x40)
 	}
 	if e == nil && r.Len() != 0 {
-		e = fmt.Errorf("invalid data: extra data")
+		tmp := make([]byte, r.Len())
+		r.Read(tmp)
+		e = &InvalidDataError{
+			Name:  "extra part",
+			Bytes: tmp}
 	}
 
 	return
@@ -105,7 +109,7 @@ func (d *Deliver) String() string {
 			fmt.Fprintf(w, "%s%s%s\n", Indent, Indent, d.DCS.Decode(d.UD))
 		}
 	}
-	return w.String()
+	return w.String()[:w.Len()-1]
 }
 
 // DeliverReport is TPDU message from MS to SC
@@ -187,7 +191,11 @@ func (d *DeliverReport) Decode(b []byte) (e error) {
 		d.UD, d.UDH, e = readUD(r, d.DCS, b[0]&0x40 == 0x40)
 	}
 	if e == nil && r.Len() != 0 {
-		e = fmt.Errorf("invalid data: extra data")
+		tmp := make([]byte, r.Len())
+		r.Read(tmp)
+		e = &InvalidDataError{
+			Name:  "extra part",
+			Bytes: tmp}
 	}
 	return
 }
@@ -217,5 +225,5 @@ func (d *DeliverReport) String() string {
 			fmt.Fprintf(w, "%s%s%s\n", Indent, Indent, d.DCS.Decode(d.UD))
 		}
 	}
-	return w.String()
+	return w.String()[:w.Len()-1]
 }
