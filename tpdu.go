@@ -7,13 +7,21 @@ import (
 )
 
 var (
-	msgRef byte
+	msgRef chan byte
 	// Indent for String() output for each TPDU
 	Indent = " | "
 )
 
 func init() {
-	msgRef = byte(time.Now().Nanosecond())
+	msgRef = make(chan byte, 1)
+	msgRef <- byte(time.Now().Nanosecond())
+}
+
+// NextMsgReference make Message Reference ID
+func NextMsgReference() byte {
+	ret := <-msgRef
+	msgRef <- ret + 1
+	return ret
 }
 
 // TPDU represents a SMS PDU
