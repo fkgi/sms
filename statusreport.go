@@ -19,7 +19,7 @@ type StatusReport struct {
 	ST   byte      // Status
 	PID  *byte     // Protocol Identifier
 	DCS  dcs       // Data Coding Scheme
-	UDH  []udh     // User Data Header
+	UDH  []UDH     // User Data Header
 	UD   []byte    // User Data
 }
 

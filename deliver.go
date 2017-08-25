@@ -17,7 +17,7 @@ type Deliver struct {
 	PID  byte      // Protocol Identifier
 	DCS  dcs       // Data Coding Scheme
 	SCTS time.Time // Service Centre Time Stamp
-	UDH  []udh     // User Data Header
+	UDH  []UDH     // User Data Header
 	UD   []byte    // User Data
 }
 
@@ -117,7 +117,7 @@ type DeliverReport struct {
 	FCS *byte  // Failure Cause
 	PID *byte  // Protocol Identifier
 	DCS dcs    // Data Coding Scheme
-	UDH []udh  // User Data Header
+	UDH []UDH  // User Data Header
 	UD  []byte // User Data
 }
 

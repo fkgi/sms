@@ -17,7 +17,7 @@ type Submit struct {
 	PID byte    // Protocol Identifier
 	DCS dcs     // Data Coding Scheme
 	VP  vp      // Validity Period
-	UDH []udh   // User Data Header
+	UDH []UDH   // User Data Header
 	UD  []byte  // User Data
 }
 
@@ -151,7 +151,7 @@ type SubmitReport struct {
 	SCTS time.Time // Service Centre Time Stamp
 	PID  *byte     // Protocol Identifier
 	DCS  dcs       // Data Coding Scheme
-	UDH  []udh     // User Data Header
+	UDH  []UDH     // User Data Header
 	UD   []byte    // User Data
 }
 

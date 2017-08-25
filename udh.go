@@ -5,19 +5,19 @@ import (
 	"fmt"
 )
 
-type udh interface {
+type UDH interface {
 	encode() []byte
 	decode(b []byte)
 	String() string
 }
 
-func decodeUDH(b []byte) (h []udh) {
+func decodeUDH(b []byte) (h []UDH) {
 	if len(b) == 0 {
 		return
 	}
 	buf := bytes.NewBuffer(b[1:])
 	for buf.Len() != 0 {
-		var u udh
+		var u UDH
 		k, _ := buf.ReadByte()
 		switch k {
 		case 0x00:
@@ -34,7 +34,7 @@ func decodeUDH(b []byte) (h []udh) {
 	return
 }
 
-func encodeUDH(h []udh) []byte {
+func encodeUDH(h []UDH) []byte {
 	if len(h) == 0 {
 		return []byte{}
 	}

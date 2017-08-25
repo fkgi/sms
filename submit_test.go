@@ -34,7 +34,7 @@ func TestDecodeSubmit(t *testing.T) {
 			MsgClass:   NoMessageClass,
 			Charset:    UCS2},
 		VP:  nil,
-		UDH: []udh{&ConcatenatedSM{0x84, 0x0a, 0x01}}}
+		UDH: []UDH{&ConcatenatedSM{0x84, 0x0a, 0x01}}}
 	p.DA.Addr, _ = ParseTBCD("09012345678")
 	p.UD, _ = p.DCS.Encode("あいうえお")
 

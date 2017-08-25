@@ -34,7 +34,7 @@ func TestDecodeDeliver(t *testing.T) {
 		SCTS: time.Date(
 			2011, time.March, 22, 14, 25, 40, 0,
 			time.FixedZone("unknown", 9*60*60)),
-		UDH: []udh{&ConcatenatedSM{0x84, 0x0a, 0x01}}}
+		UDH: []UDH{&ConcatenatedSM{0x84, 0x0a, 0x01}}}
 	p.OA.Addr, _ = ParseTBCD("1234")
 	p.UD, _ = p.DCS.Encode("あいうえお")
 

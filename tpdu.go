@@ -88,7 +88,7 @@ func read7Bytes(r *bytes.Reader) ([7]byte, error) {
 		b[0], b[1], b[2], b[3], b[4], b[5], b[6]}, nil
 }
 
-func readUD(r *bytes.Reader, d dcs, h bool) ([]byte, []udh, error) {
+func readUD(r *bytes.Reader, d dcs, h bool) ([]byte, []UDH, error) {
 	p, e := r.ReadByte()
 	if e != nil {
 		return nil, nil, e
@@ -111,7 +111,7 @@ func readUD(r *bytes.Reader, d dcs, h bool) ([]byte, []udh, error) {
 	return ud, nil, nil
 }
 
-func writeUD(w *bytes.Buffer, ud []byte, h []udh, d dcs) {
+func writeUD(w *bytes.Buffer, ud []byte, h []UDH, d dcs) {
 	udh := encodeUDH(h)
 
 	u := d.unitSize()
