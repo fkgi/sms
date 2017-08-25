@@ -142,7 +142,7 @@ func (d *Submit) String() string {
 			fmt.Fprintf(w, "%s%s%s\n", Indent, Indent, d.DCS.Decode(d.UD))
 		}
 	}
-	return w.String()
+	return w.String()[:w.Len()-1]
 }
 
 // SubmitReport is TPDU message from SC to MS
@@ -266,5 +266,5 @@ func (d *SubmitReport) String() string {
 			fmt.Fprintf(w, "%s%s%s\n", Indent, Indent, d.DCS.Decode(d.UD))
 		}
 	}
-	return w.String()
+	return w.String()[:w.Len()-1]
 }

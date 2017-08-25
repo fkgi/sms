@@ -13,11 +13,10 @@ func MakeCodedData(s string) (uds [][]byte, dcs GeneralDataCoding) {
 	} else {
 		dcs.Charset = UCS2
 	}
-
-	if ud, e := dcs.Encode(s); e != nil {
-		if len(ud) > 140 {
-			uds = append(uds, ud[:135])
-			ud = ud[135:]
+	if ud, e := dcs.Encode(s); e == nil {
+		for len(ud) > 140 {
+			uds = append(uds, ud[:134])
+			ud = ud[134:]
 		}
 		uds = append(uds, ud)
 	}
