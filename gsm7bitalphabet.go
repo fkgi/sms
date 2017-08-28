@@ -29,7 +29,11 @@ func getCode(c rune) byte {
 
 // GetGSM7bitString generate GSM7bitString from string
 func GetGSM7bitString(s string) (GSM7bitString, error) {
-	ret := make([]byte, 0, utf8.RuneCountInString(s)*7/8+1)
+	l := utf8.RuneCountInString(s)
+	o := l%8 + l*8
+	ret := make([]byte, (l*7+l%8)/8)
+
+	l = 0
 	for i, r := range []rune(s) {
 		c := getCode(r)
 		if c == 0x80 {
@@ -38,31 +42,71 @@ func GetGSM7bitString(s string) (GSM7bitString, error) {
 				Bytes: []byte(string(r))}
 		}
 
-		switch i % 8 {
-		case 0:
-			ret = append(ret, c&0x7f)
-		case 1:
-			ret[len(ret)-1] = (ret[len(ret)-1]) | ((c << 7) & 0x80)
-			ret = append(ret, (c>>1)&0x3f)
-		case 2:
-			ret[len(ret)-1] = (ret[len(ret)-1]) | ((c << 6) & 0xc0)
-			ret = append(ret, (c>>2)&0x1f)
-		case 3:
-			ret[len(ret)-1] = (ret[len(ret)-1]) | ((c << 5) & 0xe0)
-			ret = append(ret, (c>>3)&0x0f)
-		case 4:
-			ret[len(ret)-1] = (ret[len(ret)-1]) | ((c << 4) & 0xf0)
-			ret = append(ret, (c>>4)&0x07)
-		case 5:
-			ret[len(ret)-1] = (ret[len(ret)-1]) | ((c << 3) & 0xf8)
-			ret = append(ret, (c>>5)&0x03)
-		case 6:
-			ret[len(ret)-1] = (ret[len(ret)-1]) | ((c << 2) & 0xfc)
-			ret = append(ret, (c>>6)&0x01)
-		case 7:
-			ret[len(ret)-1] = (ret[len(ret)-1]) | ((c << 1) & 0xfe)
+		shift := uint((o - i) % 8)
+		ret[l] = ret[l] | (c << shift)
+		if shift > 1 {
+			shift = 8 - shift
+			ret[l+1] = (c >> shift)
+			l++
+		} else if shift == 1 {
+			l++
 		}
 	}
+
+	/*
+		ret := make([]byte, 0, utf8.RuneCountInString(s)*7/8+1)
+		offset := utf8.RuneCountInString(s)%8
+		//var r rune
+		for i, r := range []rune(s) {
+			c := getCode(r)
+			if c == 0x80 {
+				return nil, &InvalidDataError{
+					Name:  "GSM7bit string",
+					Bytes: []byte(string(r))}
+			}
+
+			switch (offset+i) % 8 {
+			case 0:
+				ret = append(ret, c&0x7f)
+			case 1:
+				ret[len(ret)-1] = (ret[len(ret)-1]) | ((c << 7) & 0x80)
+				ret = append(ret, (c>>1)&0x3f)
+			case 2:
+				ret[len(ret)-1] = (ret[len(ret)-1]) | ((c << 6) & 0xc0)
+				ret = append(ret, (c>>2)&0x1f)
+			case 3:
+				ret[len(ret)-1] = (ret[len(ret)-1]) | ((c << 5) & 0xe0)
+				ret = append(ret, (c>>3)&0x0f)
+			case 4:
+				ret[len(ret)-1] = (ret[len(ret)-1]) | ((c << 4) & 0xf0)
+				ret = append(ret, (c>>4)&0x07)
+			case 5:
+				ret[len(ret)-1] = (ret[len(ret)-1]) | ((c << 3) & 0xf8)
+				ret = append(ret, (c>>5)&0x03)
+			case 6:
+				ret[len(ret)-1] = (ret[len(ret)-1]) | ((c << 2) & 0xfc)
+				ret = append(ret, (c>>6)&0x01)
+			case 7:
+				ret[len(ret)-1] = (ret[len(ret)-1]) | ((c << 1) & 0xfe)
+			}
+		}
+		switch i % 8 {
+		case 0:
+			ret[len(ret)-1] = ret[len(ret)-1] << 1
+		case 1:
+			ret[len(ret)-1] = ret[len(ret)-1] << 2
+		case 2:
+			ret[len(ret)-1] = ret[len(ret)-1] << 3
+		case 3:
+			ret[len(ret)-1] = ret[len(ret)-1] << 4
+		case 4:
+			ret[len(ret)-1] = ret[len(ret)-1] << 5
+		case 5:
+			ret[len(ret)-1] = ret[len(ret)-1] << 6
+		case 6:
+			ret[len(ret)-1] = ret[len(ret)-1] << 7
+		}
+	*/
 	return ret, nil
 }
 
