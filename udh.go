@@ -5,6 +5,7 @@ import (
 	"fmt"
 )
 
+// UDH is header of TP-UD
 type UDH interface {
 	encode() []byte
 	decode(b []byte)
