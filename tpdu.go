@@ -115,7 +115,6 @@ func writeUD(w *bytes.Buffer, ud []byte, h []UDH, d dcs) {
 	udh := encodeUDH(h)
 
 	u := d.unitSize()
-	println(len(udh))
 	l := len(udh) + len(ud)
 	l = ((l * 8) - (l * 8 % u)) / u
 

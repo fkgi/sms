@@ -165,7 +165,7 @@ func (d *StatusReport) String() string {
 			fmt.Fprintf(w, "%s%s%s\n", Indent, Indent, h)
 		}
 		if len(d.UD) != 0 {
-			fmt.Fprintf(w, "%s%s%s\n", Indent, Indent, d.DCS.Decode(d.UD))
+			//			fmt.Fprintf(w, "%s%s%s\n", Indent, Indent, d.DCS.Decode(d.UD))
 		}
 	}
 	return w.String()[:w.Len()-1]

@@ -10,49 +10,70 @@ import (
 )
 
 func TestGetGSM7bitString(t *testing.T) {
-	s, e := GetGSM7bitString("Design@Home")
-	if e != nil {
-		t.Fatalf("conversion failure: %s", e)
-	}
-	b := []byte{0xC4, 0xF2, 0x3C, 0x7D, 0x76, 0x03, 0x90, 0xEF, 0x76, 0x19}
+	txt := "Hello0!"
+	bin := []byte{0x00, 0x64, 0x99, 0xCD, 0x7E, 0xC3, 0x42}
+	cnv := []byte{}
 
-	for i := range b {
-		if s[i] != b[i] {
-			t.Fatalf("conversion failed in %d byte", i)
+	t.Logf("\ntest text=%s", txt)
+	if s, e := GetGSM7bitString(txt); e != nil {
+		t.Fatalf("conversion failure: %s", e)
+	} else {
+		cnv = s.Bytes()
+	}
+
+	t.Logf("\nconv bin=% x\norig bin=% x", cnv, bin)
+	for i := range cnv {
+		if bin[i] != cnv[i] {
+			t.Fatalf("\nconversion failed in %d byte,"+
+				" %x should be %x", i, cnv[i], bin[i])
 		}
 	}
 }
 
 func TestGSM7bitStringLength(t *testing.T) {
-	org := randText(200)
-	s, e := GetGSM7bitString(org)
+	rand.Seed(time.Now().Unix())
+	txt := randText(rand.Int() % 1000)
+	t.Logf("\ntest text=%s", strconv.QuoteToGraphic(txt))
+
+	s, e := GetGSM7bitString(txt)
 	if e != nil {
 		t.Fatalf("conversion failure: %s", e)
 	}
+	t.Logf("\norig len=%d\nconv len=%d",
+		utf8.RuneCountInString(txt), s.Length())
 
-	if s.Length() != utf8.RuneCountInString(org) {
+	if s.Length() != utf8.RuneCountInString(txt) {
 		t.Fatalf("detect length failed orig=%d detect=%d",
-			utf8.RuneCountInString(org), s.Length())
+			utf8.RuneCountInString(txt), s.Length())
 	}
 }
 
-func TestGSM7bitStringString(t *testing.T) {
-	org := randText(200)
-	s, e := GetGSM7bitString(org)
-	if e != nil {
-		t.Fatalf("conversion failure: %s", e)
-	}
+func TestGSM7bitStringByteConv(t *testing.T) {
+	rand.Seed(time.Now().Unix())
 
-	r := s.String()
-	if r != org {
-		t.Fatalf("different text orig=%s detect=%s",
-			strconv.QuoteToGraphic(org),
-			strconv.QuoteToGraphic(r))
+	for i := 0; i < 50; i++ {
+		org := randText(rand.Int() % 1000)
+		l := utf8.RuneCountInString(org)
+		t.Logf("\nid=%d, len=%d, bin=%d, offset=%d\norigin=%s",
+			i, l, (l*7+l%8)/8, l%8, strconv.QuoteToGraphic(org))
+
+		s, e := GetGSM7bitString(org)
+		if e != nil {
+			t.Fatalf("conversion failure: %s", e)
+		}
+		b := s.Bytes()
+		t.Logf("\nhex=% x\n", b)
+
+		s = GetGSM7bitByte(l, b)
+		r := s.String()
+		if r != org {
+			t.Fatalf("\ndetect=%s", strconv.QuoteToGraphic(r))
+		}
 	}
 }
 
 func randText(len int) string {
-	rand.Seed(time.Now().Unix())
+	//rand.Seed(time.Now().Unix())
 	var b bytes.Buffer
 	for i := 0; i < len; i++ {
 		b.WriteRune(code[rand.Int()%128])

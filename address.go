@@ -16,10 +16,9 @@ type Address struct {
 
 type addrValue interface {
 	Length() int
-	ByteLength() int
+	//	ByteLength() int
 	String() string
 	Bytes() []byte
-	//	WriteTo(w io.Writer) (n int64, e error)
 }
 
 func (a Address) String() string {
@@ -31,7 +30,7 @@ func (a Address) RegexpMatch(re *regexp.Regexp) bool {
 	return re.MatchString(a.Addr.String())
 }
 
-// Encode generate binary data of this Address
+// Encode generate binary data and semi-octet length of this Address
 func (a Address) Encode() (l byte, b []byte) {
 	switch a.Addr.(type) {
 	case TBCD:
@@ -40,14 +39,17 @@ func (a Address) Encode() (l byte, b []byte) {
 			a.TON = 0x00
 		}
 	case GSM7bitString:
-		l = byte(a.Addr.ByteLength() * 2)
+		l = byte(a.Addr.Length() * 7 / 4)
+		if a.Addr.Length()*7%4 != 0 {
+			l++
+		}
 		a.TON = 0x05
 		a.NPI = 0x00
 	}
 
 	b = []byte{0x80}
-	b[0] = b[0] | (a.TON&0x07)<<4
-	b[0] = b[0] | (a.NPI & 0x0f)
+	b[0] |= (a.TON & 0x07) << 4
+	b[0] |= a.NPI & 0x0f
 
 	if a.Addr != nil {
 		b = append(b, a.Addr.Bytes()...)
@@ -55,34 +57,39 @@ func (a Address) Encode() (l byte, b []byte) {
 	return
 }
 
-// Decode make Address from binary data
-func (a *Address) Decode(b []byte) {
+// Decode make Address from binary data and semi-octet length
+func (a *Address) Decode(l byte, b []byte) {
 	a.TON = (b[0] >> 4) & 0x07
 	a.NPI = b[0] & 0x0f
+
+	b = b[1:]
 	if a.TON == 0x05 {
-		a.Addr = GSM7bitString(b[1:])
+		l = l * 4 / 7
+		a.Addr = GetGSM7bitByte(int(l), b)
 	} else {
-		a.Addr = TBCD(b[1:])
+		if l%2 == 1 {
+			b[len(b)-1] |= 0xf0
+		}
+		a.Addr = TBCD(b)
 	}
 	return
 }
 
-func readAddr(r *bytes.Reader) (a Address, e error) {
-	var l byte
-	if l, e = r.ReadByte(); e != nil {
-		return
+func readAddr(r *bytes.Reader) (Address, error) {
+	a := Address{}
+	l, e := r.ReadByte()
+	if e != nil {
+		return a, e
 	}
-	if l%2 == 1 {
-		l++
-	}
-	b := make([]byte, l/2+1)
+
+	b := make([]byte, l/2+l%2)
 	var i int
 	if i, e = r.Read(b); e == nil {
 		if i != len(b) {
 			e = io.EOF
 		} else {
-			a.Decode(b)
+			a.Decode(l, b)
 		}
 	}
-	return
+	return a, e
 }

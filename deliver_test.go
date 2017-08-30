@@ -36,7 +36,7 @@ func TestDecodeDeliver(t *testing.T) {
 			time.FixedZone("unknown", 9*60*60)),
 		UDH: []UDH{&ConcatenatedSM{0x84, 0x0a, 0x01}}}
 	p.OA.Addr, _ = ParseTBCD("1234")
-	p.UD, _ = p.DCS.Encode("あいうえお")
+	_, p.UD, _ = p.DCS.Encode("あいうえお")
 
 	b := p.Encode()
 	t.Logf("% x", b)

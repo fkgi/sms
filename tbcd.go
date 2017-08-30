@@ -70,16 +70,17 @@ func ParseTBCD(s string) (TBCD, error) {
 // Length return length of the TBCD digit
 func (t TBCD) Length() int {
 	ret := len(t) * 2
-	if (t[len(t)-1]&0xf0)>>4 == 0x0f {
+	if t[len(t)-1]&0xf0 == 0xf0 {
 		ret--
 	}
 	return ret
 }
 
-// ByteLength return octets of the TBCD digit
+/* ByteLength return octets of the TBCD digit
 func (t TBCD) ByteLength() int {
 	return len(t)
 }
+*/
 
 // String return string value of the TBCD digit
 func (t TBCD) String() string {
