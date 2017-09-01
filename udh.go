@@ -5,20 +5,19 @@ import (
 	"fmt"
 )
 
-// UDH is header of TP-UD
-type UDH interface {
+type udh interface {
 	encode() []byte
-	decode(b []byte)
+	decode([]byte)
 	String() string
 }
 
-func decodeUDH(b []byte) (h []UDH) {
+func decodeUDH(b []byte) (h []udh) {
 	if len(b) == 0 {
 		return
 	}
 	buf := bytes.NewBuffer(b[1:])
 	for buf.Len() != 0 {
-		var u UDH
+		var u udh
 		k, _ := buf.ReadByte()
 		switch k {
 		case 0x00:
@@ -35,7 +34,7 @@ func decodeUDH(b []byte) (h []UDH) {
 	return
 }
 
-func encodeUDH(h []UDH) []byte {
+func encodeUDH(h []udh) []byte {
 	if len(h) == 0 {
 		return []byte{}
 	}

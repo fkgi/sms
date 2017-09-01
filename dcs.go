@@ -1,17 +1,11 @@
 package sms
 
-import (
-	"bytes"
-	"fmt"
-	"unicode/utf16"
-)
+import "bytes"
 
 type dcs interface {
-	encode() (b byte)
-	unitSize() int
+	encode() byte
 	String() string
-	Decode(l int, b []byte) string
-	Encode(s string) (int, []byte, error)
+	charset() charset
 }
 
 func decodeDCS(b byte) dcs {
@@ -82,12 +76,12 @@ const (
 	// MessageClass3 means message class 3
 	MessageClass3 msgClass = 0x13
 
-	// GSM7bitAlphabet means GSM 7 bit default alphabet charset
-	GSM7bitAlphabet charset = 0x00
-	// Data8bit means 8 bit data charset
-	Data8bit charset = 0x04
-	// UCS2 means UCS2 charset
-	UCS2 charset = 0x08
+	// CharsetGSM7bit means GSM 7 bit default alphabet charset
+	CharsetGSM7bit charset = 0x00
+	// Charset8bitData means 8 bit data charset
+	Charset8bitData charset = 0x04
+	// CharsetUCS2 means UCS2 charset
+	CharsetUCS2 charset = 0x08
 )
 
 // GeneralDataCoding is group of SMS Data Coding Scheme
@@ -105,48 +99,15 @@ func (c *GeneralDataCoding) encode() (b byte) {
 		b = 0x00
 	}
 	if c.Compressed {
-		b = b | 0x20
+		b |= 0x20
 	}
-	b = b | byte(c.MsgClass)
-	b = b | byte(c.Charset&0x0c)
+	b |= byte(c.MsgClass)
+	b |= byte(c.Charset & 0x0c)
 	return
 }
 
-func (c *GeneralDataCoding) unitSize() int {
-	if c.Charset == GSM7bitAlphabet {
-		return 7
-	}
-	return 8
-}
-
-// Decode DCS data from byte slice
-func (c *GeneralDataCoding) Decode(l int, b []byte) string {
-	switch c.Charset {
-	case GSM7bitAlphabet:
-		return GetGSM7bitByte(l, b).String()
-	case Data8bit:
-		return fmt.Sprintf("% x", b[:l])
-	case UCS2:
-		return decodeUCS2(l, b[:l])
-	}
-	return ""
-}
-
-// Encode DCS data to byte slice
-func (c *GeneralDataCoding) Encode(s string) (int, []byte, error) {
-	switch c.Charset {
-	case GSM7bitAlphabet:
-		b, e := GetGSM7bitString(s)
-		if e == nil {
-			return b.Length(), b.Bytes(), nil
-		}
-		return 0, nil, e
-	case Data8bit:
-		// return len(s), []byte(s), nil
-	case UCS2:
-		return len(s), encodeUCS2(s), nil
-	}
-	return len(s), []byte(s), nil
+func (c *GeneralDataCoding) charset() charset {
+	return c.Charset
 }
 
 func (c *GeneralDataCoding) String() string {
@@ -171,11 +132,11 @@ func (c *GeneralDataCoding) String() string {
 		b.WriteString(", class 3")
 	}
 	switch c.Charset {
-	case GSM7bitAlphabet:
+	case CharsetGSM7bit:
 		b.WriteString(", GSM 7bit default alphabet")
-	case Data8bit:
+	case Charset8bitData:
 		b.WriteString(", 8 bit data")
-	case UCS2:
+	case CharsetUCS2:
 		b.WriteString(", UCS2 (16bit)")
 	}
 	return b.String()
@@ -211,39 +172,19 @@ type MessageWaiting struct {
 
 func (c *MessageWaiting) encode() (b byte) {
 	b = 0xc0
-	b = b | byte(c.Behavior&0xc0)
+	b |= byte(c.Behavior & 0xc0)
 	if c.Active {
-		b = b | 0x80
+		b |= 0x80
 	}
-	b = b | byte(c.WaitingType&0x03)
+	b |= byte(c.WaitingType & 0x03)
 	return
 }
 
-func (c *MessageWaiting) unitSize() int {
+func (c *MessageWaiting) charset() charset {
 	if c.Behavior == StoreMessageUCS2 {
-		return 8
+		return CharsetUCS2
 	}
-	return 7
-}
-
-// Decode DCS data from byte slice
-func (c *MessageWaiting) Decode(l int, b []byte) string {
-	if c.Behavior == StoreMessageUCS2 {
-		return decodeUCS2(l, b[:l])
-	}
-	return GetGSM7bitByte(l, b).String()
-}
-
-// Encode DCS data to byte slice
-func (c *MessageWaiting) Encode(s string) (int, []byte, error) {
-	if c.Behavior == StoreMessageUCS2 {
-		return len(s), encodeUCS2(s), nil
-	}
-	b, e := GetGSM7bitString(s)
-	if e == nil {
-		return b.Length(), b.Bytes(), nil
-	}
-	return 0, nil, e
+	return CharsetGSM7bit
 }
 
 func (c *MessageWaiting) String() string {
@@ -284,37 +225,17 @@ type DataCodingMessage struct {
 func (c *DataCodingMessage) encode() (b byte) {
 	b = 0xf0
 	if c.IsData {
-		b = b | 0x40
+		b |= 0x40
 	}
-	b = b | byte(c.MsgClass&0x03)
+	b |= byte(c.MsgClass & 0x03)
 	return
 }
 
-func (c *DataCodingMessage) unitSize() int {
+func (c *DataCodingMessage) charset() charset {
 	if c.IsData {
-		return 8
+		return Charset8bitData
 	}
-	return 7
-}
-
-// Decode DCS data from byte slice
-func (c *DataCodingMessage) Decode(l int, b []byte) string {
-	if c.IsData {
-		return fmt.Sprintf("% x", b[:l])
-	}
-	return GetGSM7bitByte(l, b).String()
-}
-
-// Encode DCS data to byte slice
-func (c *DataCodingMessage) Encode(s string) (int, []byte, error) {
-	if c.IsData {
-		return len(s), []byte(s), nil
-	}
-	b, e := GetGSM7bitString(s)
-	if e == nil {
-		return b.Length(), b.Bytes(), nil
-	}
-	return 0, nil, e
+	return CharsetGSM7bit
 }
 
 func (c *DataCodingMessage) String() string {
@@ -336,22 +257,4 @@ func (c *DataCodingMessage) String() string {
 		b.WriteString(", class 3")
 	}
 	return b.String()
-}
-
-func encodeUCS2(s string) []byte {
-	u := utf16.Encode([]rune(s))
-	b := make([]byte, len(u)*2)
-	for i, c := range u {
-		b[i*2] = byte((c >> 8) & 0xff)
-		b[i*2+1] = byte(c & 0xff)
-	}
-	return b
-}
-
-func decodeUCS2(l int, b []byte) string {
-	u := make([]uint16, l/2)
-	for i := range u {
-		u[i] = uint16(b[2*i])<<8 | uint16(b[2*i+1])
-	}
-	return string(utf16.Decode(u))
 }

@@ -88,41 +88,6 @@ func read7Bytes(r *bytes.Reader) ([7]byte, error) {
 		b[0], b[1], b[2], b[3], b[4], b[5], b[6]}, nil
 }
 
-func readUD(r *bytes.Reader, d dcs, h bool) ([]byte, []UDH, error) {
-	p, e := r.ReadByte()
-	if e != nil {
-		return nil, nil, e
-	}
-	l := d.unitSize()
-	l *= int(p)
-	if l%8 != 0 {
-		l += 8 - l%8
-	}
-
-	ud := make([]byte, l/8)
-	if r.Len() < len(ud) {
-		return nil, nil, io.EOF
-	}
-	r.Read(ud)
-
-	if h {
-		return ud[ud[0]+1:], decodeUDH(ud[0 : ud[0]+1]), nil
-	}
-	return ud, nil, nil
-}
-
-func writeUD(w *bytes.Buffer, ud []byte, h []UDH, d dcs) {
-	udh := encodeUDH(h)
-
-	u := d.unitSize()
-	l := len(udh) + len(ud)
-	l = ((l * 8) - (l * 8 % u)) / u
-
-	w.WriteByte(byte(l))
-	w.Write(udh)
-	w.Write(ud)
-}
-
 func encodeSCTimeStamp(t time.Time) (r []byte) {
 	r = make([]byte, 7)
 	r[0] = int2SemiOctet(t.Year())

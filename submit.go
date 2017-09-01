@@ -17,8 +17,7 @@ type Submit struct {
 	PID byte    // Protocol Identifier
 	DCS dcs     // Data Coding Scheme
 	VP  vp      // Validity Period
-	UDH []UDH   // User Data Header
-	UD  []byte  // User Data
+	UD          // User Data
 }
 
 // Encode output byte data of this TPDU
@@ -61,8 +60,7 @@ func (d *Submit) Encode() []byte {
 	w.WriteByte(d.PID)
 	w.WriteByte(d.DCS.encode())
 	w.Write(vp)
-
-	writeUD(w, d.UD, d.UDH, d.DCS)
+	d.UD.write(w, d.DCS)
 
 	return w.Bytes()
 }
@@ -107,7 +105,7 @@ func (d *Submit) Decode(b []byte) (e error) {
 		}
 	}
 	if e == nil {
-		d.UD, d.UDH, e = readUD(r, d.DCS, b[0]&0x40 == 0x40)
+		e = d.UD.read(r, d.DCS, b[0]&0x40 == 0x40)
 	}
 	if e == nil && r.Len() != 0 {
 		tmp := make([]byte, r.Len())
@@ -132,17 +130,8 @@ func (d *Submit) String() string {
 	if d.VP != nil {
 		fmt.Fprintf(w, "%sTP-VP:   %s\n", Indent, d.VP)
 	}
-
-	if len(d.UDH)+len(d.UD) != 0 {
-		fmt.Fprintf(w, "%sTP-UD:\n", Indent)
-		for _, h := range d.UDH {
-			fmt.Fprintf(w, "%s%s%s\n", Indent, Indent, h)
-		}
-		if len(d.UD) != 0 {
-			//			fmt.Fprintf(w, "%s%s%s\n", Indent, Indent, d.DCS.Decode(d.UD))
-		}
-	}
-	return w.String()[:w.Len()-1]
+	fmt.Fprintf(w, "%s", d.UD.String(d.DCS))
+	return w.String()
 }
 
 // SubmitReport is TPDU message from SC to MS
@@ -151,8 +140,7 @@ type SubmitReport struct {
 	SCTS time.Time // Service Centre Time Stamp
 	PID  *byte     // Protocol Identifier
 	DCS  dcs       // Data Coding Scheme
-	UDH  []UDH     // User Data Header
-	UD   []byte    // User Data
+	UD             // User Data
 }
 
 // Encode output byte data of this TPDU
@@ -174,7 +162,8 @@ func (d *SubmitReport) Encode() []byte {
 	if d.DCS != nil {
 		b = b | 0x02
 	}
-	if len(d.UDH)+len(d.UD) != 0 {
+	if len(d.UD.Text) != 0 ||
+		(d.UD.UDH != nil && len(d.UD.UDH) != 0) {
 		b = b | 0x04
 	}
 	w.WriteByte(b)
@@ -185,8 +174,9 @@ func (d *SubmitReport) Encode() []byte {
 	if d.DCS != nil {
 		w.WriteByte(d.DCS.encode())
 	}
-	if len(d.UDH)+len(d.UD) != 0 {
-		writeUD(w, d.UD, d.UDH, d.DCS)
+	if len(d.UD.Text) != 0 ||
+		(d.UD.UDH != nil && len(d.UD.UDH) != 0) {
+		d.UD.write(w, d.DCS)
 	}
 	return w.Bytes()
 }
@@ -226,9 +216,9 @@ func (d *SubmitReport) Decode(b []byte) (e error) {
 				AutoDelete: false,
 				Compressed: false,
 				MsgClass:   NoMessageClass,
-				Charset:    GSM7bitAlphabet}
+				Charset:    CharsetGSM7bit}
 		}
-		d.UD, d.UDH, e = readUD(r, d.DCS, b[0]&0x40 == 0x40)
+		d.UD.read(r, d.DCS, b[0]&0x40 == 0x40)
 	}
 	if e == nil && r.Len() != 0 {
 		tmp := make([]byte, r.Len())
@@ -257,14 +247,6 @@ func (d *SubmitReport) String() string {
 	if d.DCS != nil {
 		fmt.Fprintf(w, "%sTP-DCS:  %s\n", Indent, d.DCS)
 	}
-	if len(d.UDH)+len(d.UD) != 0 {
-		fmt.Fprintf(w, "%sTP-UD:\n", Indent)
-		for _, h := range d.UDH {
-			fmt.Fprintf(w, "%s%s%s\n", Indent, Indent, h)
-		}
-		if len(d.UD) != 0 {
-			//			fmt.Fprintf(w, "%s%s%s\n", Indent, Indent, d.DCS.Decode(d.UD))
-		}
-	}
+	fmt.Fprintf(w, "%s", d.UD.String(d.DCS))
 	return w.String()[:w.Len()-1]
 }

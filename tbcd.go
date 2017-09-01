@@ -76,12 +76,6 @@ func (t TBCD) Length() int {
 	return ret
 }
 
-/* ByteLength return octets of the TBCD digit
-func (t TBCD) ByteLength() int {
-	return len(t)
-}
-*/
-
 // String return string value of the TBCD digit
 func (t TBCD) String() string {
 	var b bytes.Buffer

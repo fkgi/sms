@@ -17,8 +17,7 @@ type Deliver struct {
 	PID  byte      // Protocol Identifier
 	DCS  dcs       // Data Coding Scheme
 	SCTS time.Time // Service Centre Time Stamp
-	UDH  []UDH     // User Data Header
-	UD   []byte    // User Data
+	UD             // User Data
 }
 
 // Encode output byte data of this TPDU
@@ -27,19 +26,19 @@ func (d *Deliver) Encode() []byte {
 
 	b := byte(0x00)
 	if !d.MMS {
-		b = b | 0x04
+		b |= 0x04
 	}
 	if d.LP {
-		b = b | 0x08
+		b |= 0x08
 	}
 	if d.SRI {
-		b = b | 0x20
+		b |= 0x20
 	}
 	if d.UDH != nil && len(d.UDH) != 0 {
-		b = b | 0x40
+		b |= 0x40
 	}
 	if d.RP {
-		b = b | 0x80
+		b |= 0x80
 	}
 	w.WriteByte(b)
 	b, a := d.OA.Encode()
@@ -48,7 +47,7 @@ func (d *Deliver) Encode() []byte {
 	w.WriteByte(d.PID)
 	w.WriteByte(d.DCS.encode())
 	w.Write(encodeSCTimeStamp(d.SCTS))
-	writeUD(w, d.UD, d.UDH, d.DCS)
+	d.UD.write(w, d.DCS)
 
 	return w.Bytes()
 }
@@ -75,7 +74,7 @@ func (d *Deliver) Decode(b []byte) (e error) {
 		d.SCTS = decodeSCTimeStamp(tmp)
 	}
 	if e == nil {
-		d.UD, d.UDH, e = readUD(r, d.DCS, b[0]&0x40 == 0x40)
+		e = d.UD.read(r, d.DCS, b[0]&0x40 == 0x40)
 	}
 	if e == nil && r.Len() != 0 {
 		tmp := make([]byte, r.Len())
@@ -99,26 +98,16 @@ func (d *Deliver) String() string {
 	fmt.Fprintf(w, "%sTP-PID:  %s\n", Indent, pidStat(d.PID))
 	fmt.Fprintf(w, "%sTP-DCS:  %s\n", Indent, d.DCS)
 	fmt.Fprintf(w, "%sTP-SCTS: %s\n", Indent, d.SCTS)
-
-	if len(d.UDH)+len(d.UD) != 0 {
-		fmt.Fprintf(w, "%sTP-UD:\n", Indent)
-		for _, h := range d.UDH {
-			fmt.Fprintf(w, "%s%s%s\n", Indent, Indent, h)
-		}
-		if len(d.UD) != 0 {
-			//			fmt.Fprintf(w, "%s%s%s\n", Indent, Indent, d.DCS.Decode(d.UD))
-		}
-	}
-	return w.String()[:w.Len()-1]
+	fmt.Fprintf(w, "%s", d.UD.String(d.DCS))
+	return w.String()
 }
 
 // DeliverReport is TPDU message from MS to SC
 type DeliverReport struct {
-	FCS *byte  // Failure Cause
-	PID *byte  // Protocol Identifier
-	DCS dcs    // Data Coding Scheme
-	UDH []UDH  // User Data Header
-	UD  []byte // User Data
+	FCS *byte // Failure Cause
+	PID *byte // Protocol Identifier
+	DCS dcs   // Data Coding Scheme
+	UD        // User Data
 }
 
 // Encode output byte data of this TPDU
@@ -127,7 +116,7 @@ func (d *DeliverReport) Encode() []byte {
 
 	b := byte(0x00)
 	if len(d.UDH) != 0 {
-		b = b | 0x40
+		b |= 0x40
 	}
 	w.WriteByte(b)
 	if d.FCS != nil {
@@ -135,13 +124,14 @@ func (d *DeliverReport) Encode() []byte {
 	}
 	b = byte(0x00)
 	if d.PID != nil {
-		b = b | 0x01
+		b |= 0x01
 	}
 	if d.DCS != nil {
-		b = b | 0x02
+		b |= 0x02
 	}
-	if len(d.UDH)+len(d.UD) != 0 {
-		b = b | 0x04
+	if len(d.UD.Text) != 0 ||
+		(d.UD.UDH != nil && len(d.UD.UDH) != 0) {
+		b |= 0x04
 	}
 	w.WriteByte(b)
 	if d.PID != nil {
@@ -150,8 +140,9 @@ func (d *DeliverReport) Encode() []byte {
 	if d.DCS != nil {
 		w.WriteByte(d.DCS.encode())
 	}
-	if len(d.UDH)+len(d.UD) != 0 {
-		writeUD(w, d.UD, d.UDH, d.DCS)
+	if len(d.UD.Text) != 0 ||
+		(d.UD.UDH != nil && len(d.UD.UDH) != 0) {
+		d.UD.write(w, d.DCS)
 	}
 	return w.Bytes()
 }
@@ -186,9 +177,9 @@ func (d *DeliverReport) Decode(b []byte) (e error) {
 				AutoDelete: false,
 				Compressed: false,
 				MsgClass:   NoMessageClass,
-				Charset:    GSM7bitAlphabet}
+				Charset:    CharsetGSM7bit}
 		}
-		d.UD, d.UDH, e = readUD(r, d.DCS, b[0]&0x40 == 0x40)
+		d.UD.read(r, d.DCS, b[0]&0x40 == 0x40)
 	}
 	if e == nil && r.Len() != 0 {
 		tmp := make([]byte, r.Len())
@@ -216,14 +207,6 @@ func (d *DeliverReport) String() string {
 	if d.DCS != nil {
 		fmt.Fprintf(w, "%sTP-DCS:  %s\n", Indent, d.DCS)
 	}
-	if len(d.UDH)+len(d.UD) != 0 {
-		fmt.Fprintf(w, "%sTP-UD:\n", Indent)
-		for _, h := range d.UDH {
-			fmt.Fprintf(w, "%s%s%s\n", Indent, Indent, h)
-		}
-		if len(d.UD) != 0 {
-			//			fmt.Fprintf(w, "%s%s%s\n", Indent, Indent, d.DCS.Decode(d.UD))
-		}
-	}
-	return w.String()[:w.Len()-1]
+	fmt.Fprintf(w, "%s", d.UD.String(d.DCS))
+	return w.String()
 }

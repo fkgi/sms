@@ -32,11 +32,12 @@ func TestDecodeSubmit(t *testing.T) {
 			AutoDelete: false,
 			Compressed: false,
 			MsgClass:   NoMessageClass,
-			Charset:    UCS2},
-		VP:  nil,
-		UDH: []UDH{&ConcatenatedSM{0x84, 0x0a, 0x01}}}
+			Charset:    CharsetUCS2},
+		VP: nil,
+		UD: UD{
+			UDH:  []udh{&ConcatenatedSM{0x84, 0x0a, 0x01}},
+			Text: "あいうえお"}}
 	p.DA.Addr, _ = ParseTBCD("09012345678")
-	_, p.UD, _ = p.DCS.Encode("あいうえお")
 
 	b := p.Encode()
 	t.Logf("% x", b)
@@ -58,9 +59,7 @@ func TestDecodeSubmitReport(t *testing.T) {
 			2011, time.March, 22, 14, 25, 40, 0,
 			time.FixedZone("unknown", 9*60*60)),
 		PID: nil,
-		DCS: nil,
-		UDH: nil,
-		UD:  nil}
+		DCS: nil}
 
 	b := p.Encode()
 	t.Logf("% x", b)

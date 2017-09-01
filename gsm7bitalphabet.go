@@ -21,6 +21,13 @@ var code = [128]rune{
 	'x', 'y', 'z', 'ä', 'ö', 'ñ', 'ü', 'à'}
 
 func getCode(c rune) byte {
+	if (c > 0x61 && c < 0x7a) ||
+		(c > 0x41 && c < 0x5a) ||
+		(c > 0x20 && c < 0x23) ||
+		(c > 0x25 && c < 0x3f) {
+		return byte(c)
+	}
+
 	for i, r := range code {
 		if r == c {
 			return byte(i)
@@ -29,51 +36,49 @@ func getCode(c rune) byte {
 	return 0x80
 }
 
-// GetGSM7bitString generate GSM7bitString from string
-func GetGSM7bitString(s string) (GSM7bitString, error) {
+// StringToGSM7bit generate GSM7bitString from string
+func StringToGSM7bit(s string) (GSM7bitString, error) {
 	l := utf8.RuneCountInString(s)
-	text := make([]rune, l)
-	for i, r := range []rune(s) {
+	txt := make([]rune, l)
+	for i, r := range s {
 		if getCode(r) == 0x80 {
 			return nil, &InvalidDataError{
 				Name:  "GSM7bit string",
 				Bytes: []byte(string(r))}
 		}
-		text[i] = r
+		txt[i] = r
 	}
-	return text, nil
+	return txt, nil
 }
 
-// GetGSM7bitByte generate GSM7bitString from byte slice
-func GetGSM7bitByte(l int, s []byte) GSM7bitString {
-	o := 7 - ((len(s) * 8) % 7)
-	b := make([]rune, 0, l+1)
+// DecodeGSM7bit generate GSM7bitString from byte slice
+func DecodeGSM7bit(l int, b []byte) GSM7bitString {
+	s := GSM7bitString(make([]rune, l))
+	s.decode(0, b)
+	return s
+}
+
+func (s GSM7bitString) decode(o int, b []byte) {
+	o = 7 - o
+	s = s[:0]
 	var next byte
+	var sh uint
 
-	for i, r := range s {
-		shift := uint((i + o) % 7)
-
-		next |= (r << shift) & 0x7f
-		if i == 0 {
-			if shift == 0 {
-				b = append(b, code[next])
-			}
-		} else {
-			b = append(b, code[next])
+	for i, r := range b {
+		sh = uint((i + o) % 7)
+		next |= (r << sh) & 0x7f
+		if i != 0 || o == 7 {
+			s = append(s, code[next])
 		}
 
-		next = (r >> (7 - shift)) & (0x7f >> (6 - shift))
-		if shift == 6 {
-			b = append(b, code[next])
+		sh = 7 - sh
+		next = (r >> sh) & (0x7f >> (sh - 1))
+		if sh == 1 && i < cap(s) {
+			s = append(s, code[next])
 			next = 0x00
 		}
 	}
-
-	if o == 0 || (o == 7 && len(b) > l) {
-		b = b[1:]
-	}
-
-	return b
+	return
 }
 
 // Length return length of the GSM 7bit String
@@ -88,27 +93,37 @@ func (s GSM7bitString) String() string {
 
 // Bytes return byte data
 func (s GSM7bitString) Bytes() []byte {
-	l := len(s)
-	o := l%8 + l*8
-	ret := make([]byte, (l*7+l%8)/8)
+	return s.encode(0)
+}
 
+func (s GSM7bitString) encode(o int) []byte {
+	l := len(s)*7 + o
+	if l%8 != 0 {
+		l = l/8 + 1
+	} else {
+		l = l / 8
+	}
+	b := make([]byte, l)
+
+	var sh uint
+	var c byte
+	o += len(s) * 8
 	l = 0
 	for i, r := range s {
-		c := getCode(r)
+		c = getCode(r)
 		if c == 0x80 {
-			return nil
+			c = 0x20
 		}
 
-		shift := uint((o - i) % 8)
-		ret[l] |= c << shift
-		if shift > 1 {
-			shift = 8 - shift
-			ret[l+1] = (c >> shift)
+		sh = uint((o - i) % 8)
+		b[l] |= c << sh
+		if sh > 1 {
+			sh = 8 - sh
+			b[l+1] = c >> sh
 			l++
-		} else if shift == 1 {
+		} else if sh == 1 {
 			l++
 		}
 	}
-
-	return ret
+	return b
 }

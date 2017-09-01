@@ -16,13 +16,13 @@ type Address struct {
 
 type addrValue interface {
 	Length() int
-	//	ByteLength() int
 	String() string
 	Bytes() []byte
 }
 
 func (a Address) String() string {
-	return fmt.Sprintf("TON/NPI=%d/%d addr=%s", a.TON, a.NPI, a.Addr)
+	return fmt.Sprintf(
+		"TON/NPI=%d/%d addr=%s", a.TON, a.NPI, a.Addr)
 }
 
 // RegexpMatch check matching text of address
@@ -65,7 +65,7 @@ func (a *Address) Decode(l byte, b []byte) {
 	b = b[1:]
 	if a.TON == 0x05 {
 		l = l * 4 / 7
-		a.Addr = GetGSM7bitByte(int(l), b)
+		a.Addr = DecodeGSM7bit(int(l), b)
 	} else {
 		if l%2 == 1 {
 			b[len(b)-1] |= 0xf0
@@ -82,7 +82,7 @@ func readAddr(r *bytes.Reader) (Address, error) {
 		return a, e
 	}
 
-	b := make([]byte, l/2+l%2)
+	b := make([]byte, l/2+l%2+1)
 	var i int
 	if i, e = r.Read(b); e == nil {
 		if i != len(b) {
