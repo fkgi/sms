@@ -183,7 +183,7 @@ func MakeSeparatedText(s string, c msgClass, id byte) (
 		ud[i].AddUDH(&ConcatenatedSM{
 			RefNum: id,
 			MaxNum: byte(len(ud)),
-			SeqNum: byte(i)})
+			SeqNum: byte(i + 1)})
 	}
 
 	return
