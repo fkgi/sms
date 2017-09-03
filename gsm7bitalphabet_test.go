@@ -66,7 +66,7 @@ func TestGSM7bitStringByteConv(t *testing.T) {
 		t.Logf("\nlen=%d\nhex=% x\n", len(b), b)
 
 		s = GSM7bitString(make([]rune, l))
-		s.decode(o, b) //BytesToGSM7bit(l, b)
+		s.decode(o, b)
 
 		r := s.String()
 		if r != org {
@@ -78,7 +78,11 @@ func TestGSM7bitStringByteConv(t *testing.T) {
 func randText(len int) string {
 	var b bytes.Buffer
 	for i := 0; i < len; i++ {
-		b.WriteRune(code[rand.Int()%128])
+		c := 0x1b
+		for code[c] == '\x00' || code[c] == '\x1b' {
+			c = rand.Int() % (128 + 16)
+		}
+		b.WriteRune(code[c])
 	}
 	return b.String()
 }

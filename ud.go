@@ -145,7 +145,8 @@ func MakeSeparatedText(s string, c msgClass, id byte) (
 
 	dcs.Charset = CharsetGSM7bit
 	for _, r := range s {
-		if getCode(r) == 0x80 {
+		_, code := getCode(r)
+		if code == 0xff {
 			dcs.Charset = CharsetUCS2
 			break
 		}
