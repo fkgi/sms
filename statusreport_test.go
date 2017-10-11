@@ -3,6 +3,8 @@ package sms
 import (
 	"testing"
 	"time"
+
+	"github.com/fkgi/teldata"
 )
 
 var bytedata = []byte{
@@ -32,7 +34,7 @@ func TestDecodeStatusReport(t *testing.T) {
 			2011, time.March, 22, 14, 25, 40, 0,
 			time.FixedZone("unknown", 9*60*60)),
 		ST: 0x00}
-	p.RA.Addr, _ = ParseTBCD("1234")
+	p.RA.Addr, _ = teldata.ParseTBCD("1234")
 
 	b := p.Encode()
 	t.Logf("% x", b)

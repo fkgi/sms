@@ -3,6 +3,8 @@ package sms
 import (
 	"testing"
 	"time"
+
+	"github.com/fkgi/teldata"
 )
 
 func TestEncodeDeliver(t *testing.T) {
@@ -37,7 +39,7 @@ func TestDecodeDeliver(t *testing.T) {
 		UD: UD{
 			UDH:  []udh{&ConcatenatedSM{0x84, 0x0a, 0x01}},
 			Text: "あいうえお"}}
-	p.OA.Addr, _ = ParseTBCD("1234")
+	p.OA.Addr, _ = teldata.ParseTBCD("1234")
 
 	b := p.Encode()
 	t.Logf("% x", b)

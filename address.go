@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"regexp"
+
+	"github.com/fkgi/teldata"
 )
 
 // Address is SMS originator/destination address
@@ -33,7 +35,7 @@ func (a Address) RegexpMatch(re *regexp.Regexp) bool {
 // Encode generate binary data and semi-octet length of this Address
 func (a Address) Encode() (l byte, b []byte) {
 	switch a.Addr.(type) {
-	case TBCD:
+	case teldata.TBCD:
 		l = byte(a.Addr.Length())
 		if a.TON == 0x05 {
 			a.TON = 0x00
@@ -70,7 +72,7 @@ func (a *Address) Decode(l byte, b []byte) {
 		if l%2 == 1 {
 			b[len(b)-1] |= 0xf0
 		}
-		a.Addr = TBCD(b)
+		a.Addr = teldata.TBCD(b)
 	}
 	return
 }
