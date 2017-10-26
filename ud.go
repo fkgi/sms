@@ -180,11 +180,13 @@ func MakeSeparatedText(s string, c msgClass, id byte) (
 		ud = append(ud, UD{Text: string(rs)})
 	}
 
-	for i := range ud {
-		ud[i].AddUDH(&ConcatenatedSM{
-			RefNum: id,
-			MaxNum: byte(len(ud)),
-			SeqNum: byte(i + 1)})
+	if len(ud) > 1 {
+		for i := range ud {
+			ud[i].AddUDH(&ConcatenatedSM{
+				RefNum: id,
+				MaxNum: byte(len(ud)),
+				SeqNum: byte(i + 1)})
+		}
 	}
 
 	return
