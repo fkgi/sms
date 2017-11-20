@@ -9,6 +9,12 @@ import (
 	"github.com/fkgi/teldata"
 )
 
+type addrValue interface {
+	Length() int
+	String() string
+	Bytes() []byte
+}
+
 // Address is SMS originator/destination address
 type Address struct {
 	TON  byte
@@ -16,13 +22,10 @@ type Address struct {
 	Addr addrValue
 }
 
-type addrValue interface {
-	Length() int
-	String() string
-	Bytes() []byte
-}
-
 func (a Address) String() string {
+	if a.Addr == nil {
+		return "<nil>"
+	}
 	return fmt.Sprintf(
 		"TON/NPI=%d/%d addr=%s", a.TON, a.NPI, a.Addr)
 }
