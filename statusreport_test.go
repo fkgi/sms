@@ -1,9 +1,10 @@
-package sms
+package sms_test
 
 import (
 	"testing"
 	"time"
 
+	"github.com/fkgi/sms"
 	"github.com/fkgi/teldata"
 )
 
@@ -13,7 +14,7 @@ var bytedata = []byte{
 	0x41, 0x52, 0x04, 0x63, 0x00}
 
 func TestEncodeStatusReport(t *testing.T) {
-	p, e := DecodeAsMS(bytedata)
+	p, e := sms.DecodeAsMS(bytedata)
 	if e != nil {
 		t.Fatalf("encode failed: %s", e)
 	}
@@ -21,12 +22,12 @@ func TestEncodeStatusReport(t *testing.T) {
 }
 
 func TestDecodeStatusReport(t *testing.T) {
-	p := &StatusReport{
+	p := &sms.StatusReport{
 		MMS: false,
 		LP:  false,
 		SRQ: false,
 		MR:  0x00,
-		RA:  Address{TON: 0, NPI: 0},
+		RA:  sms.Address{TON: 0, NPI: 0},
 		SCTS: time.Date(
 			2011, time.March, 22, 14, 25, 40, 0,
 			time.FixedZone("unknown", 9*60*60)),

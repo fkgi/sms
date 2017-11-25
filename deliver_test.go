@@ -1,9 +1,10 @@
-package sms
+package sms_test
 
 import (
 	"testing"
 	"time"
 
+	"github.com/fkgi/sms"
 	"github.com/fkgi/teldata"
 )
 
@@ -13,7 +14,7 @@ func TestEncodeDeliver(t *testing.T) {
 		0x30, 0x22, 0x41, 0x52, 0x04, 0x63, 0x10, 0x05,
 		0x00, 0x03, 0x87, 0x02, 0x01, 0x30, 0x42, 0x30,
 		0x44, 0x30, 0x46, 0x30, 0x48, 0x30, 0x4a}
-	p, e := DecodeAsMS(bytedata)
+	p, e := sms.DecodeAsMS(bytedata)
 	if e != nil {
 		t.Fatalf("encode failed: %s", e)
 	}
@@ -21,24 +22,24 @@ func TestEncodeDeliver(t *testing.T) {
 }
 
 func TestDecodeDeliver(t *testing.T) {
-	p := &Deliver{
+	p := &sms.Deliver{
 		MMS: true,
 		LP:  false,
 		SRI: false,
 		RP:  false,
-		OA:  Address{TON: 0, NPI: 0},
+		OA:  sms.Address{TON: 0, NPI: 0},
 		PID: 0,
-		DCS: &GeneralDataCoding{
+		DCS: &sms.GeneralDataCoding{
 			AutoDelete: false,
 			Compressed: false,
-			MsgClass:   NoMessageClass,
-			Charset:    CharsetUCS2},
+			MsgClass:   sms.NoMessageClass,
+			Charset:    sms.CharsetUCS2},
 		SCTS: time.Date(
 			2011, time.March, 22, 14, 25, 40, 0,
 			time.FixedZone("unknown", 9*60*60)),
-		UD: UD{
-			UDH:  []udh{&ConcatenatedSM{0x84, 0x0a, 0x01}},
-			Text: "あいうえお"}}
+		UD: sms.UD{Text: "あいうえお"}}
+	p.UD.AddUDH(&sms.ConcatenatedSM{
+		RefNum: 0x84, MaxNum: 0x0a, SeqNum: 0x01})
 	p.OA.Addr, _ = teldata.ParseTBCD("1234")
 
 	b := p.Encode()
@@ -48,7 +49,7 @@ func TestDecodeDeliver(t *testing.T) {
 func TestEncodeDeliverReport(t *testing.T) {
 	bytedata := []byte{
 		0x00, 0x00}
-	p, e := DecodeAsSC(bytedata)
+	p, e := sms.DecodeAsSC(bytedata)
 	if e != nil {
 		t.Fatalf("encode failed: %s", e)
 	}
@@ -56,7 +57,7 @@ func TestEncodeDeliverReport(t *testing.T) {
 }
 
 func TestDecodeDeliverReport(t *testing.T) {
-	p := &DeliverReport{
+	p := &sms.DeliverReport{
 		PID: nil,
 		DCS: nil}
 

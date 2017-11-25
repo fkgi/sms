@@ -7,7 +7,7 @@ import (
 )
 
 type vp interface {
-	String() string
+	fmt.Stringer
 	Period(t time.Time) time.Time
 }
 

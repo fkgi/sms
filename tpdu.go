@@ -2,6 +2,7 @@ package sms
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"time"
 )
@@ -28,7 +29,7 @@ func NextMsgReference() byte {
 type TPDU interface {
 	Encode() []byte
 	Decode([]byte) error
-	String() string
+	fmt.Stringer
 }
 
 // DecodeAsSC parse byte data to TPDU as SC.

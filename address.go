@@ -2,6 +2,7 @@ package sms
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"regexp"
@@ -22,12 +23,49 @@ type Address struct {
 	Addr addrValue
 }
 
+type jaddr struct {
+	TON  byte   `json:"ton"`
+	NPI  byte   `json:"npi"`
+	Addr string `json:"addr"`
+}
+
 func (a Address) String() string {
 	if a.Addr == nil {
 		return "<nil>"
 	}
 	return fmt.Sprintf(
 		"TON/NPI=%d/%d addr=%s", a.TON, a.NPI, a.Addr)
+}
+
+// MarshalJSON provide custom marshaller
+func (a Address) MarshalJSON() ([]byte, error) {
+	addr := jaddr{
+		TON: a.TON,
+		NPI: a.NPI}
+	if a.Addr != nil {
+		addr.Addr = a.Addr.String()
+	}
+	return json.Marshal(addr)
+}
+
+// UnmarshalJSON provide custom marshaller
+func (a *Address) UnmarshalJSON(b []byte) (e error) {
+	addr := jaddr{}
+	if e = json.Unmarshal(b, &addr); e != nil {
+		return e
+	}
+	a.TON = addr.TON
+	a.NPI = addr.NPI
+
+	if len(addr.Addr) == 0 {
+		a.Addr = nil
+	} else if a.TON == 0x05 {
+		a.Addr, e = StringToGSM7bit(addr.Addr)
+	} else {
+		a.Addr, e = teldata.ParseTBCD(addr.Addr)
+	}
+
+	return e
 }
 
 // RegexpMatch check matching text of address

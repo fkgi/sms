@@ -1,10 +1,13 @@
 package sms
 
-import "bytes"
+import (
+	"bytes"
+	"fmt"
+)
 
 type dcs interface {
 	encode() byte
-	String() string
+	fmt.Stringer
 	charset() charset
 }
 

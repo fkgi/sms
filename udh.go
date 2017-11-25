@@ -8,7 +8,7 @@ import (
 type udh interface {
 	encode() []byte
 	decode([]byte)
-	String() string
+	fmt.Stringer
 }
 
 func decodeUDH(b []byte) (h []udh) {
