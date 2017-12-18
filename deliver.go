@@ -15,7 +15,7 @@ type Deliver struct {
 
 	OA   Address   // Originating Address
 	PID  byte      // Protocol Identifier
-	DCS  dcs       // Data Coding Scheme
+	DCS            // Data Coding Scheme
 	SCTS time.Time // Service Centre Time Stamp
 	UD             // User Data
 }
@@ -45,7 +45,7 @@ func (d *Deliver) Encode() []byte {
 	w.WriteByte(b)
 	w.Write(a)
 	w.WriteByte(d.PID)
-	w.WriteByte(d.DCS.encode())
+	w.WriteByte(d.DCS.Encode())
 	w.Write(encodeSCTimeStamp(d.SCTS))
 	d.UD.write(w, d.DCS)
 
@@ -106,7 +106,7 @@ func (d *Deliver) String() string {
 type DeliverReport struct {
 	FCS *byte // Failure Cause
 	PID *byte // Protocol Identifier
-	DCS dcs   // Data Coding Scheme
+	DCS       // Data Coding Scheme
 	UD        // User Data
 }
 
@@ -138,7 +138,7 @@ func (d *DeliverReport) Encode() []byte {
 		w.WriteByte(*d.PID)
 	}
 	if d.DCS != nil {
-		w.WriteByte(d.DCS.encode())
+		w.WriteByte(d.DCS.Encode())
 	}
 	if len(d.UD.Text) != 0 ||
 		(d.UD.UDH != nil && len(d.UD.UDH) != 0) {

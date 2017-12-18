@@ -18,9 +18,8 @@ type StatusReport struct {
 	DT   time.Time // Discharge Time
 	ST   byte      // Status
 	PID  *byte     // Protocol Identifier
-	DCS  dcs       // Data Coding Scheme
-	//	UDH  []udh     // User Data Header
-	UD // User Data
+	DCS            // Data Coding Scheme
+	UD             // User Data
 }
 
 // Encode output byte data of this TPDU
@@ -67,7 +66,7 @@ func (d *StatusReport) Encode() []byte {
 		w.WriteByte(*d.PID)
 	}
 	if d.DCS != nil {
-		w.WriteByte(d.DCS.encode())
+		w.WriteByte(d.DCS.Encode())
 	}
 	if len(d.UD.Text) != 0 ||
 		(d.UD.UDH != nil && len(d.UD.UDH) != 0) {

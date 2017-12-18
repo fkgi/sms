@@ -5,13 +5,15 @@ import (
 	"fmt"
 )
 
-type dcs interface {
-	encode() byte
+// DCS indicate Data Coding Scheme
+type DCS interface {
+	Encode() byte
 	fmt.Stringer
 	charset() charset
 }
 
-func decodeDCS(b byte) dcs {
+// DecodeDCS make DCS from byte data
+func DecodeDCS(b byte) DCS {
 	switch b & 0xc0 {
 	case 0x00:
 		return &GeneralDataCoding{
@@ -50,12 +52,12 @@ func decodeDCS(b byte) dcs {
 	return nil
 }
 
-func readDCS(r *bytes.Reader) (dcs, error) {
+func readDCS(r *bytes.Reader) (DCS, error) {
 	p, e := r.ReadByte()
 	if e != nil {
 		return nil, e
 	}
-	d := decodeDCS(p)
+	d := DecodeDCS(p)
 	if d == nil {
 		return nil, &InvalidDataError{
 			Name:  "TP-DCS",
@@ -95,7 +97,8 @@ type GeneralDataCoding struct {
 	Charset    charset
 }
 
-func (c *GeneralDataCoding) encode() (b byte) {
+// Encode make byte data
+func (c *GeneralDataCoding) Encode() (b byte) {
 	if c.AutoDelete {
 		b = 0x40
 	} else {
@@ -173,7 +176,8 @@ type MessageWaiting struct {
 	WaitingType waitType
 }
 
-func (c *MessageWaiting) encode() (b byte) {
+// Encode make byte data
+func (c *MessageWaiting) Encode() (b byte) {
 	b = 0xc0
 	b |= byte(c.Behavior & 0xc0)
 	if c.Active {
@@ -225,7 +229,8 @@ type DataCodingMessage struct {
 	MsgClass msgClass
 }
 
-func (c *DataCodingMessage) encode() (b byte) {
+// Encode make byte data
+func (c *DataCodingMessage) Encode() (b byte) {
 	b = 0xf0
 	if c.IsData {
 		b |= 0x40

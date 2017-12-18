@@ -2,6 +2,7 @@ package sms
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"unicode/utf16"
@@ -13,7 +14,16 @@ type UD struct {
 	UDH  []udh
 }
 
-func (u UD) String(d dcs) string {
+type jud struct {
+	Text []byte `json:"text"`
+	UDH  []judh `json:"hdr"`
+}
+type judh struct {
+	Key byte   `json:"key"`
+	Val []byte `json:"value"`
+}
+
+func (u UD) String(d DCS) string {
 	w := new(bytes.Buffer)
 	fmt.Fprintf(w, "%sTP-UD:", Indent)
 
@@ -32,6 +42,40 @@ func (u UD) String(d dcs) string {
 	return w.String()
 }
 
+// MarshalJSON provide custom marshaller
+func (u UD) MarshalJSON() ([]byte, error) {
+	ud := jud{
+		Text: []byte(u.Text),
+		UDH:  make([]judh, 0)}
+	for _, h := range u.UDH {
+		ud.UDH = append(ud.UDH, judh{Key: h.Key(), Val: h.Value()})
+	}
+	return json.Marshal(ud)
+}
+
+// UnmarshalJSON provide custom marshaller
+func (u *UD) UnmarshalJSON(b []byte) (e error) {
+	ud := jud{}
+	if e = json.Unmarshal(b, &ud); e != nil {
+		return
+	}
+	u.Text = string(ud.Text)
+	u.UDH = make([]udh, 0)
+	for _, h := range ud.UDH {
+		switch h.Key {
+		case 0x00:
+			t := &ConcatenatedSM{}
+			t.decode(h.Val)
+			u.UDH = append(u.UDH, t)
+		default:
+			t := &GenericIEI{K: h.Key}
+			t.decode(h.Val)
+			u.UDH = append(u.UDH, t)
+		}
+	}
+	return nil
+}
+
 // AddUDH add additional User-Data header
 func (u *UD) AddUDH(h udh) {
 	if u.UDH == nil {
@@ -41,7 +85,7 @@ func (u *UD) AddUDH(h udh) {
 	}
 }
 
-func (u *UD) read(r *bytes.Reader, d dcs, h bool) error {
+func (u *UD) read(r *bytes.Reader, d DCS, h bool) error {
 	p, e := r.ReadByte()
 	if e != nil {
 		return e
@@ -98,7 +142,7 @@ func (u *UD) read(r *bytes.Reader, d dcs, h bool) error {
 	return nil
 }
 
-func (u *UD) write(w *bytes.Buffer, d dcs) {
+func (u *UD) write(w *bytes.Buffer, d DCS) {
 	c := d.charset()
 	udh := encodeUDH(u.UDH)
 	var ud []byte

@@ -15,7 +15,7 @@ type Submit struct {
 	MR  byte    // Message Reference
 	DA  Address // Destination Address
 	PID byte    // Protocol Identifier
-	DCS dcs     // Data Coding Scheme
+	DCS         // Data Coding Scheme
 	VP  vp      // Validity Period
 	UD          // User Data
 }
@@ -58,7 +58,7 @@ func (d *Submit) Encode() []byte {
 	w.Write(a)
 
 	w.WriteByte(d.PID)
-	w.WriteByte(d.DCS.encode())
+	w.WriteByte(d.DCS.Encode())
 	w.Write(vp)
 	d.UD.write(w, d.DCS)
 
@@ -139,7 +139,7 @@ type SubmitReport struct {
 	FCS  *byte     // Failure Cause
 	SCTS time.Time // Service Centre Time Stamp
 	PID  *byte     // Protocol Identifier
-	DCS  dcs       // Data Coding Scheme
+	DCS            // Data Coding Scheme
 	UD             // User Data
 }
 
@@ -172,7 +172,7 @@ func (d *SubmitReport) Encode() []byte {
 		w.WriteByte(*d.PID)
 	}
 	if d.DCS != nil {
-		w.WriteByte(d.DCS.encode())
+		w.WriteByte(d.DCS.Encode())
 	}
 	if len(d.UD.Text) != 0 ||
 		(d.UD.UDH != nil && len(d.UD.UDH) != 0) {

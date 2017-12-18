@@ -9,6 +9,8 @@ type udh interface {
 	encode() []byte
 	decode([]byte)
 	fmt.Stringer
+	Key() byte
+	Value() []byte
 }
 
 func decodeUDH(b []byte) (h []udh) {
@@ -23,7 +25,7 @@ func decodeUDH(b []byte) (h []udh) {
 		case 0x00:
 			u = &ConcatenatedSM{}
 		default:
-			u = &GenericIEI{Key: k}
+			u = &GenericIEI{K: k}
 		}
 		l, _ := buf.ReadByte()
 		v := make([]byte, l)
@@ -51,26 +53,36 @@ func encodeUDH(h []udh) []byte {
 
 // GenericIEI is User Data Header
 type GenericIEI struct {
-	Key   byte
-	Value []byte
+	K byte
+	V []byte
+}
+
+// Key of this IEI
+func (h *GenericIEI) Key() byte {
+	return h.K
+}
+
+// Value of this IEI
+func (h *GenericIEI) Value() []byte {
+	return h.V
 }
 
 func (h *GenericIEI) encode() []byte {
-	r := make([]byte, len(h.Value)+2)
-	r[0] = h.Key
-	r[1] = byte(len(h.Value))
-	for i := range h.Value {
-		r[i+2] = h.Value[i]
+	r := make([]byte, len(h.V)+2)
+	r[0] = h.K
+	r[1] = byte(len(h.V))
+	for i := range h.V {
+		r[i+2] = h.V[i]
 	}
 	return r
 }
 
 func (h *GenericIEI) decode(b []byte) {
-	h.Value = b
+	h.V = b
 }
 
 func (h *GenericIEI) String() string {
-	return fmt.Sprintf("Generic(%x): % x", h.Key, h.Value)
+	return fmt.Sprintf("Generic(%x): % x", h.K, h.V)
 }
 
 // ConcatenatedSM is User Data Header
@@ -78,6 +90,16 @@ type ConcatenatedSM struct {
 	RefNum byte
 	MaxNum byte
 	SeqNum byte
+}
+
+// Key of this IEI
+func (h *ConcatenatedSM) Key() byte {
+	return 0x00
+}
+
+// Value of this IEI
+func (h *ConcatenatedSM) Value() []byte {
+	return []byte{h.RefNum, h.MaxNum, h.SeqNum}
 }
 
 func (h *ConcatenatedSM) encode() []byte {
@@ -101,6 +123,16 @@ type ConcatenatedSM16bit struct {
 	RefNum uint16
 	MaxNum byte
 	SeqNum byte
+}
+
+// Key of this IEI
+func (h *ConcatenatedSM16bit) Key() byte {
+	return 0x08
+}
+
+// Value of this IEI
+func (h *ConcatenatedSM16bit) Value() []byte {
+	return []byte{byte(h.RefNum >> 8), byte(h.RefNum & 0x00ff), h.MaxNum, h.SeqNum}
 }
 
 func (h *ConcatenatedSM16bit) encode() []byte {
