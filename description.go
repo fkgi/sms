@@ -111,17 +111,17 @@ func stStat(b byte) string {
 	case 0x02:
 		return "Short message replaced by the SC"
 	case 0x20:
-		return "Congestion"
+		return "Congestion (trying transfer)"
 	case 0x21:
-		return "SME busy"
+		return "SME busy (trying transfer)"
 	case 0x22:
-		return "No response from SME"
+		return "No response from SME (trying transfer)"
 	case 0x23:
-		return "Service rejected"
+		return "Service rejected (trying transfer)"
 	case 0x24:
-		return "Quality of service not available"
+		return "Quality of service not available (trying transfer)"
 	case 0x25:
-		return "Error in SME"
+		return "Error in SME (trying transfer)"
 	case 0x40:
 		return "Remote procedure error"
 	case 0x41:
@@ -131,7 +131,7 @@ func stStat(b byte) string {
 	case 0x43:
 		return "Not obtainable"
 	case 0x44:
-		return "Quality of service not available"
+		return "Quality of service not available (permanent)"
 	case 0x45:
 		return "No interworking available"
 	case 0x46:
