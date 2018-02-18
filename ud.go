@@ -46,9 +46,9 @@ func (u UD) String(d DCS) string {
 func (u UD) MarshalJSON() ([]byte, error) {
 	ud := jud{
 		Text: []byte(u.Text),
-		UDH:  make([]judh, 0)}
-	for _, h := range u.UDH {
-		ud.UDH = append(ud.UDH, judh{Key: h.Key(), Val: h.Value()})
+		UDH:  make([]judh, len(u.UDH))}
+	for i, h := range u.UDH {
+		ud.UDH[i] = judh{Key: h.Key(), Val: h.Value()}
 	}
 	return json.Marshal(ud)
 }
