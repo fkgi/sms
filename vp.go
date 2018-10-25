@@ -8,7 +8,8 @@ import (
 
 type vp interface {
 	fmt.Stringer
-	Period(t time.Time) time.Time
+	ExpireTime(t time.Time) time.Time
+	Duration() time.Duration
 }
 
 // VPRelative is relative format VP value
@@ -32,24 +33,27 @@ func relativeFormatString(b byte) string {
 	return fmt.Sprintf("%d weeks", b-192)
 }
 
-// Period return period time
-func (f VPRelative) Period(t time.Time) time.Time {
-	return relativeFormatPeriod(t, f[0])
+// ExpireTime return expire time
+func (f VPRelative) ExpireTime(t time.Time) time.Time {
+	return t.Add(relativeFormatDuration(f[0]))
 }
 
-func relativeFormatPeriod(t time.Time, b byte) time.Time {
+// Duration return duration to expire time
+func (f VPRelative) Duration() time.Duration {
+	return relativeFormatDuration(f[0])
+}
+
+func relativeFormatDuration(b byte) time.Duration {
 	if b < 144 {
-		i := time.Duration(b+1) * 5 * time.Minute
-		return t.Add(i)
+		return time.Duration(b+1) * 5 * time.Minute
 	}
 	if b < 168 {
-		i := time.Duration(b-143) * 30 * time.Minute
-		return t.Add(i)
+		return time.Duration(b-143) * 30 * time.Minute
 	}
 	if b < 197 {
-		return t.AddDate(0, 0, int(b-166))
+		return time.Duration(b-166) * time.Hour * 24
 	}
-	return t.AddDate(0, 0, int(b-192)*7)
+	return time.Duration(b-192) * time.Hour * 24 * 7
 }
 
 // VPAbsolute is absolute format VP value
@@ -59,9 +63,14 @@ func (f VPAbsolute) String() string {
 	return fmt.Sprintf("absolute, %s", decodeSCTimeStamp(f))
 }
 
-// Period return period time
-func (f VPAbsolute) Period(t time.Time) time.Time {
+// ExpireTime return expire time
+func (f VPAbsolute) ExpireTime(t time.Time) time.Time {
 	return decodeSCTimeStamp(f)
+}
+
+// Duration return duration to expire time
+func (f VPAbsolute) Duration() time.Duration {
+	return time.Until(decodeSCTimeStamp(f))
 }
 
 // VPEnhanced is enhanced format VP value
@@ -83,30 +92,47 @@ func (f VPEnhanced) String() string {
 		s.WriteString(fmt.Sprintf(", %d sec", f[1]))
 	case 0x03:
 		s.WriteString(fmt.Sprintf(", %d:%d:%d",
-			semiOctet2Int(f[1]), semiOctet2Int(f[2]), semiOctet2Int(f[3])))
+			semiOctet2Int(f[1]),
+			semiOctet2Int(f[2]),
+			semiOctet2Int(f[3])))
 	default:
 		s.WriteString(", invalid format")
 	}
 	return s.String()
 }
 
-// Period return period time
-func (f VPEnhanced) Period(t time.Time) time.Time {
+// ExpireTime return expire time
+func (f VPEnhanced) ExpireTime(t time.Time) time.Time {
 	switch f[0] & 0x03 {
 	case 0x00:
-		return t
+		return time.Time{}
 	case 0x01:
-		return relativeFormatPeriod(t, f[1])
+		return t.Add(relativeFormatDuration(f[1]))
 	case 0x02:
 		return t.Add(time.Duration(f[1]) * time.Second)
 	case 0x03:
-		j := int(f[1]&0x0f)*10 + int((f[1]&0xf0)>>4)
-		i := time.Duration(j) * time.Hour
-		j = int(f[2]&0x0f)*10 + int((f[2]&0xf0)>>4)
-		i += time.Duration(j) * time.Minute
-		j = int(f[3]&0x0f)*10 + int((f[3]&0xf0)>>4)
-		i += time.Duration(j) * time.Second
+		i := time.Duration(semiOctet2Int(f[1])) * time.Hour
+		i += time.Duration(semiOctet2Int(f[2])) * time.Minute
+		i += time.Duration(semiOctet2Int(f[3])) * time.Second
 		return t.Add(i)
 	}
-	return t
+	return time.Time{}
+}
+
+// Duration return duration to expire time
+func (f VPEnhanced) Duration() time.Duration {
+	switch f[0] & 0x03 {
+	case 0x00:
+		return time.Duration(0)
+	case 0x01:
+		return relativeFormatDuration(f[1])
+	case 0x02:
+		return time.Duration(f[1]) * time.Second
+	case 0x03:
+		i := time.Duration(semiOctet2Int(f[1])) * time.Hour
+		i += time.Duration(semiOctet2Int(f[2])) * time.Minute
+		i += time.Duration(semiOctet2Int(f[3])) * time.Second
+		return i
+	}
+	return time.Duration(0)
 }
