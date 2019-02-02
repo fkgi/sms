@@ -16,7 +16,7 @@ type Submit struct {
 	DA  Address // Destination Address
 	PID byte    // Protocol Identifier
 	DCS         // Data Coding Scheme
-	VP  vp      // Validity Period
+	VP          // Validity Period
 	UD          // User Data
 }
 
@@ -32,7 +32,7 @@ func (d *Submit) Encode() []byte {
 	switch v := d.VP.(type) {
 	case VPRelative:
 		b = b | 0x10
-		vp = []byte{v[0]}
+		vp = []byte{byte(v)}
 	case VPEnhanced:
 		b = b | 0x08
 		vp = []byte{v[0], v[1], v[2], v[3], v[4], v[5], v[6]}
@@ -91,7 +91,7 @@ func (d *Submit) Decode(b []byte) (e error) {
 	case 0x10:
 		var p byte
 		if p, e = r.ReadByte(); e == nil {
-			d.VP = VPRelative([1]byte{p})
+			d.VP = VPRelative(p)
 		}
 	case 0x08:
 		var p [7]byte

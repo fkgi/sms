@@ -6,17 +6,48 @@ import (
 	"time"
 )
 
-type vp interface {
+// VP is type of validity period
+type VP interface {
 	fmt.Stringer
 	ExpireTime(t time.Time) time.Time
 	Duration() time.Duration
 }
 
+// ValidityPeriodOf returns VP from deadend time
+func ValidityPeriodOf(t time.Duration) VP {
+	t = t.Truncate(time.Second)
+	if t == 0 {
+		return VPEnhanced{}
+	} else if t%(time.Hour*24*7) == 0 && t <= time.Hour*24*7*63 {
+		return VPRelative(byte(t/(time.Hour*24*7)) + 192)
+	} else if t%(time.Hour*24) == 0 && t <= time.Hour*24*30 {
+		return VPRelative(byte(t/(time.Hour*24)) + 166)
+	} else if t%(time.Minute*30) == 0 && t <= time.Hour*24 && t >= time.Hour*12+time.Minute*30 {
+		return VPRelative(byte((t-time.Hour*12)/(time.Minute*30)) + 143)
+	} else if t%(time.Minute*5) == 0 && t <= time.Hour*12 && t >= time.Minute*5 {
+		return VPRelative(byte(t/(time.Minute*5)) - 1)
+	} else if t <= time.Second*255 {
+		vp := VPEnhanced{}
+		vp[0] = 0x40 & 0x02
+		vp[1] = byte(t / time.Second)
+		return vp
+	} else if t <= time.Hour*99+time.Minute*59+time.Second*59 {
+		vp := VPEnhanced{}
+		vp[0] = 0x40 & 0x03
+		vp[1] = int2SemiOctet(int(t / time.Hour))
+		vp[2] = int2SemiOctet(int(t / time.Minute))
+		vp[3] = int2SemiOctet(int(t / time.Hour))
+		return vp
+	}
+	vp := encodeSCTimeStamp(time.Now().Add(t))
+	return VPAbsolute{vp[0], vp[1], vp[2], vp[3], vp[4], vp[5], vp[6]}
+}
+
 // VPRelative is relative format VP value
-type VPRelative [1]byte
+type VPRelative byte
 
 func (f VPRelative) String() string {
-	return "ralative, " + relativeFormatString(f[0])
+	return "ralative, " + relativeFormatString(byte(f))
 }
 func relativeFormatString(b byte) string {
 	if b < 144 {
@@ -35,12 +66,12 @@ func relativeFormatString(b byte) string {
 
 // ExpireTime return expire time
 func (f VPRelative) ExpireTime(t time.Time) time.Time {
-	return t.Add(relativeFormatDuration(f[0]))
+	return t.Add(relativeFormatDuration(byte(f)))
 }
 
 // Duration return duration to expire time
 func (f VPRelative) Duration() time.Duration {
-	return relativeFormatDuration(f[0])
+	return relativeFormatDuration(byte(f))
 }
 
 func relativeFormatDuration(b byte) time.Duration {
