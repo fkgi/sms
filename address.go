@@ -88,6 +88,8 @@ func (a Address) Encode() (l byte, b []byte) {
 		}
 		a.TON = 0x05
 		a.NPI = 0x00
+	default:
+		// null addr
 	}
 
 	b = []byte{0x80}

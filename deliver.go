@@ -8,16 +8,16 @@ import (
 
 // Deliver is TPDU message from SC to MS
 type Deliver struct {
-	MMS bool // More Messages to Send (true=more messages)
-	LP  bool // Loop Prevention
-	SRI bool // Status Report Indication (true=status report shall be returned)
-	RP  bool // Reply Path
+	MMS bool // M / More Messages to Send (true=more messages)
+	LP  bool // O / Loop Prevention
+	SRI bool // O / Status Report Indication (true=status report shall be returned)
+	RP  bool // M / Reply Path
 
-	OA   Address   // Originating Address
-	PID  byte      // Protocol Identifier
-	DCS            // Data Coding Scheme
-	SCTS time.Time // Service Centre Time Stamp
-	UD             // User Data
+	OA   Address   // M / Originating Address
+	PID  byte      // M / Protocol Identifier
+	DCS            // M / Data Coding Scheme
+	SCTS time.Time // M / Service Centre Time Stamp
+	UD             // O / User Data
 }
 
 // Encode output byte data of this TPDU
@@ -34,7 +34,7 @@ func (d *Deliver) Encode() []byte {
 	if d.SRI {
 		b |= 0x20
 	}
-	if d.UDH != nil && len(d.UDH) != 0 {
+	if len(d.UDH) != 0 {
 		b |= 0x40
 	}
 	if d.RP {
@@ -45,7 +45,11 @@ func (d *Deliver) Encode() []byte {
 	w.WriteByte(b)
 	w.Write(a)
 	w.WriteByte(d.PID)
-	w.WriteByte(d.DCS.Encode())
+	if d.DCS == nil {
+		w.WriteByte(0x00)
+	} else {
+		w.WriteByte(d.DCS.Encode())
+	}
 	w.Write(encodeSCTimeStamp(d.SCTS))
 	d.UD.write(w, d.DCS)
 
@@ -104,10 +108,10 @@ func (d *Deliver) String() string {
 
 // DeliverReport is TPDU message from MS to SC
 type DeliverReport struct {
-	FCS *byte // Failure Cause
-	PID *byte // Protocol Identifier
-	DCS       // Data Coding Scheme
-	UD        // User Data
+	FCS byte  // C / Failure Cause
+	PID *byte // O / Protocol Identifier
+	DCS       // O / Data Coding Scheme
+	UD        // O / User Data
 }
 
 // Encode output byte data of this TPDU
@@ -119,8 +123,8 @@ func (d *DeliverReport) Encode() []byte {
 		b |= 0x40
 	}
 	w.WriteByte(b)
-	if d.FCS != nil {
-		w.WriteByte(*d.FCS)
+	if d.FCS&0x80 != 0x80 {
+		w.WriteByte(d.FCS)
 	}
 	b = byte(0x00)
 	if d.PID != nil {
@@ -129,8 +133,7 @@ func (d *DeliverReport) Encode() []byte {
 	if d.DCS != nil {
 		b |= 0x02
 	}
-	if len(d.UD.Text) != 0 ||
-		(d.UD.UDH != nil && len(d.UD.UDH) != 0) {
+	if len(d.UD.Text) != 0 || len(d.UD.UDH) != 0 {
 		b |= 0x04
 	}
 	w.WriteByte(b)
@@ -140,8 +143,7 @@ func (d *DeliverReport) Encode() []byte {
 	if d.DCS != nil {
 		w.WriteByte(d.DCS.Encode())
 	}
-	if len(d.UD.Text) != 0 ||
-		(d.UD.UDH != nil && len(d.UD.UDH) != 0) {
+	if len(d.UD.Text) != 0 || len(d.UD.UDH) != 0 {
 		d.UD.write(w, d.DCS)
 	}
 	return w.Bytes()
@@ -153,7 +155,7 @@ func (d *DeliverReport) Decode(b []byte) (e error) {
 
 	pi, e := r.ReadByte()
 	if e == nil && pi&0x80 == 0x80 {
-		d.FCS = &pi
+		d.FCS = pi
 		pi, e = r.ReadByte()
 	}
 	if e != nil {
@@ -172,13 +174,6 @@ func (d *DeliverReport) Decode(b []byte) (e error) {
 		}
 	}
 	if pi&0x04 == 0x04 {
-		if d.DCS == nil {
-			d.DCS = &GeneralDataCoding{
-				AutoDelete: false,
-				Compressed: false,
-				MsgClass:   NoMessageClass,
-				Charset:    CharsetGSM7bit}
-		}
 		d.UD.read(r, d.DCS, b[0]&0x40 == 0x40)
 	}
 	if e == nil && r.Len() != 0 {
@@ -194,9 +189,9 @@ func (d *DeliverReport) Decode(b []byte) (e error) {
 func (d *DeliverReport) String() string {
 	w := new(bytes.Buffer)
 	fmt.Fprintf(w, "SMS message stack: Deliver Report")
-	if d.FCS != nil {
+	if d.FCS&0x80 != 0x80 {
 		fmt.Fprintf(w, " for RP-ERROR\n")
-		fmt.Fprintf(w, "%sTP-FCS:  %s\n", Indent, fcsStat(*d.FCS))
+		fmt.Fprintf(w, "%sTP-FCS:  %s\n", Indent, fcsStat(d.FCS))
 	} else {
 		fmt.Fprintf(w, " for RP-ACK\n")
 	}

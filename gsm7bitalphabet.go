@@ -84,14 +84,13 @@ func StringToGSM7bit(s string) (GSM7bitString, error) {
 
 // DecodeGSM7bit generate GSM7bitString from byte slice
 func DecodeGSM7bit(l int, b []byte) GSM7bitString {
-	s := GSM7bitString(make([]rune, l))
+	s := GSM7bitString(make([]rune, 0, l))
 	s.decode(0, b)
 	return s
 }
 
 func (s GSM7bitString) decode(o int, b []byte) {
 	o = 7 - o
-	s = s[:0]
 	var next byte
 	var sh uint
 	var esc bool
@@ -141,11 +140,17 @@ func (s GSM7bitString) Length() int {
 
 // String return string value of the GSM 7bit String
 func (s GSM7bitString) String() string {
+	if s == nil {
+		return "<nil>"
+	}
 	return string(s)
 }
 
 // Bytes return byte data
 func (s GSM7bitString) Bytes() []byte {
+	if s == nil {
+		return []byte{}
+	}
 	return s.encode(0)
 }
 

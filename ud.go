@@ -31,7 +31,11 @@ func (u UD) String(d DCS) string {
 		fmt.Fprintf(w, "\n%s%s%s", Indent, Indent, h)
 	}
 	if len(u.Text) != 0 {
-		switch d.charset() {
+		c := CharsetGSM7bit
+		if d != nil {
+			c = d.charset()
+		}
+		switch c {
 		case CharsetGSM7bit, CharsetUCS2:
 			fmt.Fprintf(w, "\n%s%s%s", Indent, Indent, u.Text)
 		case Charset8bitData:
@@ -91,7 +95,10 @@ func (u *UD) read(r *bytes.Reader, d DCS, h bool) error {
 		return e
 	}
 
-	c := d.charset()
+	c := CharsetGSM7bit
+	if d != nil {
+		c = d.charset()
+	}
 	l := int(p)
 	if c == CharsetGSM7bit {
 		l *= 7
@@ -127,7 +134,7 @@ func (u *UD) read(r *bytes.Reader, d DCS, h bool) error {
 
 	switch c {
 	case CharsetGSM7bit:
-		s := GSM7bitString(make([]rune, l))
+		s := GSM7bitString(make([]rune, 0, l))
 		s.decode(o, ud)
 		u.Text = s.String()
 	case Charset8bitData:
@@ -143,7 +150,10 @@ func (u *UD) read(r *bytes.Reader, d DCS, h bool) error {
 }
 
 func (u *UD) write(w *bytes.Buffer, d DCS) {
-	c := d.charset()
+	c := CharsetGSM7bit
+	if d != nil {
+		c = d.charset()
+	}
 	udh := encodeUDH(u.UDH)
 	var ud []byte
 	l := len(udh)

@@ -8,18 +8,18 @@ import (
 
 // StatusReport is TPDU message from SC to MS
 type StatusReport struct {
-	MMS bool // More Messages to Send (true=more messages)
-	LP  bool // Loop Prevention
-	SRQ bool // Status Report Qualifier (true=status report shall be returned)
+	MMS bool // M / More Messages to Send (true=more messages)
+	LP  bool // O / Loop Prevention
+	SRQ bool // M / Status Report Qualifier (true=status report shall be returned)
 
-	MR   byte      // Message Reference
-	RA   Address   // Destination Address
-	SCTS time.Time // Service Centre Time Stamp
-	DT   time.Time // Discharge Time
-	ST   byte      // Status
-	PID  *byte     // Protocol Identifier
-	DCS            // Data Coding Scheme
-	UD             // User Data
+	MR   byte      // M / Message Reference
+	RA   Address   // M / Destination Address
+	SCTS time.Time // M / Service Centre Time Stamp
+	DT   time.Time // M / Discharge Time
+	ST   byte      // M / Status
+	PID  *byte     // O / Protocol Identifier
+	DCS            // O / Data Coding Scheme
+	UD             // O / User Data
 }
 
 // Encode output byte data of this TPDU
@@ -54,8 +54,7 @@ func (d *StatusReport) Encode() []byte {
 	if d.DCS != nil {
 		b = b | 0x02
 	}
-	if len(d.UD.Text) != 0 ||
-		(d.UD.UDH != nil && len(d.UD.UDH) != 0) {
+	if len(d.UD.Text) != 0 || len(d.UD.UDH) != 0 {
 		b = b | 0x04
 	}
 	if b == 0x00 {
@@ -68,8 +67,7 @@ func (d *StatusReport) Encode() []byte {
 	if d.DCS != nil {
 		w.WriteByte(d.DCS.Encode())
 	}
-	if len(d.UD.Text) != 0 ||
-		(d.UD.UDH != nil && len(d.UD.UDH) != 0) {
+	if len(d.UD.Text) != 0 || len(d.UD.UDH) != 0 {
 		d.UD.write(w, d.DCS)
 	}
 	return w.Bytes()
@@ -123,13 +121,6 @@ func (d *StatusReport) Decode(b []byte) (e error) {
 		}
 	}
 	if pi&0x04 == 0x04 {
-		if d.DCS == nil {
-			d.DCS = &GeneralDataCoding{
-				AutoDelete: false,
-				Compressed: false,
-				MsgClass:   NoMessageClass,
-				Charset:    CharsetGSM7bit}
-		}
 		d.UD.read(r, d.DCS, b[0]&0x40 == 0x40)
 	}
 	if e == nil && r.Len() != 0 {
