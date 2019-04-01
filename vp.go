@@ -11,13 +11,18 @@ type VP interface {
 	fmt.Stringer
 	ExpireTime(t time.Time) time.Time
 	Duration() time.Duration
+	SingleAttempt() bool
 }
 
 // ValidityPeriodOf returns VP from deadend time
-func ValidityPeriodOf(t time.Duration) VP {
+func ValidityPeriodOf(t time.Duration, s bool) VP {
 	t = t.Truncate(time.Second)
 	if t == 0 {
-		return VPEnhanced{}
+		vp := VPEnhanced{}
+		if s {
+			vp[0] = 0x40
+		}
+		return vp
 	} else if t%(time.Hour*24*7) == 0 && t <= time.Hour*24*7*63 {
 		return VPRelative(byte(t/(time.Hour*24*7)) + 192)
 	} else if t%(time.Hour*24) == 0 && t <= time.Hour*24*30 {
@@ -28,12 +33,18 @@ func ValidityPeriodOf(t time.Duration) VP {
 		return VPRelative(byte(t/(time.Minute*5)) - 1)
 	} else if t <= time.Second*255 {
 		vp := VPEnhanced{}
-		vp[0] = 0x40 & 0x02
+		vp[0] = 0x02
+		if s {
+			vp[0] |= 0x40
+		}
 		vp[1] = byte(t / time.Second)
 		return vp
 	} else if t <= time.Hour*99+time.Minute*59+time.Second*59 {
 		vp := VPEnhanced{}
-		vp[0] = 0x40 & 0x03
+		vp[0] = 0x03
+		if s {
+			vp[0] |= 0x40
+		}
 		vp[1] = int2SemiOctet(int(t / time.Hour))
 		vp[2] = int2SemiOctet(int(t / time.Minute))
 		vp[3] = int2SemiOctet(int(t / time.Hour))
@@ -87,6 +98,11 @@ func relativeFormatDuration(b byte) time.Duration {
 	return time.Duration(b-192) * time.Hour * 24 * 7
 }
 
+// SingleAttempt return single attempt is required or not
+func (f VPRelative) SingleAttempt() bool {
+	return false
+}
+
 // VPAbsolute is absolute format VP value
 type VPAbsolute [7]byte
 
@@ -102,6 +118,11 @@ func (f VPAbsolute) ExpireTime(t time.Time) time.Time {
 // Duration return duration to expire time
 func (f VPAbsolute) Duration() time.Duration {
 	return time.Until(decodeSCTimeStamp(f))
+}
+
+// SingleAttempt return single attempt is required or not
+func (f VPAbsolute) SingleAttempt() bool {
+	return false
 }
 
 // VPEnhanced is enhanced format VP value
@@ -166,4 +187,12 @@ func (f VPEnhanced) Duration() time.Duration {
 		return i
 	}
 	return time.Duration(0)
+}
+
+// SingleAttempt return single attempt is required or not
+func (f VPEnhanced) SingleAttempt() bool {
+	if f[0]&0x40 == 0x40 {
+		return true
+	}
+	return false
 }

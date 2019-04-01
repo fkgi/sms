@@ -104,6 +104,10 @@ func (a Address) Encode() (l byte, b []byte) {
 
 // Decode make Address from binary data and semi-octet length
 func (a *Address) Decode(l byte, b []byte) {
+	if a == nil {
+		return
+	}
+
 	a.TON = (b[0] >> 4) & 0x07
 	a.NPI = b[0] & 0x0f
 
@@ -120,11 +124,10 @@ func (a *Address) Decode(l byte, b []byte) {
 	return
 }
 
-func readAddr(r *bytes.Reader) (Address, error) {
-	a := Address{}
-	l, e := r.ReadByte()
-	if e != nil {
-		return a, e
+func readAddr(r *bytes.Reader) (a Address, e error) {
+	var l byte
+	if l, e = r.ReadByte(); e != nil {
+		return
 	}
 
 	b := make([]byte, l/2+l%2+1)
@@ -136,5 +139,5 @@ func readAddr(r *bytes.Reader) (Address, error) {
 			a.Decode(l, b)
 		}
 	}
-	return a, e
+	return
 }

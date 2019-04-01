@@ -2,6 +2,7 @@ package sms
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -15,7 +16,7 @@ type UD struct {
 }
 
 type jud struct {
-	Text []byte `json:"text"`
+	Text string `json:"text"`
 	UDH  []judh `json:"hdr"`
 }
 type judh struct {
@@ -23,7 +24,7 @@ type judh struct {
 	Val []byte `json:"value"`
 }
 
-func (u UD) String(d DCS) string {
+func (u UD) String() string {
 	w := new(bytes.Buffer)
 	fmt.Fprintf(w, "%sTP-UD:", Indent)
 
@@ -31,17 +32,7 @@ func (u UD) String(d DCS) string {
 		fmt.Fprintf(w, "\n%s%s%s", Indent, Indent, h)
 	}
 	if len(u.Text) != 0 {
-		c := CharsetGSM7bit
-		if d != nil {
-			c = d.charset()
-		}
-		switch c {
-		case CharsetGSM7bit, CharsetUCS2:
-			fmt.Fprintf(w, "\n%s%s%s", Indent, Indent, u.Text)
-		case Charset8bitData:
-			fmt.Fprintf(w, "\n%s%s% x",
-				Indent, Indent, []byte(u.Text))
-		}
+		fmt.Fprintf(w, "\n%s%s%s", Indent, Indent, u.Text)
 	}
 	return w.String()
 }
@@ -49,7 +40,7 @@ func (u UD) String(d DCS) string {
 // MarshalJSON provide custom marshaller
 func (u UD) MarshalJSON() ([]byte, error) {
 	ud := jud{
-		Text: []byte(u.Text),
+		Text: u.Text,
 		UDH:  make([]judh, len(u.UDH))}
 	for i, h := range u.UDH {
 		ud.UDH[i] = judh{Key: h.Key(), Val: h.Value()}
@@ -63,7 +54,7 @@ func (u *UD) UnmarshalJSON(b []byte) (e error) {
 	if e = json.Unmarshal(b, &ud); e != nil {
 		return
 	}
-	u.Text = string(ud.Text)
+	u.Text = ud.Text
 	u.UDH = make([]udh, 0)
 	for _, h := range ud.UDH {
 		switch h.Key {
@@ -82,11 +73,26 @@ func (u *UD) UnmarshalJSON(b []byte) (e error) {
 
 // AddUDH add additional User-Data header
 func (u *UD) AddUDH(h udh) {
+	if h == nil || u == nil {
+		return
+	}
 	if u.UDH == nil {
 		u.UDH = []udh{h}
 	} else {
 		u.UDH = append(u.UDH, h)
 	}
+}
+
+// Set8bitData set binary data as UD
+func (u *UD) Set8bitData(d []byte) {
+	if u != nil && len(d) != 0 {
+		u.Text = base64.StdEncoding.EncodeToString(d)
+	}
+}
+
+// Get8bitData set binary data as UD
+func (u UD) Get8bitData() ([]byte, error) {
+	return base64.StdEncoding.DecodeString(u.Text)
 }
 
 func (u *UD) read(r *bytes.Reader, d DCS, h bool) error {
@@ -138,7 +144,7 @@ func (u *UD) read(r *bytes.Reader, d DCS, h bool) error {
 		s.decode(o, ud)
 		u.Text = s.String()
 	case Charset8bitData:
-		u.Text = string(ud)
+		u.Text = base64.StdEncoding.EncodeToString(ud)
 	case CharsetUCS2:
 		s := make([]uint16, l/2)
 		for i := range s {
@@ -171,7 +177,11 @@ func (u *UD) write(w *bytes.Buffer, d DCS) {
 		ud = s.encode(o)
 		l += s.Length()
 	case Charset8bitData:
-		ud = []byte(u.Text)
+		var e error
+		ud, e = base64.StdEncoding.DecodeString(u.Text)
+		if e != nil {
+			ud = []byte{}
+		}
 		l += len(ud)
 	case CharsetUCS2:
 		u := utf16.Encode([]rune(u.Text))

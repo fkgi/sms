@@ -119,7 +119,7 @@ func decodeSCTimeStamp(t [7]byte) time.Time {
 	}
 	return time.Date(2000+d[0],
 		time.Month(d[1]), d[2], d[3], d[4], d[5], 0,
-		time.FixedZone("unknown", l*15*60))
+		time.FixedZone("", l*15*60)).Local()
 }
 
 func int2SemiOctet(i int) (b byte) {

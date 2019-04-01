@@ -59,15 +59,25 @@ type GenericIEI struct {
 
 // Key of this IEI
 func (h *GenericIEI) Key() byte {
+	if h == nil {
+		return 0x00
+	}
 	return h.K
 }
 
 // Value of this IEI
 func (h *GenericIEI) Value() []byte {
+	if h == nil || h.V == nil {
+		return []byte{}
+	}
 	return h.V
 }
 
 func (h *GenericIEI) encode() []byte {
+	if h == nil {
+		return []byte{}
+	}
+
 	r := make([]byte, len(h.V)+2)
 	r[0] = h.K
 	r[1] = byte(len(h.V))
@@ -78,10 +88,15 @@ func (h *GenericIEI) encode() []byte {
 }
 
 func (h *GenericIEI) decode(b []byte) {
-	h.V = b
+	if h != nil && b != nil {
+		h.V = b
+	}
 }
 
 func (h *GenericIEI) String() string {
+	if h == nil {
+		return "<nil>"
+	}
 	return fmt.Sprintf("Generic(%x): % x", h.K, h.V)
 }
 
@@ -99,20 +114,31 @@ func (h *ConcatenatedSM) Key() byte {
 
 // Value of this IEI
 func (h *ConcatenatedSM) Value() []byte {
+	if h == nil {
+		return []byte{}
+	}
 	return []byte{h.RefNum, h.MaxNum, h.SeqNum}
 }
 
 func (h *ConcatenatedSM) encode() []byte {
+	if h == nil {
+		return []byte{}
+	}
 	return []byte{0x00, 0x03, h.RefNum, h.MaxNum, h.SeqNum}
 }
 
 func (h *ConcatenatedSM) decode(b []byte) {
-	h.RefNum = b[0]
-	h.MaxNum = b[1]
-	h.SeqNum = b[2]
+	if h != nil && b != nil && len(b) > 3 {
+		h.RefNum = b[0]
+		h.MaxNum = b[1]
+		h.SeqNum = b[2]
+	}
 }
 
 func (h *ConcatenatedSM) String() string {
+	if h == nil {
+		return "<nil>"
+	}
 	return fmt.Sprintf(
 		"Concatenated SM: Ref=%d, Max=%d, Seq=%d",
 		h.RefNum, h.MaxNum, h.SeqNum)
@@ -132,21 +158,32 @@ func (h *ConcatenatedSM16bit) Key() byte {
 
 // Value of this IEI
 func (h *ConcatenatedSM16bit) Value() []byte {
+	if h == nil {
+		return []byte{}
+	}
 	return []byte{byte(h.RefNum >> 8), byte(h.RefNum & 0x00ff), h.MaxNum, h.SeqNum}
 }
 
 func (h *ConcatenatedSM16bit) encode() []byte {
+	if h == nil {
+		return []byte{}
+	}
 	return []byte{0x08, 0x04,
 		byte(h.RefNum >> 8), byte(h.RefNum & 0x00ff), h.MaxNum, h.SeqNum}
 }
 
 func (h *ConcatenatedSM16bit) decode(b []byte) {
-	h.RefNum = (uint16(b[0]) << 8) | uint16(b[1])
-	h.MaxNum = b[2]
-	h.SeqNum = b[3]
+	if h != nil && b != nil && len(b) > 4 {
+		h.RefNum = (uint16(b[0]) << 8) | uint16(b[1])
+		h.MaxNum = b[2]
+		h.SeqNum = b[3]
+	}
 }
 
 func (h *ConcatenatedSM16bit) String() string {
+	if h == nil {
+		return "<nil>"
+	}
 	return fmt.Sprintf(
 		"Concatenated SM (16bit ref number): Ref=%d, Max=%d, Seq=%d",
 		h.RefNum, h.MaxNum, h.SeqNum)

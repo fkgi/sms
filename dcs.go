@@ -99,6 +99,10 @@ type GeneralDataCoding struct {
 
 // Encode make byte data
 func (c *GeneralDataCoding) Encode() (b byte) {
+	if c == nil {
+		return
+	}
+
 	if c.AutoDelete {
 		b = 0x40
 	} else {
@@ -113,10 +117,16 @@ func (c *GeneralDataCoding) Encode() (b byte) {
 }
 
 func (c *GeneralDataCoding) charset() charset {
-	return c.Charset
+	if c != nil {
+		return c.Charset
+	}
+	return CharsetGSM7bit
 }
 
 func (c *GeneralDataCoding) String() string {
+	if c == nil {
+		return "<nil>"
+	}
 	var b bytes.Buffer
 	b.WriteString("General Data Coding")
 	if c.AutoDelete {
@@ -178,6 +188,10 @@ type MessageWaiting struct {
 
 // Encode make byte data
 func (c *MessageWaiting) Encode() (b byte) {
+	if c == nil {
+		return
+	}
+
 	b = 0xc0
 	b |= byte(c.Behavior & 0xc0)
 	if c.Active {
@@ -188,13 +202,16 @@ func (c *MessageWaiting) Encode() (b byte) {
 }
 
 func (c *MessageWaiting) charset() charset {
-	if c.Behavior == StoreMessageUCS2 {
+	if c != nil && c.Behavior == StoreMessageUCS2 {
 		return CharsetUCS2
 	}
 	return CharsetGSM7bit
 }
 
 func (c *MessageWaiting) String() string {
+	if c == nil {
+		return "<nil>"
+	}
 	var b bytes.Buffer
 	b.WriteString("MessageWaiting")
 	switch c.Behavior {
@@ -231,6 +248,10 @@ type DataCodingMessage struct {
 
 // Encode make byte data
 func (c *DataCodingMessage) Encode() (b byte) {
+	if c == nil {
+		return
+	}
+
 	b = 0xf0
 	if c.IsData {
 		b |= 0x40
@@ -240,13 +261,16 @@ func (c *DataCodingMessage) Encode() (b byte) {
 }
 
 func (c *DataCodingMessage) charset() charset {
-	if c.IsData {
+	if c != nil && c.IsData {
 		return Charset8bitData
 	}
 	return CharsetGSM7bit
 }
 
 func (c *DataCodingMessage) String() string {
+	if c == nil {
+		return "<nil>"
+	}
 	var b bytes.Buffer
 	b.WriteString("Data coding/message")
 	if c.IsData {

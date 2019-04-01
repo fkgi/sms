@@ -24,6 +24,10 @@ type StatusReport struct {
 
 // Encode output byte data of this TPDU
 func (d *StatusReport) Encode() []byte {
+	if d == nil {
+		return []byte{}
+	}
+
 	w := new(bytes.Buffer)
 
 	b := byte(0x02)
@@ -75,6 +79,10 @@ func (d *StatusReport) Encode() []byte {
 
 // Decode get data of this TPDU
 func (d *StatusReport) Decode(b []byte) (e error) {
+	if d == nil {
+		return fmt.Errorf("nil data")
+	}
+
 	d.MMS = b[0]&0x04 != 0x04
 	d.LP = b[0]&0x08 == 0x08
 	d.SRQ = b[0]&0x20 == 0x20
@@ -134,6 +142,10 @@ func (d *StatusReport) Decode(b []byte) (e error) {
 }
 
 func (d *StatusReport) String() string {
+	if d == nil {
+		return "<nil>"
+	}
+
 	w := new(bytes.Buffer)
 	fmt.Fprintf(w, "SMS message stack: Status Report\n")
 	fmt.Fprintf(w, "%sTP-MMS:  %s\n", Indent, mmsStat(d.MMS))
@@ -144,13 +156,12 @@ func (d *StatusReport) String() string {
 	fmt.Fprintf(w, "%sTP-SCTS: %s\n", Indent, d.SCTS)
 	fmt.Fprintf(w, "%sTP-DT:   %s\n", Indent, d.SCTS)
 	fmt.Fprintf(w, "%sTP-ST:   %s\n", Indent, stStat(d.ST))
-
 	if d.PID != nil {
 		fmt.Fprintf(w, "%sTP-PID:  %s\n", Indent, pidStat(*d.PID))
 	}
 	if d.DCS != nil {
 		fmt.Fprintf(w, "%sTP-DCS:  %s\n", Indent, d.DCS)
 	}
-	fmt.Fprintf(w, "%s", d.UD.String(d.DCS))
+	fmt.Fprintf(w, "%s", d.UD.String())
 	return w.String()
 }

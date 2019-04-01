@@ -8,57 +8,64 @@ import (
 
 // Submit is TPDU message from MS to SC
 type Submit struct {
-	RD  bool // Reject Duplicates
-	SRR bool // Status Report Request
-	RP  bool // Reply Path
+	RD  bool // M / Reject Duplicates
+	SRR bool // O / Status Report Request
+	RP  bool // M / Reply Path
 
-	MR  byte    // Message Reference
-	DA  Address // Destination Address
-	PID byte    // Protocol Identifier
-	DCS         // Data Coding Scheme
-	VP          // Validity Period
-	UD          // User Data
+	MR  byte    // M / Message Reference
+	DA  Address // M / Destination Address
+	PID byte    // M / Protocol Identifier
+	DCS         // M / Data Coding Scheme
+	VP          // O / Validity Period
+	UD          // O / User Data
 }
 
 // Encode output byte data of this TPDU
 func (d *Submit) Encode() []byte {
+	if d == nil {
+		return []byte{}
+	}
+
 	w := new(bytes.Buffer)
 
 	b := byte(0x01)
 	if d.RD {
-		b = b | 0x04
+		b |= 0x04
 	}
 	var vp []byte
 	switch v := d.VP.(type) {
 	case VPRelative:
-		b = b | 0x10
+		b |= 0x10
 		vp = []byte{byte(v)}
 	case VPEnhanced:
-		b = b | 0x08
+		b |= 0x08
 		vp = []byte{v[0], v[1], v[2], v[3], v[4], v[5], v[6]}
 	case VPAbsolute:
-		b = b | 0x18
+		b |= 0x18
 		vp = []byte{v[0], v[1], v[2], v[3], v[4], v[5], v[6]}
+	default:
+		// nil VP value
 	}
 	if d.SRR {
-		b = b | 0x20
+		b |= 0x20
 	}
 	if len(d.UDH) != 0 {
-		b = b | 0x40
+		b |= 0x40
 	}
 	if d.RP {
-		b = b | 0x80
+		b |= 0x80
 	}
 	w.WriteByte(b)
-
 	w.WriteByte(d.MR)
-
 	b, a := d.DA.Encode()
 	w.WriteByte(b)
 	w.Write(a)
-
 	w.WriteByte(d.PID)
-	w.WriteByte(d.DCS.Encode())
+	if d.DCS == nil {
+		w.WriteByte(0x00)
+	} else {
+		w.WriteByte(d.DCS.Encode())
+	}
 	w.Write(vp)
 	d.UD.write(w, d.DCS)
 
@@ -67,12 +74,15 @@ func (d *Submit) Encode() []byte {
 
 // Decode get data of this TPDU
 func (d *Submit) Decode(b []byte) (e error) {
+	if d == nil {
+		return fmt.Errorf("nil data")
+	}
+
 	d.RD = b[0]&0x04 == 0x04
 	d.SRR = b[0]&0x20 == 0x20
 	d.RP = b[0]&0x80 == 0x80
 
 	r := bytes.NewReader(b[1:])
-
 	if d.MR, e = r.ReadByte(); e != nil {
 		return
 	}
@@ -118,6 +128,10 @@ func (d *Submit) Decode(b []byte) (e error) {
 }
 
 func (d *Submit) String() string {
+	if d == nil {
+		return "<nil>"
+	}
+
 	w := new(bytes.Buffer)
 	fmt.Fprintf(w, "SMS message stack: Submit\n")
 	fmt.Fprintf(w, "%sTP-RD:   %s\n", Indent, rdStat(d.RD))
@@ -130,41 +144,44 @@ func (d *Submit) String() string {
 	if d.VP != nil {
 		fmt.Fprintf(w, "%sTP-VP:   %s\n", Indent, d.VP)
 	}
-	fmt.Fprintf(w, "%s", d.UD.String(d.DCS))
+	fmt.Fprintf(w, "%s", d.UD.String())
 	return w.String()
 }
 
 // SubmitReport is TPDU message from SC to MS
 type SubmitReport struct {
-	FCS  *byte     // Failure Cause
-	SCTS time.Time // Service Centre Time Stamp
-	PID  *byte     // Protocol Identifier
-	DCS            // Data Coding Scheme
-	UD             // User Data
+	FCS  byte      // C / Failure Cause
+	SCTS time.Time // M / Service Centre Time Stamp
+	PID  *byte     // O / Protocol Identifier
+	DCS            // O / Data Coding Scheme
+	UD             // O / User Data
 }
 
 // Encode output byte data of this TPDU
 func (d *SubmitReport) Encode() []byte {
+	if d == nil {
+		return []byte{}
+	}
+
 	w := new(bytes.Buffer)
 
 	b := byte(0x01)
 	if len(d.UDH) != 0 {
-		b = b | 0x40
+		b |= 0x40
 	}
 	w.WriteByte(b)
-	if d.FCS != nil {
-		w.WriteByte(*d.FCS)
+	if d.FCS&0x80 == 0x80 {
+		w.WriteByte(d.FCS)
 	}
 	b = byte(0x00)
 	if d.PID != nil {
-		b = b | 0x01
+		b |= 0x01
 	}
 	if d.DCS != nil {
-		b = b | 0x02
+		b |= 0x02
 	}
-	if len(d.UD.Text) != 0 ||
-		(d.UD.UDH != nil && len(d.UD.UDH) != 0) {
-		b = b | 0x04
+	if len(d.UD.Text) != 0 || len(d.UD.UDH) != 0 {
+		b |= 0x04
 	}
 	w.WriteByte(b)
 	w.Write(encodeSCTimeStamp(d.SCTS))
@@ -174,8 +191,7 @@ func (d *SubmitReport) Encode() []byte {
 	if d.DCS != nil {
 		w.WriteByte(d.DCS.Encode())
 	}
-	if len(d.UD.Text) != 0 ||
-		(d.UD.UDH != nil && len(d.UD.UDH) != 0) {
+	if len(d.UD.Text) != 0 || len(d.UD.UDH) != 0 {
 		d.UD.write(w, d.DCS)
 	}
 	return w.Bytes()
@@ -183,11 +199,15 @@ func (d *SubmitReport) Encode() []byte {
 
 // Decode get data of this TPDU
 func (d *SubmitReport) Decode(b []byte) (e error) {
+	if d == nil {
+		return fmt.Errorf("nil data")
+	}
+
 	r := bytes.NewReader(b[1:])
 
 	var pi byte
 	if pi, e = r.ReadByte(); e == nil && pi&0x80 == 0x80 {
-		d.FCS = &pi
+		d.FCS = pi
 		pi, e = r.ReadByte()
 	}
 	if e != nil {
@@ -211,13 +231,6 @@ func (d *SubmitReport) Decode(b []byte) (e error) {
 		}
 	}
 	if pi&0x04 == 0x04 {
-		if d.DCS == nil {
-			d.DCS = &GeneralDataCoding{
-				AutoDelete: false,
-				Compressed: false,
-				MsgClass:   NoMessageClass,
-				Charset:    CharsetGSM7bit}
-		}
 		d.UD.read(r, d.DCS, b[0]&0x40 == 0x40)
 	}
 	if e == nil && r.Len() != 0 {
@@ -231,11 +244,15 @@ func (d *SubmitReport) Decode(b []byte) (e error) {
 }
 
 func (d *SubmitReport) String() string {
+	if d == nil {
+		return "<nil>"
+	}
+
 	w := new(bytes.Buffer)
 	fmt.Fprintf(w, "SMS message stack: Submit Report")
-	if d.FCS != nil {
+	if d.FCS&0x80 == 0x80 {
 		fmt.Fprintf(w, " for RP-ERROR\n")
-		fmt.Fprintf(w, "%sTP-FCS:  %s\n", Indent, fcsStat(*d.FCS))
+		fmt.Fprintf(w, "%sTP-FCS:  %s\n", Indent, fcsStat(d.FCS))
 	} else {
 		fmt.Fprintf(w, " for RP-ACK\n")
 	}
@@ -247,6 +264,6 @@ func (d *SubmitReport) String() string {
 	if d.DCS != nil {
 		fmt.Fprintf(w, "%sTP-DCS:  %s\n", Indent, d.DCS)
 	}
-	fmt.Fprintf(w, "%s", d.UD.String(d.DCS))
-	return w.String()[:w.Len()-1]
+	fmt.Fprintf(w, "%s", d.UD.String())
+	return w.String()
 }

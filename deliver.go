@@ -22,6 +22,10 @@ type Deliver struct {
 
 // Encode output byte data of this TPDU
 func (d *Deliver) Encode() []byte {
+	if d == nil {
+		return []byte{}
+	}
+
 	w := new(bytes.Buffer)
 
 	b := byte(0x00)
@@ -58,6 +62,10 @@ func (d *Deliver) Encode() []byte {
 
 // Decode get data of this TPDU
 func (d *Deliver) Decode(b []byte) (e error) {
+	if d == nil {
+		return fmt.Errorf("nil data")
+	}
+
 	d.MMS = b[0]&0x04 != 0x04
 	d.LP = b[0]&0x08 == 0x08
 	d.SRI = b[0]&0x20 == 0x20
@@ -92,6 +100,10 @@ func (d *Deliver) Decode(b []byte) (e error) {
 }
 
 func (d *Deliver) String() string {
+	if d == nil {
+		return "<nil>"
+	}
+
 	w := new(bytes.Buffer)
 	fmt.Fprintf(w, "SMS message stack: Deliver\n")
 	fmt.Fprintf(w, "%sTP-MMS:  %s\n", Indent, mmsStat(d.MMS))
@@ -102,7 +114,7 @@ func (d *Deliver) String() string {
 	fmt.Fprintf(w, "%sTP-PID:  %s\n", Indent, pidStat(d.PID))
 	fmt.Fprintf(w, "%sTP-DCS:  %s\n", Indent, d.DCS)
 	fmt.Fprintf(w, "%sTP-SCTS: %s\n", Indent, d.SCTS)
-	fmt.Fprintf(w, "%s", d.UD.String(d.DCS))
+	fmt.Fprintf(w, "%s", d.UD.String())
 	return w.String()
 }
 
@@ -116,6 +128,10 @@ type DeliverReport struct {
 
 // Encode output byte data of this TPDU
 func (d *DeliverReport) Encode() []byte {
+	if d == nil {
+		return []byte{}
+	}
+
 	w := new(bytes.Buffer)
 
 	b := byte(0x00)
@@ -123,7 +139,7 @@ func (d *DeliverReport) Encode() []byte {
 		b |= 0x40
 	}
 	w.WriteByte(b)
-	if d.FCS&0x80 != 0x80 {
+	if d.FCS&0x80 == 0x80 {
 		w.WriteByte(d.FCS)
 	}
 	b = byte(0x00)
@@ -151,10 +167,14 @@ func (d *DeliverReport) Encode() []byte {
 
 // Decode get data of this TPDU
 func (d *DeliverReport) Decode(b []byte) (e error) {
+	if d == nil {
+		return fmt.Errorf("nil data")
+	}
+
 	r := bytes.NewReader(b[1:])
 
-	pi, e := r.ReadByte()
-	if e == nil && pi&0x80 == 0x80 {
+	var pi byte
+	if pi, e = r.ReadByte(); e == nil && pi&0x80 == 0x80 {
 		d.FCS = pi
 		pi, e = r.ReadByte()
 	}
@@ -187,9 +207,13 @@ func (d *DeliverReport) Decode(b []byte) (e error) {
 }
 
 func (d *DeliverReport) String() string {
+	if d == nil {
+		return "<nil>"
+	}
+
 	w := new(bytes.Buffer)
 	fmt.Fprintf(w, "SMS message stack: Deliver Report")
-	if d.FCS&0x80 != 0x80 {
+	if d.FCS&0x80 == 0x80 {
 		fmt.Fprintf(w, " for RP-ERROR\n")
 		fmt.Fprintf(w, "%sTP-FCS:  %s\n", Indent, fcsStat(d.FCS))
 	} else {
@@ -202,6 +226,6 @@ func (d *DeliverReport) String() string {
 	if d.DCS != nil {
 		fmt.Fprintf(w, "%sTP-DCS:  %s\n", Indent, d.DCS)
 	}
-	fmt.Fprintf(w, "%s", d.UD.String(d.DCS))
+	fmt.Fprintf(w, "%s", d.UD.String())
 	return w.String()
 }
