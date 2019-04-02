@@ -14,15 +14,42 @@ type VP interface {
 	SingleAttempt() bool
 }
 
-// ValidityPeriodOf returns VP from deadend time
+// ValidityPeriodOf returns VP from deadend time and single-attempt flag
 func ValidityPeriodOf(t time.Duration, s bool) VP {
 	t = t.Truncate(time.Second)
-	if t == 0 {
+
+	if s {
 		vp := VPEnhanced{}
-		if s {
-			vp[0] = 0x40
+		vp[0] = 0x40
+		if t == 0 {
+		} else if t%(time.Hour*24*7) == 0 && t <= time.Hour*24*7*63 {
+			vp[0] |= 0x01
+			vp[1] = byte(t/(time.Hour*24*7)) + 192
+		} else if t%(time.Hour*24) == 0 && t <= time.Hour*24*30 {
+			vp[0] |= 0x01
+			vp[1] = byte(t/(time.Hour*24)) + 166
+		} else if t%(time.Minute*30) == 0 && t <= time.Hour*24 && t >= time.Hour*12+time.Minute*30 {
+			vp[0] |= 0x01
+			vp[1] = byte((t-time.Hour*12)/(time.Minute*30)) + 143
+		} else if t%(time.Minute*5) == 0 && t <= time.Hour*12 && t >= time.Minute*5 {
+			vp[0] |= 0x01
+			vp[1] = byte(t/(time.Minute*5)) - 1
+		} else if t <= time.Second*255 {
+			vp[0] = 0x02
+			vp[1] = byte(t / time.Second)
+		} else if t <= time.Hour*99+time.Minute*59+time.Second*59 {
+			vp[0] = 0x03
+			vp[1] = int2SemiOctet(int(t / time.Hour))
+			vp[2] = int2SemiOctet(int(t / time.Minute))
+			vp[3] = int2SemiOctet(int(t / time.Hour))
+		} else if t <= time.Hour*24*30 {
+			vp[0] |= 0x01
+			vp[1] = byte(t/(time.Hour*24)) + 166
 		}
 		return vp
+	}
+	if t == 0 {
+		return VPEnhanced{}
 	} else if t%(time.Hour*24*7) == 0 && t <= time.Hour*24*7*63 {
 		return VPRelative(byte(t/(time.Hour*24*7)) + 192)
 	} else if t%(time.Hour*24) == 0 && t <= time.Hour*24*30 {
@@ -34,17 +61,11 @@ func ValidityPeriodOf(t time.Duration, s bool) VP {
 	} else if t <= time.Second*255 {
 		vp := VPEnhanced{}
 		vp[0] = 0x02
-		if s {
-			vp[0] |= 0x40
-		}
 		vp[1] = byte(t / time.Second)
 		return vp
 	} else if t <= time.Hour*99+time.Minute*59+time.Second*59 {
 		vp := VPEnhanced{}
 		vp[0] = 0x03
-		if s {
-			vp[0] |= 0x40
-		}
 		vp[1] = int2SemiOctet(int(t / time.Hour))
 		vp[2] = int2SemiOctet(int(t / time.Minute))
 		vp[3] = int2SemiOctet(int(t / time.Hour))
