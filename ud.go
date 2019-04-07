@@ -11,17 +11,8 @@ import (
 
 // UD is TP-UD
 type UD struct {
-	Text string
-	UDH  []udh
-}
-
-type jud struct {
 	Text string `json:"text"`
-	UDH  []judh `json:"hdr"`
-}
-type judh struct {
-	Key byte   `json:"key"`
-	Val []byte `json:"value"`
+	UDH  []udh  `json:"hdr"`
 }
 
 func (u UD) String() string {
@@ -37,9 +28,17 @@ func (u UD) String() string {
 	return w.String()
 }
 
+type judh struct {
+	Key byte   `json:"key"`
+	Val []byte `json:"value"`
+}
+
 // MarshalJSON provide custom marshaller
 func (u UD) MarshalJSON() ([]byte, error) {
-	ud := jud{
+	ud := struct {
+		Text string `json:"text"`
+		UDH  []judh `json:"hdr"`
+	}{
 		Text: u.Text,
 		UDH:  make([]judh, len(u.UDH))}
 	for i, h := range u.UDH {
@@ -50,13 +49,17 @@ func (u UD) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON provide custom marshaller
 func (u *UD) UnmarshalJSON(b []byte) (e error) {
-	ud := jud{}
-	if e = json.Unmarshal(b, &ud); e != nil {
+	type alias UD
+	al := struct {
+		UDH []judh `json:"hdr"`
+		*alias
+	}{
+		alias: (*alias)(u)}
+	if e = json.Unmarshal(b, &al); e != nil {
 		return
 	}
-	u.Text = ud.Text
-	u.UDH = make([]udh, 0)
-	for _, h := range ud.UDH {
+	u.UDH = make([]udh, len(al.UDH))
+	for _, h := range al.UDH {
 		switch h.Key {
 		case 0x00:
 			t := &ConcatenatedSM{}

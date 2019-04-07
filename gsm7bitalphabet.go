@@ -1,6 +1,9 @@
 package sms
 
-import "unicode/utf8"
+import (
+	"encoding/json"
+	"unicode/utf8"
+)
 
 // GSM7bitString is GSM 7-bit default alphabet of 3GPP TS23.038
 type GSM7bitString []rune
@@ -193,4 +196,9 @@ func (s GSM7bitString) encode(o int) []byte {
 		f(c)
 	}
 	return b
+}
+
+// MarshalJSON provide custom marshaller
+func (s GSM7bitString) MarshalJSON() ([]byte, error) {
+	return json.Marshal(string(s))
 }

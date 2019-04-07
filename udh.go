@@ -2,6 +2,7 @@ package sms
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 )
 
@@ -53,8 +54,8 @@ func encodeUDH(h []udh) []byte {
 
 // GenericIEI is User Data Header
 type GenericIEI struct {
-	K byte
-	V []byte
+	K byte   `json:"key"`
+	V []byte `json:"value"`
 }
 
 // Key of this IEI
@@ -142,6 +143,11 @@ func (h *ConcatenatedSM) String() string {
 	return fmt.Sprintf(
 		"Concatenated SM: Ref=%d, Max=%d, Seq=%d",
 		h.RefNum, h.MaxNum, h.SeqNum)
+}
+
+// MarshalJSON provide custom marshaller
+func (h *ConcatenatedSM) MarshalJSON() ([]byte, error) {
+	return json.Marshal(h)
 }
 
 // ConcatenatedSM16bit is User Data Header

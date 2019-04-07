@@ -14,19 +14,14 @@ type addrValue interface {
 	Length() int
 	String() string
 	Bytes() []byte
+	MarshalJSON() ([]byte, error)
 }
 
 // Address is SMS originator/destination address
 type Address struct {
-	TON  byte
-	NPI  byte
-	Addr addrValue
-}
-
-type jaddr struct {
-	TON  byte   `json:"ton"`
-	NPI  byte   `json:"npi"`
-	Addr string `json:"addr"`
+	TON  byte      `json:"ton"`
+	NPI  byte      `json:"npi"`
+	Addr addrValue `json:"addr"`
 }
 
 func (a Address) String() string {
@@ -37,32 +32,24 @@ func (a Address) String() string {
 		"TON/NPI=%d/%d addr=%s", a.TON, a.NPI, a.Addr)
 }
 
-// MarshalJSON provide custom marshaller
-func (a Address) MarshalJSON() ([]byte, error) {
-	addr := jaddr{
-		TON: a.TON,
-		NPI: a.NPI}
-	if a.Addr != nil {
-		addr.Addr = a.Addr.String()
-	}
-	return json.Marshal(addr)
-}
-
 // UnmarshalJSON provide custom marshaller
 func (a *Address) UnmarshalJSON(b []byte) (e error) {
-	addr := jaddr{}
-	if e = json.Unmarshal(b, &addr); e != nil {
+	type alias Address
+	al := struct {
+		Addr string `json:"addr"`
+		*alias
+	}{
+		alias: (*alias)(a)}
+	if e = json.Unmarshal(b, &al); e != nil {
 		return e
 	}
-	a.TON = addr.TON
-	a.NPI = addr.NPI
 
-	if len(addr.Addr) == 0 {
+	if len(al.Addr) == 0 {
 		a.Addr = nil
 	} else if a.TON == 0x05 {
-		a.Addr, e = StringToGSM7bit(addr.Addr)
+		a.Addr, e = StringToGSM7bit(al.Addr)
 	} else {
-		a.Addr, e = teldata.ParseTBCD(addr.Addr)
+		a.Addr, e = teldata.ParseTBCD(al.Addr)
 	}
 
 	return e
