@@ -17,6 +17,42 @@ type addrValue interface {
 	MarshalJSON() ([]byte, error)
 }
 
+const (
+	// UnknownType of TON
+	UnknownType byte = 0
+	// International of TON
+	International byte = 1
+	// National of TON
+	National byte = 2
+	// NetworkSpecific of TON
+	NetworkSpecific byte = 3
+	// Subscriber of TON
+	Subscriber byte = 4
+	// Alphanumeric of TON
+	Alphanumeric byte = 5
+	// Abbreviated of TON
+	Abbreviated byte = 6
+
+	// UnknownPlan of NPI
+	UnknownPlan byte = 0
+	// ISDNTelephone of NPI
+	ISDNTelephone byte = 1
+	// Data of NPI
+	Data byte = 3
+	// Telex of NPI
+	Telex byte = 4
+	// SCSpecific1 of NPI
+	SCSpecific1 byte = 5
+	// SCSpecific2 of NPI
+	SCSpecific2 byte = 6
+	// NationalPlan of NPI
+	NationalPlan byte = 8
+	// Private of NPI
+	Private byte = 9
+	// ERMES of NPI
+	ERMES byte = 10
+)
+
 // Address is SMS originator/destination address
 type Address struct {
 	TON  byte      `json:"ton"`
