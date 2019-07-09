@@ -25,7 +25,7 @@ func NextMsgReference() byte {
 	return ret
 }
 
-// TPDU represents a SMS PDU
+// TPDU represents a SMS TP PDU
 type TPDU interface {
 	Encode() []byte
 	Decode([]byte) error

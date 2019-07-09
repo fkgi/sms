@@ -8,42 +8,49 @@ func mmsStat(b bool) string {
 	}
 	return "No more messages are waiting"
 }
+
 func lpStat(b bool) string {
 	if b {
 		return "Forwarded/spawned message"
 	}
 	return "Not forwarded/spawned message"
 }
+
 func sriStat(b bool) string {
 	if b {
 		return "Status report shall be returned"
 	}
 	return "Status report shall not be returned"
 }
+
 func srqStat(b bool) string {
 	if b {
 		return "This is result of an SMS-COMMAND"
 	}
 	return "This is result of a SMS-SUBMIT"
 }
+
 func rpStat(b bool) string {
 	if b {
 		return "Reply Path is set"
 	}
 	return "Reply Path is not set"
 }
+
 func rdStat(b bool) string {
 	if b {
 		return "Reject duplicate SUBMIT"
 	}
 	return "Accept duplicate SUBMIT"
 }
+
 func srrStat(b bool) string {
 	if b {
 		return "Status report is requested"
 	}
 	return "Status report is not requested"
 }
+
 func fcsStat(b byte) string {
 	switch b {
 	case 0x80:
@@ -101,6 +108,7 @@ func fcsStat(b byte) string {
 	}
 	return fmt.Sprintf("Reserved(%d)", b)
 }
+
 func stStat(b byte) string {
 	switch b {
 	case 0x00:
@@ -157,6 +165,7 @@ func stStat(b byte) string {
 	}
 	return fmt.Sprintf("Reserved(%d)", b)
 }
+
 func pidStat(b byte) string {
 	switch b {
 	case 0:
