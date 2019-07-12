@@ -18,39 +18,39 @@ type addrValue interface {
 }
 
 const (
-	// UnknownType of TON
-	UnknownType byte = 0
-	// International of TON
-	International byte = 1
-	// National of TON
-	National byte = 2
-	// NetworkSpecific of TON
-	NetworkSpecific byte = 3
-	// Subscriber of TON
-	Subscriber byte = 4
-	// Alphanumeric of TON
-	Alphanumeric byte = 5
-	// Abbreviated of TON
-	Abbreviated byte = 6
+	// TypeUnknown of TON
+	TypeUnknown byte = 0
+	// TypeInternational of TON
+	TypeInternational byte = 1
+	// TypeNational of TON
+	TypeNational byte = 2
+	// TypeNetworkSpecific of TON
+	TypeNetworkSpecific byte = 3
+	// TypeSubscriber of TON
+	TypeSubscriber byte = 4
+	// TypeAlphanumeric of TON
+	TypeAlphanumeric byte = 5
+	// TypeAbbreviated of TON
+	TypeAbbreviated byte = 6
 
-	// UnknownPlan of NPI
-	UnknownPlan byte = 0
-	// ISDNTelephone of NPI
-	ISDNTelephone byte = 1
-	// Data of NPI
-	Data byte = 3
-	// Telex of NPI
-	Telex byte = 4
-	// SCSpecific1 of NPI
-	SCSpecific1 byte = 5
-	// SCSpecific2 of NPI
-	SCSpecific2 byte = 6
-	// NationalPlan of NPI
-	NationalPlan byte = 8
-	// Private of NPI
-	Private byte = 9
-	// ERMES of NPI
-	ERMES byte = 10
+	// PlanUnknown of NPI
+	PlanUnknown byte = 0
+	// PlanISDNTelephone of NPI
+	PlanISDNTelephone byte = 1
+	// PlanData of NPI
+	PlanData byte = 3
+	// PlanTelex of NPI
+	PlanTelex byte = 4
+	// PlanSCSpecific1 of NPI
+	PlanSCSpecific1 byte = 5
+	// PlanSCSpecific2 of NPI
+	PlanSCSpecific2 byte = 6
+	// PlanNational of NPI
+	PlanNational byte = 8
+	// PlanPrivate of NPI
+	PlanPrivate byte = 9
+	// PlanERMES of NPI
+	PlanERMES byte = 10
 )
 
 // Address is SMS originator/destination address
@@ -75,9 +75,10 @@ func (a *Address) UnmarshalJSON(b []byte) (e error) {
 		Addr string `json:"addr"`
 		*alias
 	}{
-		alias: (*alias)(a)}
+		alias: (*alias)(a),
+	}
 	if e = json.Unmarshal(b, &al); e != nil {
-		return e
+		return
 	}
 
 	if len(al.Addr) == 0 {
@@ -87,8 +88,20 @@ func (a *Address) UnmarshalJSON(b []byte) (e error) {
 	} else {
 		a.Addr, e = teldata.ParseTBCD(al.Addr)
 	}
+	return
+}
 
-	return e
+// MarshalJSON provide custom marshaller
+func (a Address) MarshalJSON() ([]byte, error) {
+	type alias Address
+	al := struct {
+		*alias
+		Addr string `json:"addr"`
+	}{
+		Addr:  a.Addr.String(),
+		alias: (*alias)(&a),
+	}
+	return json.Marshal(al)
 }
 
 // RegexpMatch check matching text of address
@@ -101,16 +114,16 @@ func (a Address) Encode() (l byte, b []byte) {
 	switch a.Addr.(type) {
 	case teldata.TBCD:
 		l = byte(a.Addr.Length())
-		if a.TON == 0x05 {
-			a.TON = 0x00
+		if a.TON == TypeAlphanumeric {
+			a.TON = TypeUnknown
 		}
 	case GSM7bitString:
 		l = byte(a.Addr.Length() * 7 / 4)
 		if a.Addr.Length()*7%4 != 0 {
 			l++
 		}
-		a.TON = 0x05
-		a.NPI = 0x00
+		a.TON = TypeAlphanumeric
+		a.NPI = PlanUnknown
 	default:
 		// null addr
 	}
@@ -135,7 +148,7 @@ func (a *Address) Decode(l byte, b []byte) {
 	a.NPI = b[0] & 0x0f
 
 	b = b[1:]
-	if a.TON == 0x05 {
+	if a.TON == TypeAlphanumeric {
 		l = l * 4 / 7
 		a.Addr = DecodeGSM7bit(int(l), b)
 	} else {

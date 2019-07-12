@@ -58,7 +58,7 @@ func (u *UD) UnmarshalJSON(b []byte) (e error) {
 	if e = json.Unmarshal(b, &al); e != nil {
 		return
 	}
-	u.UDH = make([]udh, len(al.UDH))
+	u.UDH = make([]udh, 0, len(al.UDH))
 	for _, h := range al.UDH {
 		switch h.Key {
 		case 0x00:

@@ -98,7 +98,7 @@ func (h *GenericIEI) String() string {
 	if h == nil {
 		return "<nil>"
 	}
-	return fmt.Sprintf("Generic(%x): % x", h.K, h.V)
+	return fmt.Sprintf("Generic(0x%x): % x", h.K, h.V)
 }
 
 // ConcatenatedSM is User Data Header
@@ -129,7 +129,7 @@ func (h *ConcatenatedSM) encode() []byte {
 }
 
 func (h *ConcatenatedSM) decode(b []byte) {
-	if h != nil && b != nil && len(b) > 3 {
+	if h != nil && b != nil && len(b) >= 3 {
 		h.RefNum = b[0]
 		h.MaxNum = b[1]
 		h.SeqNum = b[2]
@@ -179,7 +179,7 @@ func (h *ConcatenatedSM16bit) encode() []byte {
 }
 
 func (h *ConcatenatedSM16bit) decode(b []byte) {
-	if h != nil && b != nil && len(b) > 4 {
+	if h != nil && b != nil && len(b) >= 4 {
 		h.RefNum = (uint16(b[0]) << 8) | uint16(b[1])
 		h.MaxNum = b[2]
 		h.SeqNum = b[3]

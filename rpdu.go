@@ -1,10 +1,14 @@
 package sms
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // RPDU represents a SMS RP PDU
 type RPDU interface {
-	Encode() []byte
-	Decode([]byte) error
+	EncodeMO() []byte
+	EncodeMT() []byte
+	DecodeMO([]byte) error
+	DecodeMT([]byte) error
 	fmt.Stringer
 }
