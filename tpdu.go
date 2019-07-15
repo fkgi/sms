@@ -2,6 +2,7 @@ package sms
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"time"
@@ -30,6 +31,8 @@ type TPDU interface {
 	Encode() []byte
 	Decode([]byte) error
 	fmt.Stringer
+	json.Unmarshaler
+	json.Marshaler
 }
 
 // DecodeAsSC parse byte data to TPDU as SC.

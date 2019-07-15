@@ -141,7 +141,6 @@ func (s GSM7bitString) Length() int {
 	return i
 }
 
-// String return string value of the GSM 7bit String
 func (s GSM7bitString) String() string {
 	if s == nil {
 		return "<nil>"
