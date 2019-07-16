@@ -6,97 +6,37 @@ import (
 	"io"
 )
 
-// ErrorMO is RP-ERROR RPDU
-type ErrorMO struct {
-	MR   byte
-	CS   byte
-	Diag byte
-	UD   TPDU
+// Error is RP-ERROR RPDU
+type Error struct {
+	MR   byte // M / Message Reference
+	CS   byte // M / Cause
+	Diag byte // M / Diagnostics
+	UD   TPDU // O / User Data
 }
 
-// Encode returns binary data
-func (d *ErrorMO) Encode() []byte {
+// EncodeMO returns binary data
+func (d *Error) EncodeMO() []byte {
+	return d.encode(4)
+}
+
+// EncodeMT returns binary data
+func (d *Error) EncodeMT() []byte {
+	return d.encode(5)
+}
+
+func (d *Error) encode(mti byte) []byte {
 	if d == nil {
 		return []byte{}
 	}
-	return encodeError(4, d.MR, d.CS, d.Diag, d.UD)
-}
 
-// Decode reads binary data
-func (d *ErrorMO) Decode(b []byte) (e error) {
-	if d == nil {
-		e = fmt.Errorf("nil data")
-	} else {
-		d.MR, d.CS, d.Diag, d.UD, e = decodeError(b, 4)
-	}
-	return
-}
-
-func (d *ErrorMO) String() string {
-	if d == nil {
-		return "<nil>"
-	}
-
-	w := new(bytes.Buffer)
-	fmt.Fprintf(w, "SMS message stack: MO Error\n")
-	fmt.Fprintf(w, "%sRP-MR:   %d\n", Indent, d.MR)
-	fmt.Fprintf(w, "%sRP-CS:   cause=%d, diagnostic=%d\n", Indent, d.CS, d.Diag)
-	if d.UD != nil {
-		fmt.Fprintf(w, "%sRP-UD:   %s\n", Indent, d.UD)
-	}
-	return w.String()
-}
-
-// ErrorMT is RP-ERROR RPDU
-type ErrorMT struct {
-	MR   byte
-	CS   byte
-	Diag byte
-	UD   TPDU
-}
-
-// Encode returns binary data
-func (d *ErrorMT) Encode() []byte {
-	if d == nil {
-		return []byte{}
-	}
-	return encodeError(5, d.MR, d.CS, d.Diag, d.UD)
-}
-
-// Decode reads binary data
-func (d *ErrorMT) Decode(b []byte) (e error) {
-	if d == nil {
-		e = fmt.Errorf("nil data")
-	} else {
-		d.MR, d.CS, d.Diag, d.UD, e = decodeError(b, 5)
-	}
-	return
-}
-
-func (d *ErrorMT) String() string {
-	if d == nil {
-		return "<nil>"
-	}
-
-	w := new(bytes.Buffer)
-	fmt.Fprintf(w, "SMS message stack: MT Error\n")
-	fmt.Fprintf(w, "%sRP-MR:   %d\n", Indent, d.MR)
-	fmt.Fprintf(w, "%sRP-CS:   cause=%d, diagnostic=%d\n", Indent, d.CS, d.Diag)
-	if d.UD != nil {
-		fmt.Fprintf(w, "%sRP-UD:   %s\n", Indent, d.UD)
-	}
-	return w.String()
-}
-
-func encodeError(mti, mr, cs, diag byte, ud TPDU) []byte {
 	w := new(bytes.Buffer)
 	w.WriteByte(mti)
-	w.WriteByte(mr)
+	w.WriteByte(d.MR)
 	w.WriteByte(2)
-	w.WriteByte(cs)
-	w.WriteByte(diag)
-	if ud != nil {
-		b := ud.Encode()
+	w.WriteByte(d.CS)
+	w.WriteByte(d.Diag)
+	if d.UD != nil {
+		b := d.UD.Encode()
 		w.WriteByte(41)
 		w.WriteByte(byte(len(b)))
 		w.Write(b)
@@ -104,16 +44,57 @@ func encodeError(mti, mr, cs, diag byte, ud TPDU) []byte {
 	return w.Bytes()
 }
 
-func decodeError(b []byte, mti byte) (mr, cs, diag byte, ud TPDU, e error) {
-	if len(b) < 3 {
-		e = io.EOF
-	} else if b[0] != mti {
-		e = fmt.Errorf("invalid data")
-	} else {
-		mr = b[1]
-		cs = b[2]
-		diag = b[3]
-		ud, e = DecodeAsSC(b[4:])
+// DecodeMO reads binary data
+func (d *Error) DecodeMO(b []byte) error {
+	ud, e := d.decode(b, 4)
+	if e != nil {
+		return e
 	}
-	return
+	if ud != nil {
+		d.UD, e = DecodeAsSC(ud)
+	}
+	return e
+}
+
+// DecodeMT reads binary data
+func (d *Error) DecodeMT(b []byte) error {
+	ud, e := d.decode(b, 5)
+	if e != nil {
+		return e
+	}
+	if ud != nil {
+		d.UD, e = DecodeAsMS(ud)
+	}
+	return e
+}
+
+func (d *Error) decode(b []byte, mti byte) ([]byte, error) {
+	if d == nil {
+		return nil, fmt.Errorf("nil data")
+	}
+	if len(b) < 5 {
+		return nil, io.EOF
+	}
+	if b[0] != mti {
+		return nil, fmt.Errorf("invalid data")
+	}
+	d.MR = b[1]
+	d.CS = b[3]
+	d.Diag = b[4]
+	return readOptionalUD(b[5:])
+}
+
+func (d *Error) String() string {
+	if d == nil {
+		return "<nil>"
+	}
+
+	w := new(bytes.Buffer)
+	fmt.Fprintf(w, "SMS message stack: Error\n")
+	fmt.Fprintf(w, "%sRP-MR:   %d\n", Indent, d.MR)
+	fmt.Fprintf(w, "%sRP-CS:   cause=%d, diagnostic=%d\n", Indent, d.CS, d.Diag)
+	if d.UD != nil {
+		fmt.Fprintf(w, "%sRP-UD:   %s\n", Indent, d.UD)
+	}
+	return w.String()
 }

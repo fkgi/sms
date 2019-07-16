@@ -6,88 +6,32 @@ import (
 	"io"
 )
 
-// AckMO is MO RP-ACK RPDU
-type AckMO struct {
-	MR byte
-	UD TPDU
+// Ack is RP-ACK RPDU
+type Ack struct {
+	MR byte // M / Message Reference
+	UD TPDU // O / User Data
 }
 
-// Encode returns binary data
-func (d *AckMO) Encode() []byte {
+// EncodeMO returns binary data
+func (d *Ack) EncodeMO() []byte {
+	return d.encode(2)
+}
+
+// EncodeMT returns binary data
+func (d *Ack) EncodeMT() []byte {
+	return d.encode(3)
+}
+
+func (d *Ack) encode(mti byte) []byte {
 	if d == nil {
 		return []byte{}
 	}
-	return encodeAck(2, d.MR, d.UD)
-}
 
-// Decode reads binary data
-func (d *AckMO) Decode(b []byte) (e error) {
-	if d == nil {
-		e = fmt.Errorf("nil data")
-	} else {
-		d.MR, d.UD, e = decodeAck(b, 2)
-	}
-	return
-}
-
-func (d *AckMO) String() string {
-	if d == nil {
-		return "<nil>"
-	}
-
-	w := new(bytes.Buffer)
-	fmt.Fprintf(w, "SMS message stack: MO Ack\n")
-	fmt.Fprintf(w, "%sRP-MR:   %d\n", Indent, d.MR)
-	if d.UD != nil {
-		fmt.Fprintf(w, "%sRP-UD:   %s\n", Indent, d.UD)
-	}
-	return w.String()
-}
-
-// AckMT is MT RP-ACK RPDU
-type AckMT struct {
-	MR byte
-	UD TPDU
-}
-
-// Encode returns binary data
-func (d *AckMT) Encode() []byte {
-	if d == nil {
-		return []byte{}
-	}
-	return encodeAck(3, d.MR, d.UD)
-}
-
-// Decode reads binary data
-func (d *AckMT) Decode(b []byte) (e error) {
-	if d == nil {
-		e = fmt.Errorf("nil data")
-	} else {
-		d.MR, d.UD, e = decodeAck(b, 3)
-	}
-	return
-}
-
-func (d *AckMT) String() string {
-	if d == nil {
-		return "<nil>"
-	}
-
-	w := new(bytes.Buffer)
-	fmt.Fprintf(w, "SMS message stack: MT Ack\n")
-	fmt.Fprintf(w, "%sRP-MR:   %d\n", Indent, d.MR)
-	if d.UD != nil {
-		fmt.Fprintf(w, "%sRP-UD:   %s\n", Indent, d.UD)
-	}
-	return w.String()
-}
-
-func encodeAck(mti, mr byte, ud TPDU) []byte {
 	w := new(bytes.Buffer)
 	w.WriteByte(mti)
-	w.WriteByte(mr)
-	if ud != nil {
-		b := ud.Encode()
+	w.WriteByte(d.MR)
+	if d.UD != nil {
+		b := d.UD.Encode()
 		w.WriteByte(41)
 		w.WriteByte(byte(len(b)))
 		w.Write(b)
@@ -95,14 +39,54 @@ func encodeAck(mti, mr byte, ud TPDU) []byte {
 	return w.Bytes()
 }
 
-func decodeAck(b []byte, mti byte) (mr byte, ud TPDU, e error) {
-	if len(b) < 2 {
-		e = io.EOF
-	} else if b[0] != mti {
-		e = fmt.Errorf("invalid data")
-	} else {
-		mr = b[1]
-		ud, e = DecodeAsSC(b[2:])
+// DecodeMO reads binary data
+func (d *Ack) DecodeMO(b []byte) error {
+	ud, e := d.decode(b, 2)
+	if e != nil {
+		return e
 	}
-	return
+	if ud != nil {
+		d.UD, e = DecodeAsSC(ud)
+	}
+	return e
+}
+
+// DecodeMT reads binary data
+func (d *Ack) DecodeMT(b []byte) error {
+	ud, e := d.decode(b, 3)
+	if e != nil {
+		return e
+	}
+	if ud != nil {
+		d.UD, e = DecodeAsMS(ud)
+	}
+	return e
+}
+
+func (d *Ack) decode(b []byte, mti byte) ([]byte, error) {
+	if d == nil {
+		return nil, fmt.Errorf("nil data")
+	}
+	if len(b) < 2 {
+		return nil, io.EOF
+	}
+	if b[0] != mti {
+		return nil, fmt.Errorf("invalid data")
+	}
+	d.MR = b[1]
+	return readOptionalUD(b[2:])
+}
+
+func (d *Ack) String() string {
+	if d == nil {
+		return "<nil>"
+	}
+
+	w := new(bytes.Buffer)
+	fmt.Fprintf(w, "SMS message stack: Ack\n")
+	fmt.Fprintf(w, "%sRP-MR:   %d\n", Indent, d.MR)
+	if d.UD != nil {
+		fmt.Fprintf(w, "%sRP-UD:   %s\n", Indent, d.UD)
+	}
+	return w.String()
 }

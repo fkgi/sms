@@ -8,29 +8,40 @@ import (
 
 // MemoryAvailable is RP-SMMA RPDU
 type MemoryAvailable struct {
-	MR byte
+	MR byte // M / Message Reference
 }
 
-// Encode returns binary data
-func (d *MemoryAvailable) Encode() []byte {
+// EncodeMO returns binary data
+func (d *MemoryAvailable) EncodeMO() []byte {
 	if d == nil {
 		return []byte{}
 	}
 	return []byte{6, d.MR}
 }
 
-// Decode reads binary data
-func (d *MemoryAvailable) Decode(b []byte) (e error) {
+// EncodeMT returns binary data
+func (d *MemoryAvailable) EncodeMT() []byte {
+	return []byte{}
+}
+
+// DecodeMO reads binary data
+func (d *MemoryAvailable) DecodeMO(b []byte) error {
 	if d == nil {
-		e = fmt.Errorf("nil data")
-	} else if len(b) < 2 {
-		e = io.EOF
-	} else if b[0] != 6 {
-		e = fmt.Errorf("invalid data")
-	} else {
-		d.MR = b[1]
+		return fmt.Errorf("nil data")
 	}
-	return
+	if len(b) < 2 {
+		return io.EOF
+	}
+	if b[0] != 6 {
+		return fmt.Errorf("invalid data")
+	}
+	d.MR = b[1]
+	return nil
+}
+
+// DecodeMT reads binary data
+func (d *MemoryAvailable) DecodeMT(b []byte) error {
+	return fmt.Errorf("invalid data")
 }
 
 func (d *MemoryAvailable) String() string {

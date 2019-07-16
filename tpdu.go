@@ -57,7 +57,7 @@ func decode(b []byte, sc bool) (t TPDU, e error) {
 		case 0x02:
 			// t = &Command{}
 		case 0x03:
-			e = &InvalidDataError{
+			e = InvalidDataError{
 				Name:  "reserved TPDU type",
 				Bytes: b}
 		}
@@ -70,7 +70,7 @@ func decode(b []byte, sc bool) (t TPDU, e error) {
 		case 0x02:
 			t = &StatusReport{}
 		case 0x03:
-			e = &InvalidDataError{
+			e = InvalidDataError{
 				Name:  "reserved TPDU type",
 				Bytes: b}
 		}

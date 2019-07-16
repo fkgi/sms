@@ -7,39 +7,36 @@ import (
 
 // RPDU represents a SMS RP PDU
 type RPDU interface {
-	serializer
+	EncodeMO() []byte
+	EncodeMT() []byte
+	DecodeMO([]byte) error
+	DecodeMT([]byte) error
 	fmt.Stringer
 	//json.Unmarshaler
 	//json.Marshaler
 }
 
-// serializer provids binary encode and decode
-type serializer interface {
-	Encode() []byte
-	Decode([]byte) error
-}
-
-// DecodeRPasSC parse byte data to TPDU as SC.
-func DecodeRPasSC(b []byte) (t RPDU, e error) {
+// DecodeMORP parse byte data to TPDU as SC.
+func DecodeMORP(b []byte) (t RPDU, e error) {
 	return decodeRP(b, true)
 }
 
-// DecodeRPasMS parse byte data to TPDU as MS.
-func DecodeRPasMS(b []byte) (t RPDU, e error) {
+// DecodeMTRP parse byte data to TPDU as MS.
+func DecodeMTRP(b []byte) (t RPDU, e error) {
 	return decodeRP(b, false)
 }
 
 func decodeRP(b []byte, sc bool) (t RPDU, e error) {
 	if len(b) == 0 {
 		e = io.EOF
-	} else if sc {
+	} else {
 		switch b[0] & 0x03 {
 		case 0x00:
-			t = &DataMO{}
+			t = &Data{}
 		case 0x02:
-			t = &AckMO{}
+			t = &Ack{}
 		case 0x04:
-			t = &ErrorMO{}
+			t = &Error{}
 		case 0x06:
 			t = &MemoryAvailable{}
 		default:
@@ -47,23 +44,27 @@ func decodeRP(b []byte, sc bool) (t RPDU, e error) {
 				Name:  "reserved RPDU type",
 				Bytes: b}
 		}
-	} else {
-		switch b[0] & 0x03 {
-		case 0x01:
-			t = &DataMT{}
-		case 0x03:
-			t = &AckMT{}
-		case 0x05:
-			t = &ErrorMT{}
-		default:
-			e = &InvalidDataError{
-				Name:  "reserved RPDU type",
-				Bytes: b}
+		if sc {
+			e = t.DecodeMO(b)
+		} else {
+			e = t.DecodeMT(b)
 		}
 	}
-
-	if e == nil {
-		e = t.Decode(b)
-	}
 	return
+}
+
+func readOptionalUD(b []byte) ([]byte, error) {
+	if len(b) == 0 {
+		return nil, nil
+	}
+	if len(b) < 3 {
+		return nil, fmt.Errorf("invalid data")
+	}
+	if b[0] != 41 {
+		return nil, fmt.Errorf("invalid data")
+	}
+	if len(b) != int(b[1]+2) {
+		return nil, fmt.Errorf("invalid data")
+	}
+	return b[2:], nil
 }

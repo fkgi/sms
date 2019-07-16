@@ -2,22 +2,23 @@ package sms
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"time"
 )
 
 // Deliver is TPDU message from SC to MS
 type Deliver struct {
-	MMS bool // M / More Messages to Send (true=more messages)
-	LP  bool // O / Loop Prevention
-	SRI bool // O / Status Report Indication (true=status report shall be returned)
-	RP  bool // M / Reply Path
+	MMS bool `json:"mms"` // M / More Messages to Send (true=more messages)
+	LP  bool `json:"lp"`  // O / Loop Prevention
+	SRI bool `json:"sri"` // O / Status Report Indication (true=status report shall be returned)
+	RP  bool `json:"rp"`  // M / Reply Path
 
-	OA   Address   // M / Originating Address
-	PID  byte      // M / Protocol Identifier
-	DCS            // M / Data Coding Scheme
-	SCTS time.Time // M / Service Centre Time Stamp
-	UD             // O / User Data
+	OA   Address   `json:"oa"`   // M / Originating Address
+	PID  byte      `json:"pid"`  // M / Protocol Identifier
+	DCS  DCS       `json:"dcs"`  // M / Data Coding Scheme
+	SCTS time.Time `json:"scts"` // M / Service Centre Time Stamp
+	UD   UD        `json:"ud"`   // O / User Data
 }
 
 // Encode output byte data of this TPDU
@@ -38,7 +39,7 @@ func (d *Deliver) Encode() []byte {
 	if d.SRI {
 		b |= 0x20
 	}
-	if len(d.UDH) != 0 {
+	if len(d.UD.UDH) != 0 {
 		b |= 0x40
 	}
 	if d.RP {
@@ -99,6 +100,35 @@ func (d *Deliver) Decode(b []byte) (e error) {
 	return
 }
 
+// UnmarshalJSON provide custom marshaller
+func (d *Deliver) UnmarshalJSON(b []byte) error {
+	type alias Deliver
+	al := struct {
+		Dcs byte `json:"dcs"`
+		*alias
+	}{
+		alias: (*alias)(d),
+	}
+	if e := json.Unmarshal(b, &al); e != nil {
+		return e
+	}
+	d.DCS = DecodeDCS(al.Dcs)
+	return nil
+}
+
+// MarshalJSON provide custom marshaller
+func (d *Deliver) MarshalJSON() ([]byte, error) {
+	type alias Deliver
+	al := struct {
+		*alias
+		Dcs byte `json:"dcs"`
+	}{
+		Dcs:   d.DCS.Encode(),
+		alias: (*alias)(d),
+	}
+	return json.Marshal(al)
+}
+
 func (d *Deliver) String() string {
 	if d == nil {
 		return "<nil>"
@@ -120,10 +150,10 @@ func (d *Deliver) String() string {
 
 // DeliverReport is TPDU message from MS to SC
 type DeliverReport struct {
-	FCS byte  // C / Failure Cause
-	PID *byte // O / Protocol Identifier
-	DCS       // O / Data Coding Scheme
-	UD        // O / User Data
+	FCS byte  `json:"fcs"` // C / Failure Cause
+	PID *byte `json:"pid"` // O / Protocol Identifier
+	DCS DCS   `json:"dcs"` // O / Data Coding Scheme
+	UD  UD    `json:"ud"`  // O / User Data
 }
 
 // Encode output byte data of this TPDU
@@ -135,7 +165,7 @@ func (d *DeliverReport) Encode() []byte {
 	w := new(bytes.Buffer)
 
 	b := byte(0x00)
-	if len(d.UDH) != 0 {
+	if len(d.UD.UDH) != 0 {
 		b |= 0x40
 	}
 	w.WriteByte(b)
@@ -204,6 +234,35 @@ func (d *DeliverReport) Decode(b []byte) (e error) {
 			Bytes: tmp}
 	}
 	return
+}
+
+// UnmarshalJSON provide custom marshaller
+func (d *DeliverReport) UnmarshalJSON(b []byte) error {
+	type alias DeliverReport
+	al := struct {
+		Dcs byte `json:"dcs"`
+		*alias
+	}{
+		alias: (*alias)(d),
+	}
+	if e := json.Unmarshal(b, &al); e != nil {
+		return e
+	}
+	d.DCS = DecodeDCS(al.Dcs)
+	return nil
+}
+
+// MarshalJSON provide custom marshaller
+func (d *DeliverReport) MarshalJSON() ([]byte, error) {
+	type alias DeliverReport
+	al := struct {
+		*alias
+		Dcs byte `json:"dcs"`
+	}{
+		Dcs:   d.DCS.Encode(),
+		alias: (*alias)(d),
+	}
+	return json.Marshal(al)
 }
 
 func (d *DeliverReport) String() string {

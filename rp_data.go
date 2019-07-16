@@ -5,15 +5,16 @@ import (
 	"fmt"
 )
 
-// DataMO is MO RP-DATA RPDU
-type DataMO struct {
-	MR byte
-	DA Address
-	UD TPDU
+// Data is RP-DATA RPDU
+type Data struct {
+	MR byte    // M / Message Reference
+	OA Address // C / Originator Address
+	DA Address // C / Recipient Address
+	UD TPDU    // M / User Data
 }
 
-// Encode returns binary data
-func (d *DataMO) Encode() []byte {
+// EncodeMO returns binary data
+func (d *Data) EncodeMO() []byte {
 	if d == nil {
 		return []byte{}
 	}
@@ -32,66 +33,8 @@ func (d *DataMO) Encode() []byte {
 	return w.Bytes()
 }
 
-// Decode reads binary data
-func (d *DataMO) Decode(b []byte) (e error) {
-	if d == nil {
-		return fmt.Errorf("nil data")
-	}
-	r := bytes.NewReader(b)
-	var tmp byte
-	if tmp, e = r.ReadByte(); e != nil {
-		return
-	}
-	if tmp != 0 {
-		return fmt.Errorf("invalid data")
-	}
-	if d.MR, e = r.ReadByte(); e != nil {
-		return
-	}
-	if tmp, e = r.ReadByte(); e != nil {
-		return
-	}
-	if tmp != 0 {
-		return fmt.Errorf("invalid data")
-	}
-	if d.DA, e = readAddr(r); e != nil {
-		return
-	}
-	var l byte
-	if l, e = r.ReadByte(); e != nil {
-		return
-	}
-	b = make([]byte, int(l))
-	if _, e = r.Read(b); e != nil {
-		return
-	}
-	d.UD, e = DecodeAsSC(b)
-	return
-}
-
-func (d *DataMO) String() string {
-	if d == nil {
-		return "<nil>"
-	}
-
-	w := new(bytes.Buffer)
-	fmt.Fprintf(w, "SMS message stack: MO Data\n")
-	fmt.Fprintf(w, "%sRP-MR:   %d\n", Indent, d.MR)
-	fmt.Fprintf(w, "%sRP-OA:   <nil>\n", Indent)
-	fmt.Fprintf(w, "%sRP-DA:   %s\n", Indent, d.DA)
-	fmt.Fprintf(w, "%sRP-UD:   %s\n", Indent, d.UD)
-	return w.String()
-}
-
-// DataMT is MT RP-DATA RPDU
-type DataMT struct {
-	MR byte
-	OA Address
-	UD TPDU
-}
-
-// Encode returns binary data
-func (d *DataMT) Encode() []byte {
+// EncodeMT returns binary data
+func (d *Data) EncodeMT() []byte {
 	if d == nil {
 		return []byte{}
 	}
@@ -110,53 +53,86 @@ func (d *DataMT) Encode() []byte {
 	return w.Bytes()
 }
 
-// Decode reads binary data
-func (d *DataMT) Decode(b []byte) (e error) {
+// DecodeMO reads binary data
+func (d *Data) DecodeMO(b []byte) error {
 	if d == nil {
 		return fmt.Errorf("nil data")
 	}
 	r := bytes.NewReader(b)
-	var tmp byte
-	if tmp, e = r.ReadByte(); e != nil {
-		return
-	}
-	if tmp != 1 {
+	var e error
+	if tmp, e := r.ReadByte(); e != nil {
+		return e
+	} else if tmp != 0 {
 		return fmt.Errorf("invalid data")
 	}
 	if d.MR, e = r.ReadByte(); e != nil {
-		return
+		return e
 	}
-	if d.OA, e = readAddr(r); e != nil {
-		return
-	}
-	if tmp, e = r.ReadByte(); e != nil {
-		return
-	}
-	if tmp != 0 {
+	if tmp, e := r.ReadByte(); e != nil {
+		return e
+	} else if tmp != 0 {
 		return fmt.Errorf("invalid data")
 	}
-	var l byte
-	if l, e = r.ReadByte(); e != nil {
-		return
+	if d.DA, e = readAddr(r); e != nil {
+		return e
 	}
-	b = make([]byte, int(l))
-	if _, e = r.Read(b); e != nil {
-		return
+	if l, e := r.ReadByte(); e == nil {
+		b = make([]byte, int(l))
+	} else {
+		return e
+	}
+	if _, e := r.Read(b); e != nil {
+		return e
 	}
 	d.UD, e = DecodeAsSC(b)
-	return
+	return e
 }
 
-func (d *DataMT) String() string {
+// DecodeMT reads binary data
+func (d *Data) DecodeMT(b []byte) error {
+	if d == nil {
+		return fmt.Errorf("nil data")
+	}
+	r := bytes.NewReader(b)
+	var e error
+	if tmp, e := r.ReadByte(); e != nil {
+		return e
+	} else if tmp != 1 {
+		return fmt.Errorf("invalid data")
+	}
+	if d.MR, e = r.ReadByte(); e != nil {
+		return e
+	}
+	if d.OA, e = readAddr(r); e != nil {
+		return e
+	}
+	if tmp, e := r.ReadByte(); e != nil {
+		return e
+	} else if tmp != 0 {
+		return fmt.Errorf("invalid data")
+	}
+	if l, e := r.ReadByte(); e == nil {
+		b = make([]byte, int(l))
+	} else {
+		return e
+	}
+	if _, e = r.Read(b); e != nil {
+		return e
+	}
+	d.UD, e = DecodeAsMS(b)
+	return e
+}
+
+func (d *Data) String() string {
 	if d == nil {
 		return "<nil>"
 	}
 
 	w := new(bytes.Buffer)
-	fmt.Fprintf(w, "SMS message stack: MT Data\n")
+	fmt.Fprintf(w, "SMS message stack: Data\n")
 	fmt.Fprintf(w, "%sRP-MR:   %d\n", Indent, d.MR)
 	fmt.Fprintf(w, "%sRP-OA:   %s\n", Indent, d.OA)
-	fmt.Fprintf(w, "%sRP-DA:   <nil>\n", Indent)
+	fmt.Fprintf(w, "%sRP-DA:   %s\n", Indent, d.DA)
 	fmt.Fprintf(w, "%sRP-UD:   %s\n", Indent, d.UD)
 	return w.String()
 }
