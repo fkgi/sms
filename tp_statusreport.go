@@ -8,18 +8,18 @@ import (
 
 // StatusReport is TPDU message from SC to MS
 type StatusReport struct {
-	MMS bool // M / More Messages to Send (true=more messages)
-	LP  bool // O / Loop Prevention
-	SRQ bool // M / Status Report Qualifier (true=status report shall be returned)
+	MMS bool `json:"mms"` // M / More Messages to Send (true=more messages)
+	LP  bool `json:"lp"`  // O / Loop Prevention
+	SRQ bool `json:"srq"` // M / Status Report Qualifier (true=status report shall be returned)
 
-	MR   byte      // M / Message Reference
-	RA   Address   // M / Destination Address
-	SCTS time.Time // M / Service Centre Time Stamp
-	DT   time.Time // M / Discharge Time
-	ST   byte      // M / Status
-	PID  *byte     // O / Protocol Identifier
-	DCS            // O / Data Coding Scheme
-	UD             // O / User Data
+	MR   byte      `json:"mr"`   // M / Message Reference
+	RA   Address   `json:"ra"`   // M / Destination Address
+	SCTS time.Time `json:"scts"` // M / Service Centre Time Stamp
+	DT   time.Time `json:"dt"`   // M / Discharge Time
+	ST   byte      `json:"st"`   // M / Status
+	PID  *byte     `json:"pid"`  // O / Protocol Identifier
+	DCS  DCS       `json:"dcs"`  // O / Data Coding Scheme
+	UD   UD        `json:"ud"`   // O / User Data
 }
 
 // Encode output byte data of this TPDU
@@ -40,7 +40,7 @@ func (d *StatusReport) Encode() []byte {
 	if d.SRQ {
 		b = b | 0x20
 	}
-	if d.UDH != nil && len(d.UDH) != 0 {
+	if d.UD.UDH != nil && len(d.UD.UDH) != 0 {
 		b = b | 0x40
 	}
 	w.WriteByte(b)

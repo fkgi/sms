@@ -8,16 +8,16 @@ import (
 
 // Submit is TPDU message from MS to SC
 type Submit struct {
-	RD  bool // M / Reject Duplicates
-	SRR bool // O / Status Report Request
-	RP  bool // M / Reply Path
+	RD  bool `json:"rd"`  // M / Reject Duplicates
+	SRR bool `json:"srr"` // O / Status Report Request
+	RP  bool `json:"rp"`  // M / Reply Path
 
-	MR  byte    // M / Message Reference
-	DA  Address // M / Destination Address
-	PID byte    // M / Protocol Identifier
-	DCS         // M / Data Coding Scheme
-	VP          // O / Validity Period
-	UD          // O / User Data
+	MR  byte    `json:"mr"`  // M / Message Reference
+	DA  Address `json:"da"`  // M / Destination Address
+	PID byte    `json:"pid"` // M / Protocol Identifier
+	DCS DCS     `json:"dcs"` // M / Data Coding Scheme
+	VP  VP      `json:"vp"`  // O / Validity Period
+	UD  UD      `json:"ud"`  // O / User Data
 }
 
 // Encode output byte data of this TPDU
@@ -49,7 +49,7 @@ func (d *Submit) Encode() []byte {
 	if d.SRR {
 		b |= 0x20
 	}
-	if len(d.UDH) != 0 {
+	if len(d.UD.UDH) != 0 {
 		b |= 0x40
 	}
 	if d.RP {
@@ -150,11 +150,11 @@ func (d *Submit) String() string {
 
 // SubmitReport is TPDU message from SC to MS
 type SubmitReport struct {
-	FCS  byte      // C / Failure Cause
-	SCTS time.Time // M / Service Centre Time Stamp
-	PID  *byte     // O / Protocol Identifier
-	DCS            // O / Data Coding Scheme
-	UD             // O / User Data
+	FCS  byte      `json:"fcs"`  // C / Failure Cause
+	SCTS time.Time `json:"scts"` // M / Service Centre Time Stamp
+	PID  *byte     `json:"pid"`  // O / Protocol Identifier
+	DCS  DCS       `json:"dcs"`  // O / Data Coding Scheme
+	UD   UD        `json:"uid"`  // O / User Data
 }
 
 // Encode output byte data of this TPDU
@@ -166,7 +166,7 @@ func (d *SubmitReport) Encode() []byte {
 	w := new(bytes.Buffer)
 
 	b := byte(0x01)
-	if len(d.UDH) != 0 {
+	if len(d.UD.UDH) != 0 {
 		b |= 0x40
 	}
 	w.WriteByte(b)
