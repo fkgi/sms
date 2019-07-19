@@ -7,7 +7,7 @@ import (
 )
 
 func MakeRPDATA(t *testing.T) {
-	d := sms.DataMO{
+	d := sms.Data{
 		MR: 0x01,
 	}
 	//	if e != nil {

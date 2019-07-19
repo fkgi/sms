@@ -14,7 +14,6 @@ type addrValue interface {
 	Length() int
 	String() string
 	Bytes() []byte
-	MarshalJSON() ([]byte, error)
 }
 
 const (
@@ -62,7 +61,8 @@ type Address struct {
 
 func (a Address) String() string {
 	if a.Addr == nil {
-		return "<nil>"
+		return fmt.Sprintf(
+			"TON/NPI=%d/%d addr=<empty>", a.TON, a.NPI)
 	}
 	return fmt.Sprintf(
 		"TON/NPI=%d/%d addr=%s", a.TON, a.NPI, a.Addr)
@@ -98,8 +98,11 @@ func (a Address) MarshalJSON() ([]byte, error) {
 		*alias
 		Addr string `json:"addr"`
 	}{
-		Addr:  a.Addr.String(),
-		alias: (*alias)(&a),
+		alias: (*alias)(&a)}
+	if a.Addr == nil {
+		al.Addr = ""
+	} else {
+		al.Addr = a.Addr.String()
 	}
 	return json.Marshal(al)
 }

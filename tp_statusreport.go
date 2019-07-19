@@ -2,6 +2,7 @@ package sms
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -12,22 +13,18 @@ type StatusReport struct {
 	LP  bool `json:"lp"`  // O / Loop Prevention
 	SRQ bool `json:"srq"` // M / Status Report Qualifier (true=status report shall be returned)
 
-	MR   byte      `json:"mr"`   // M / Message Reference
-	RA   Address   `json:"ra"`   // M / Destination Address
-	SCTS time.Time `json:"scts"` // M / Service Centre Time Stamp
-	DT   time.Time `json:"dt"`   // M / Discharge Time
-	ST   byte      `json:"st"`   // M / Status
-	PID  *byte     `json:"pid"`  // O / Protocol Identifier
-	DCS  DCS       `json:"dcs"`  // O / Data Coding Scheme
-	UD   UD        `json:"ud"`   // O / User Data
+	MR   byte      `json:"mr"`            // M / Message Reference
+	RA   Address   `json:"ra"`            // M / Destination Address
+	SCTS time.Time `json:"scts"`          // M / Service Centre Time Stamp
+	DT   time.Time `json:"dt"`            // M / Discharge Time
+	ST   byte      `json:"st"`            // M / Status
+	PID  *byte     `json:"pid,omitempty"` // O / Protocol Identifier
+	DCS  DCS       `json:"dcs,omitempty"` // O / Data Coding Scheme
+	UD   UD        `json:"ud,omitempty"`  // O / User Data
 }
 
 // Encode output byte data of this TPDU
-func (d *StatusReport) Encode() []byte {
-	if d == nil {
-		return []byte{}
-	}
-
+func (d StatusReport) Encode() []byte {
 	w := new(bytes.Buffer)
 
 	b := byte(0x02)
@@ -81,6 +78,10 @@ func (d *StatusReport) Encode() []byte {
 func (d *StatusReport) Decode(b []byte) (e error) {
 	if d == nil {
 		return fmt.Errorf("nil data")
+	}
+	if b[0]&0x03 != 0x02 {
+		e = &InvalidDataError{
+			Name: "invalid MTI"}
 	}
 
 	d.MMS = b[0]&0x04 != 0x04
@@ -141,11 +142,51 @@ func (d *StatusReport) Decode(b []byte) (e error) {
 	return
 }
 
-func (d *StatusReport) String() string {
-	if d == nil {
-		return "<nil>"
+// UnmarshalJSON provide custom marshaller
+func (d *StatusReport) UnmarshalJSON(b []byte) error {
+	type alias StatusReport
+	al := struct {
+		Pid *byte `json:"pid,omitempty"`
+		Dcs *byte `json:"dcs,omitempty"`
+		Ud  *UD   `json:"ud,omitempty"`
+		*alias
+	}{
+		alias: (*alias)(d)}
+	if e := json.Unmarshal(b, &al); e != nil {
+		return e
 	}
+	d.PID = al.Pid
+	if al.Dcs != nil {
+		d.DCS = DecodeDCS(*al.Dcs)
+	}
+	if al.Ud != nil {
+		d.UD = *al.Ud
+	}
+	return nil
+}
 
+// MarshalJSON provide custom marshaller
+func (d StatusReport) MarshalJSON() ([]byte, error) {
+	type alias StatusReport
+	al := struct {
+		*alias
+		Pid *byte `json:"pid,omitempty"`
+		Dcs *byte `json:"dcs,omitempty"`
+		Ud  *UD   `json:"ud,omitempty"`
+	}{
+		alias: (*alias)(&d)}
+	al.Pid = d.PID
+	if d.DCS != nil {
+		tmp := d.DCS.Encode()
+		al.Dcs = &tmp
+	}
+	if !d.UD.isEmpty() {
+		al.Ud = &d.UD
+	}
+	return json.Marshal(al)
+}
+
+func (d StatusReport) String() string {
 	w := new(bytes.Buffer)
 	fmt.Fprintf(w, "SMS message stack: Status Report\n")
 	fmt.Fprintf(w, "%sTP-MMS:  %s\n", Indent, mmsStat(d.MMS))
@@ -162,6 +203,8 @@ func (d *StatusReport) String() string {
 	if d.DCS != nil {
 		fmt.Fprintf(w, "%sTP-DCS:  %s\n", Indent, d.DCS)
 	}
-	fmt.Fprintf(w, "%s", d.UD.String())
+	if !d.UD.isEmpty() {
+		fmt.Fprintf(w, "%s", d.UD.String())
+	}
 	return w.String()
 }

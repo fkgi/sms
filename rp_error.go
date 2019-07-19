@@ -15,20 +15,16 @@ type Error struct {
 }
 
 // EncodeMO returns binary data
-func (d *Error) EncodeMO() []byte {
+func (d Error) EncodeMO() []byte {
 	return d.encode(4)
 }
 
 // EncodeMT returns binary data
-func (d *Error) EncodeMT() []byte {
+func (d Error) EncodeMT() []byte {
 	return d.encode(5)
 }
 
-func (d *Error) encode(mti byte) []byte {
-	if d == nil {
-		return []byte{}
-	}
-
+func (d Error) encode(mti byte) []byte {
 	w := new(bytes.Buffer)
 	w.WriteByte(mti)
 	w.WriteByte(d.MR)
@@ -93,11 +89,7 @@ func (d *Error) decode(b []byte, mti byte) ([]byte, error) {
 	return readOptionalUD(b[4:])
 }
 
-func (d *Error) String() string {
-	if d == nil {
-		return "<nil>"
-	}
-
+func (d Error) String() string {
 	w := new(bytes.Buffer)
 	fmt.Fprintf(w, "SMS message stack: Error\n")
 	fmt.Fprintf(w, "%sRP-MR:   %d\n", Indent, d.MR)

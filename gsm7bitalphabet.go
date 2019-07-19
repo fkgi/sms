@@ -1,7 +1,6 @@
 package sms
 
 import (
-	"encoding/json"
 	"unicode/utf8"
 )
 
@@ -195,9 +194,4 @@ func (s GSM7bitString) encode(o int) []byte {
 		f(c)
 	}
 	return b
-}
-
-// MarshalJSON provide custom marshaller
-func (s GSM7bitString) MarshalJSON() ([]byte, error) {
-	return json.Marshal(string(s))
 }

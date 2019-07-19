@@ -11,8 +11,8 @@ import (
 
 // UD is TP-UD
 type UD struct {
-	Text string `json:"text"`
-	UDH  []udh  `json:"hdr"`
+	Text string `json:"text,omitempty"`
+	UDH  []udh  `json:"hdr,omitempty"`
 }
 
 func (u UD) String() string {
@@ -35,12 +35,13 @@ type judh struct {
 
 // MarshalJSON provide custom marshaller
 func (u UD) MarshalJSON() ([]byte, error) {
+	type alias UD
 	ud := struct {
-		Text string `json:"text"`
-		UDH  []judh `json:"hdr"`
+		UDH []judh `json:"hdr,omitempty"`
+		*alias
 	}{
-		Text: u.Text,
-		UDH:  make([]judh, len(u.UDH))}
+		UDH:   make([]judh, len(u.UDH)),
+		alias: (*alias)(&u)}
 	for i, h := range u.UDH {
 		ud.UDH[i] = judh{Key: h.Key(), Val: h.Value()}
 	}
@@ -51,7 +52,7 @@ func (u UD) MarshalJSON() ([]byte, error) {
 func (u *UD) UnmarshalJSON(b []byte) (e error) {
 	type alias UD
 	al := struct {
-		UDH []judh `json:"hdr"`
+		UDH []judh `json:"hdr,omitempty"`
 		*alias
 	}{
 		alias: (*alias)(u)}
@@ -158,7 +159,7 @@ func (u *UD) read(r *bytes.Reader, d DCS, h bool) error {
 	return nil
 }
 
-func (u *UD) write(w *bytes.Buffer, d DCS) {
+func (u UD) write(w *bytes.Buffer, d DCS) {
 	c := CharsetGSM7bit
 	if d != nil {
 		c = d.charset()
@@ -199,6 +200,10 @@ func (u *UD) write(w *bytes.Buffer, d DCS) {
 	w.WriteByte(byte(l))
 	w.Write(udh)
 	w.Write(ud)
+}
+
+func (u UD) isEmpty() bool {
+	return len(u.Text) == 0 && len(u.UDH) == 0
 }
 
 // MakeSeparatedText generate splited data

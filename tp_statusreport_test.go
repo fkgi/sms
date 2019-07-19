@@ -1,6 +1,7 @@
 package sms_test
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -39,4 +40,34 @@ func TestDecodeStatusReport(t *testing.T) {
 
 	b := p.Encode()
 	t.Logf("% x", b)
+}
+
+func TestMarshalJSON_statusreport(t *testing.T) {
+	p := &sms.StatusReport{
+		MMS: false,
+		LP:  false,
+		SRQ: false,
+		MR:  0x00,
+		RA:  sms.Address{TON: 0, NPI: 0},
+		SCTS: time.Date(
+			2011, time.March, 22, 14, 25, 40, 0,
+			time.FixedZone("unknown", 9*60*60)),
+		DT: time.Date(
+			2011, time.March, 22, 14, 25, 40, 0,
+			time.FixedZone("unknown", 9*60*60)),
+		ST: 0x00}
+	p.RA.Addr, _ = teldata.ParseTBCD("1234")
+	t.Log(p.String())
+
+	var e error
+	bytedata, e = json.Marshal(p)
+	if e != nil {
+		t.Fatalf("unmarshal failed: %s", e)
+	}
+	t.Log(string(bytedata))
+
+	if e := json.Unmarshal(bytedata, &p); e != nil {
+		t.Fatalf("unmarshal failed: %s", e)
+	}
+	t.Log(p.String())
 }

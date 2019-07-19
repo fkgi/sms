@@ -14,6 +14,11 @@ type VP interface {
 	SingleAttempt() bool
 }
 
+type jvp struct {
+	T time.Duration `json:"duration"`
+	S bool          `json:"single"`
+}
+
 // ValidityPeriodOf returns VP from deadend time and single-attempt flag
 func ValidityPeriodOf(t time.Duration, s bool) VP {
 	t = t.Truncate(time.Second)

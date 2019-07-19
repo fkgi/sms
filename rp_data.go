@@ -14,11 +14,7 @@ type Data struct {
 }
 
 // EncodeMO returns binary data
-func (d *Data) EncodeMO() []byte {
-	if d == nil {
-		return []byte{}
-	}
-
+func (d Data) EncodeMO() []byte {
 	w := new(bytes.Buffer)
 	w.WriteByte(0) // MTI
 	w.WriteByte(d.MR)
@@ -34,11 +30,7 @@ func (d *Data) EncodeMO() []byte {
 }
 
 // EncodeMT returns binary data
-func (d *Data) EncodeMT() []byte {
-	if d == nil {
-		return []byte{}
-	}
-
+func (d Data) EncodeMT() []byte {
 	w := new(bytes.Buffer)
 	w.WriteByte(1) // MTI
 	w.WriteByte(d.MR)
@@ -123,11 +115,7 @@ func (d *Data) DecodeMT(b []byte) error {
 	return e
 }
 
-func (d *Data) String() string {
-	if d == nil {
-		return "<nil>"
-	}
-
+func (d Data) String() string {
 	w := new(bytes.Buffer)
 	fmt.Fprintf(w, "SMS message stack: Data\n")
 	fmt.Fprintf(w, "%sRP-MR:   %d\n", Indent, d.MR)

@@ -2,6 +2,7 @@ package sms
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -12,20 +13,16 @@ type Submit struct {
 	SRR bool `json:"srr"` // O / Status Report Request
 	RP  bool `json:"rp"`  // M / Reply Path
 
-	MR  byte    `json:"mr"`  // M / Message Reference
-	DA  Address `json:"da"`  // M / Destination Address
-	PID byte    `json:"pid"` // M / Protocol Identifier
-	DCS DCS     `json:"dcs"` // M / Data Coding Scheme
-	VP  VP      `json:"vp"`  // O / Validity Period
-	UD  UD      `json:"ud"`  // O / User Data
+	MR  byte    `json:"mr"`           // M / Message Reference
+	DA  Address `json:"da"`           // M / Destination Address
+	PID byte    `json:"pid"`          // M / Protocol Identifier
+	DCS DCS     `json:"dcs"`          // M / Data Coding Scheme
+	VP  VP      `json:"vp,omitempty"` // O / Validity Period
+	UD  UD      `json:"ud,omitempty"` // O / User Data
 }
 
 // Encode output byte data of this TPDU
-func (d *Submit) Encode() []byte {
-	if d == nil {
-		return []byte{}
-	}
-
+func (d Submit) Encode() []byte {
 	w := new(bytes.Buffer)
 
 	b := byte(0x01)
@@ -77,6 +74,10 @@ func (d *Submit) Decode(b []byte) (e error) {
 	if d == nil {
 		return fmt.Errorf("nil data")
 	}
+	if b[0]&0x03 != 0x01 {
+		e = &InvalidDataError{
+			Name: "invalid MTI"}
+	}
 
 	d.RD = b[0]&0x04 == 0x04
 	d.SRR = b[0]&0x20 == 0x20
@@ -127,11 +128,56 @@ func (d *Submit) Decode(b []byte) (e error) {
 	return
 }
 
-func (d *Submit) String() string {
-	if d == nil {
-		return "<nil>"
+// UnmarshalJSON provide custom marshaller
+func (d *Submit) UnmarshalJSON(b []byte) error {
+	type alias Submit
+	al := struct {
+		Dcs byte `json:"dcs"`
+		Vp  *jvp `json:"vp,omitempty"`
+		Ud  *UD  `json:"ud,omitempty"`
+		*alias
+	}{
+		alias: (*alias)(d)}
+	if e := json.Unmarshal(b, &al); e != nil {
+		return e
 	}
+	d.DCS = DecodeDCS(al.Dcs)
+	if al.Vp != nil {
+		d.VP = ValidityPeriodOf(al.Vp.T, al.Vp.S)
+	}
+	if al.Ud != nil {
+		d.UD = *al.Ud
+	}
+	return nil
+}
 
+// MarshalJSON provide custom marshaller
+func (d Submit) MarshalJSON() ([]byte, error) {
+	type alias Submit
+	al := struct {
+		*alias
+		Dcs byte `json:"dcs"`
+		Vp  *jvp `json:"vp,omitempty"`
+		Ud  *UD  `json:"ud,omitempty"`
+	}{
+		alias: (*alias)(&d)}
+	if d.DCS != nil {
+		al.Dcs = d.DCS.Encode()
+	} else {
+		al.Dcs = 0
+	}
+	if d.VP != nil {
+		al.Vp = &jvp{
+			T: d.VP.Duration(),
+			S: d.VP.SingleAttempt()}
+	}
+	if !d.UD.isEmpty() {
+		al.Ud = &d.UD
+	}
+	return json.Marshal(al)
+}
+
+func (d Submit) String() string {
 	w := new(bytes.Buffer)
 	fmt.Fprintf(w, "SMS message stack: Submit\n")
 	fmt.Fprintf(w, "%sTP-RD:   %s\n", Indent, rdStat(d.RD))
@@ -144,25 +190,23 @@ func (d *Submit) String() string {
 	if d.VP != nil {
 		fmt.Fprintf(w, "%sTP-VP:   %s\n", Indent, d.VP)
 	}
-	fmt.Fprintf(w, "%s", d.UD.String())
+	if !d.UD.isEmpty() {
+		fmt.Fprintf(w, "%s", d.UD.String())
+	}
 	return w.String()
 }
 
 // SubmitReport is TPDU message from SC to MS
 type SubmitReport struct {
-	FCS  byte      `json:"fcs"`  // C / Failure Cause
-	SCTS time.Time `json:"scts"` // M / Service Centre Time Stamp
-	PID  *byte     `json:"pid"`  // O / Protocol Identifier
-	DCS  DCS       `json:"dcs"`  // O / Data Coding Scheme
-	UD   UD        `json:"uid"`  // O / User Data
+	FCS  byte      `json:"fcs,omitempty"` // C / Failure Cause
+	SCTS time.Time `json:"scts"`          // M / Service Centre Time Stamp
+	PID  *byte     `json:"pid,omitempty"` // O / Protocol Identifier
+	DCS  DCS       `json:"dcs,omitempty"` // O / Data Coding Scheme
+	UD   UD        `json:"uid,omitempty"` // O / User Data
 }
 
 // Encode output byte data of this TPDU
-func (d *SubmitReport) Encode() []byte {
-	if d == nil {
-		return []byte{}
-	}
-
+func (d SubmitReport) Encode() []byte {
 	w := new(bytes.Buffer)
 
 	b := byte(0x01)
@@ -201,6 +245,10 @@ func (d *SubmitReport) Encode() []byte {
 func (d *SubmitReport) Decode(b []byte) (e error) {
 	if d == nil {
 		return fmt.Errorf("nil data")
+	}
+	if b[0]&0x03 != 0x01 {
+		e = &InvalidDataError{
+			Name: "invalid MTI"}
 	}
 
 	r := bytes.NewReader(b[1:])
@@ -243,11 +291,57 @@ func (d *SubmitReport) Decode(b []byte) (e error) {
 	return
 }
 
-func (d *SubmitReport) String() string {
-	if d == nil {
-		return "<nil>"
+// UnmarshalJSON provide custom marshaller
+func (d *SubmitReport) UnmarshalJSON(b []byte) error {
+	al := struct {
+		Fcs  *byte     `json:"fcs,omitempty"`
+		Scts time.Time `json:"scts"`
+		Pid  *byte     `json:"pid,omitempty"`
+		Dcs  *byte     `json:"dcs,omitempty"`
+		Ud   *UD       `json:"ud,omitempty"`
+	}{}
+	if e := json.Unmarshal(b, &al); e != nil {
+		return e
 	}
+	if al.Fcs != nil && *al.Fcs&0x80 == 0x80 {
+		d.FCS = *al.Fcs
+	}
+	d.SCTS = al.Scts
+	d.PID = al.Pid
+	if al.Dcs != nil {
+		d.DCS = DecodeDCS(*al.Dcs)
+	}
+	if al.Ud != nil {
+		d.UD = *al.Ud
+	}
+	return nil
+}
 
+// MarshalJSON provide custom marshaller
+func (d *SubmitReport) MarshalJSON() ([]byte, error) {
+	al := struct {
+		Fcs  *byte     `json:"fcs,omitempty"`
+		Scts time.Time `json:"scts"`
+		Pid  *byte     `json:"pid,omitempty"`
+		Dcs  *byte     `json:"dcs,omitempty"`
+		Ud   *UD       `json:"ud,omitempty"`
+	}{}
+	if d.FCS&0x80 == 0x80 {
+		al.Fcs = &d.FCS
+	}
+	al.Scts = d.SCTS
+	al.Pid = d.PID
+	if d.DCS != nil {
+		tmp := d.DCS.Encode()
+		al.Dcs = &tmp
+	}
+	if !d.UD.isEmpty() {
+		al.Ud = &d.UD
+	}
+	return json.Marshal(al)
+}
+
+func (d SubmitReport) String() string {
 	w := new(bytes.Buffer)
 	fmt.Fprintf(w, "SMS message stack: Submit Report")
 	if d.FCS&0x80 == 0x80 {
@@ -264,6 +358,8 @@ func (d *SubmitReport) String() string {
 	if d.DCS != nil {
 		fmt.Fprintf(w, "%sTP-DCS:  %s\n", Indent, d.DCS)
 	}
-	fmt.Fprintf(w, "%s", d.UD.String())
+	if !d.UD.isEmpty() {
+		fmt.Fprintf(w, "%s", d.UD.String())
+	}
 	return w.String()
 }

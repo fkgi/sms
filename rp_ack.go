@@ -13,20 +13,16 @@ type Ack struct {
 }
 
 // EncodeMO returns binary data
-func (d *Ack) EncodeMO() []byte {
+func (d Ack) EncodeMO() []byte {
 	return d.encode(2)
 }
 
 // EncodeMT returns binary data
-func (d *Ack) EncodeMT() []byte {
+func (d Ack) EncodeMT() []byte {
 	return d.encode(3)
 }
 
-func (d *Ack) encode(mti byte) []byte {
-	if d == nil {
-		return []byte{}
-	}
-
+func (d Ack) encode(mti byte) []byte {
 	w := new(bytes.Buffer)
 	w.WriteByte(mti)
 	w.WriteByte(d.MR)
@@ -77,11 +73,7 @@ func (d *Ack) decode(b []byte, mti byte) ([]byte, error) {
 	return readOptionalUD(b[2:])
 }
 
-func (d *Ack) String() string {
-	if d == nil {
-		return "<nil>"
-	}
-
+func (d Ack) String() string {
 	w := new(bytes.Buffer)
 	fmt.Fprintf(w, "SMS message stack: Ack\n")
 	fmt.Fprintf(w, "%sRP-MR:   %d\n", Indent, d.MR)

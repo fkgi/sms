@@ -12,10 +12,7 @@ type MemoryAvailable struct {
 }
 
 // EncodeMO returns binary data
-func (d *MemoryAvailable) EncodeMO() []byte {
-	if d == nil {
-		return []byte{}
-	}
+func (d MemoryAvailable) EncodeMO() []byte {
 	return []byte{6, d.MR}
 }
 
@@ -44,11 +41,7 @@ func (d *MemoryAvailable) DecodeMT(b []byte) error {
 	return fmt.Errorf("invalid data")
 }
 
-func (d *MemoryAvailable) String() string {
-	if d == nil {
-		return "<nil>"
-	}
-
+func (d MemoryAvailable) String() string {
 	w := new(bytes.Buffer)
 	fmt.Fprintf(w, "SMS message stack: MemoryAvailable\n")
 	fmt.Fprintf(w, "%sRP-MR:   %d\n", Indent, d.MR)
