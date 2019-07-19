@@ -8,10 +8,10 @@ import (
 
 // Error is RP-ERROR RPDU
 type Error struct {
-	MR   byte // M / Message Reference
-	CS   byte // M / Cause
-	Diag byte // M / Diagnostics
-	UD   TPDU // O / User Data
+	MR   byte  // M / Message Reference
+	CS   byte  // M / Cause
+	Diag *byte // M / Diagnostics
+	UD   TPDU  // O / User Data
 }
 
 // EncodeMO returns binary data
@@ -32,9 +32,14 @@ func (d *Error) encode(mti byte) []byte {
 	w := new(bytes.Buffer)
 	w.WriteByte(mti)
 	w.WriteByte(d.MR)
-	w.WriteByte(2)
-	w.WriteByte(d.CS)
-	w.WriteByte(d.Diag)
+	if d.Diag != nil {
+		w.WriteByte(2)
+		w.WriteByte(d.CS)
+		w.WriteByte(*d.Diag)
+	} else {
+		w.WriteByte(1)
+		w.WriteByte(d.CS)
+	}
 	if d.UD != nil {
 		b := d.UD.Encode()
 		w.WriteByte(41)
@@ -72,7 +77,7 @@ func (d *Error) decode(b []byte, mti byte) ([]byte, error) {
 	if d == nil {
 		return nil, fmt.Errorf("nil data")
 	}
-	if len(b) < 5 {
+	if len(b) < 4 {
 		return nil, io.EOF
 	}
 	if b[0] != mti {
@@ -80,8 +85,12 @@ func (d *Error) decode(b []byte, mti byte) ([]byte, error) {
 	}
 	d.MR = b[1]
 	d.CS = b[3]
-	d.Diag = b[4]
-	return readOptionalUD(b[5:])
+	if b[2] == 2 {
+		tmp := b[4]
+		d.Diag = &tmp
+		return readOptionalUD(b[5:])
+	}
+	return readOptionalUD(b[4:])
 }
 
 func (d *Error) String() string {
