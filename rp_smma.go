@@ -8,21 +8,27 @@ import (
 
 // MemoryAvailable is RP-SMMA RPDU
 type MemoryAvailable struct {
-	MR byte // M / Message Reference
+	MR byte `json:"mr"` // M / Message Reference
 }
 
-// EncodeMO returns binary data
-func (d MemoryAvailable) EncodeMO() []byte {
+// MarshalRPMO returns binary data
+func (d MemoryAvailable) MarshalRPMO() []byte {
 	return []byte{6, d.MR}
 }
 
-// EncodeMT returns binary data
-func (d *MemoryAvailable) EncodeMT() []byte {
+// MarshalRPMT returns binary data
+func (d MemoryAvailable) MarshalRPMT() []byte {
 	return []byte{}
 }
 
-// DecodeMO reads binary data
-func (d *MemoryAvailable) DecodeMO(b []byte) error {
+// UnmarshalMemoryAvailableMO decode MemoryAvailable MO from bytes
+func UnmarshalMemoryAvailableMO(b []byte) (a MemoryAvailable, e error) {
+	e = a.UnmarshalRPMO(b)
+	return
+}
+
+// UnmarshalRPMO reads binary data
+func (d *MemoryAvailable) UnmarshalRPMO(b []byte) error {
 	if d == nil {
 		return fmt.Errorf("nil data")
 	}
@@ -36,8 +42,14 @@ func (d *MemoryAvailable) DecodeMO(b []byte) error {
 	return nil
 }
 
-// DecodeMT reads binary data
-func (d *MemoryAvailable) DecodeMT(b []byte) error {
+// UnmarshalMemoryAvailableMT decode MemoryAvailable MO from bytes
+func UnmarshalMemoryAvailableMT(b []byte) (a MemoryAvailable, e error) {
+	e = a.UnmarshalRPMT(b)
+	return
+}
+
+// UnmarshalRPMT reads binary data
+func (d *MemoryAvailable) UnmarshalRPMT(b []byte) error {
 	return fmt.Errorf("invalid data")
 }
 

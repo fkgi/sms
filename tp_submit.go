@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"time"
 )
 
@@ -21,8 +22,8 @@ type Submit struct {
 	UD  UD      `json:"ud,omitempty"` // O / User Data
 }
 
-// Encode output byte data of this TPDU
-func (d Submit) Encode() []byte {
+// MarshalTP output byte data of this TPDU
+func (d Submit) MarshalTP() []byte {
 	w := new(bytes.Buffer)
 
 	b := byte(0x01)
@@ -69,10 +70,16 @@ func (d Submit) Encode() []byte {
 	return w.Bytes()
 }
 
-// Decode get data of this TPDU
-func (d *Submit) Decode(b []byte) (e error) {
-	if d == nil {
-		return fmt.Errorf("nil data")
+// UnmarshalSubmit decode Submit from bytes
+func UnmarshalSubmit(b []byte) (d Submit, e error) {
+	e = d.UnmarshalTP(b)
+	return
+}
+
+// UnmarshalTP get data of this TPDU
+func (d *Submit) UnmarshalTP(b []byte) (e error) {
+	if len(b) == 0 {
+		return io.EOF
 	}
 	if b[0]&0x03 != 0x01 {
 		e = &InvalidDataError{
@@ -128,29 +135,6 @@ func (d *Submit) Decode(b []byte) (e error) {
 	return
 }
 
-// UnmarshalJSON provide custom marshaller
-func (d *Submit) UnmarshalJSON(b []byte) error {
-	type alias Submit
-	al := struct {
-		Dcs byte `json:"dcs"`
-		Vp  *jvp `json:"vp,omitempty"`
-		Ud  *UD  `json:"ud,omitempty"`
-		*alias
-	}{
-		alias: (*alias)(d)}
-	if e := json.Unmarshal(b, &al); e != nil {
-		return e
-	}
-	d.DCS = DecodeDCS(al.Dcs)
-	if al.Vp != nil {
-		d.VP = ValidityPeriodOf(al.Vp.T, al.Vp.S)
-	}
-	if al.Ud != nil {
-		d.UD = *al.Ud
-	}
-	return nil
-}
-
 // MarshalJSON provide custom marshaller
 func (d Submit) MarshalJSON() ([]byte, error) {
 	type alias Submit
@@ -175,6 +159,32 @@ func (d Submit) MarshalJSON() ([]byte, error) {
 		al.Ud = &d.UD
 	}
 	return json.Marshal(al)
+}
+
+// UnmarshalJSON provide custom marshaller
+func (d *Submit) UnmarshalJSON(b []byte) error {
+	if string(b) == "null" {
+		return nil
+	}
+	type alias Submit
+	al := struct {
+		Dcs byte `json:"dcs"`
+		Vp  *jvp `json:"vp,omitempty"`
+		Ud  *UD  `json:"ud,omitempty"`
+		*alias
+	}{
+		alias: (*alias)(d)}
+	if e := json.Unmarshal(b, &al); e != nil {
+		return e
+	}
+	d.DCS = DecodeDCS(al.Dcs)
+	if al.Vp != nil {
+		d.VP = ValidityPeriodOf(al.Vp.T, al.Vp.S)
+	}
+	if al.Ud != nil {
+		d.UD = *al.Ud
+	}
+	return nil
 }
 
 func (d Submit) String() string {
@@ -205,8 +215,8 @@ type SubmitReport struct {
 	UD   UD        `json:"uid,omitempty"` // O / User Data
 }
 
-// Encode output byte data of this TPDU
-func (d SubmitReport) Encode() []byte {
+// MarshalTP output byte data of this TPDU
+func (d SubmitReport) MarshalTP() []byte {
 	w := new(bytes.Buffer)
 
 	b := byte(0x01)
@@ -241,10 +251,16 @@ func (d SubmitReport) Encode() []byte {
 	return w.Bytes()
 }
 
-// Decode get data of this TPDU
-func (d *SubmitReport) Decode(b []byte) (e error) {
-	if d == nil {
-		return fmt.Errorf("nil data")
+// UnmarshalSubmitReport decode SubmitReport from bytes
+func UnmarshalSubmitReport(b []byte) (d SubmitReport, e error) {
+	e = d.UnmarshalTP(b)
+	return
+}
+
+// UnmarshalTP get data of this TPDU
+func (d *SubmitReport) UnmarshalTP(b []byte) (e error) {
+	if len(b) == 0 {
+		return io.EOF
 	}
 	if b[0]&0x03 != 0x01 {
 		e = &InvalidDataError{
@@ -291,8 +307,35 @@ func (d *SubmitReport) Decode(b []byte) (e error) {
 	return
 }
 
+// MarshalJSON provide custom marshaller
+func (d SubmitReport) MarshalJSON() ([]byte, error) {
+	al := struct {
+		Fcs  *byte     `json:"fcs,omitempty"`
+		Scts time.Time `json:"scts"`
+		Pid  *byte     `json:"pid,omitempty"`
+		Dcs  *byte     `json:"dcs,omitempty"`
+		Ud   *UD       `json:"ud,omitempty"`
+	}{}
+	if d.FCS&0x80 == 0x80 {
+		al.Fcs = &d.FCS
+	}
+	al.Scts = d.SCTS
+	al.Pid = d.PID
+	if d.DCS != nil {
+		tmp := d.DCS.Encode()
+		al.Dcs = &tmp
+	}
+	if !d.UD.isEmpty() {
+		al.Ud = &d.UD
+	}
+	return json.Marshal(al)
+}
+
 // UnmarshalJSON provide custom marshaller
 func (d *SubmitReport) UnmarshalJSON(b []byte) error {
+	if string(b) == "null" {
+		return nil
+	}
 	al := struct {
 		Fcs  *byte     `json:"fcs,omitempty"`
 		Scts time.Time `json:"scts"`
@@ -315,30 +358,6 @@ func (d *SubmitReport) UnmarshalJSON(b []byte) error {
 		d.UD = *al.Ud
 	}
 	return nil
-}
-
-// MarshalJSON provide custom marshaller
-func (d *SubmitReport) MarshalJSON() ([]byte, error) {
-	al := struct {
-		Fcs  *byte     `json:"fcs,omitempty"`
-		Scts time.Time `json:"scts"`
-		Pid  *byte     `json:"pid,omitempty"`
-		Dcs  *byte     `json:"dcs,omitempty"`
-		Ud   *UD       `json:"ud,omitempty"`
-	}{}
-	if d.FCS&0x80 == 0x80 {
-		al.Fcs = &d.FCS
-	}
-	al.Scts = d.SCTS
-	al.Pid = d.PID
-	if d.DCS != nil {
-		tmp := d.DCS.Encode()
-		al.Dcs = &tmp
-	}
-	if !d.UD.isEmpty() {
-		al.Ud = &d.UD
-	}
-	return json.Marshal(al)
 }
 
 func (d SubmitReport) String() string {

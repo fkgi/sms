@@ -7,14 +7,14 @@ import (
 
 // Data is RP-DATA RPDU
 type Data struct {
-	MR byte    // M / Message Reference
-	OA Address // C / Originator Address
-	DA Address // C / Recipient Address
-	UD TPDU    // M / User Data
+	MR byte    `json:"mr"`           // M / Message Reference
+	OA Address `json:"oa,omitempty"` // C / Originator Address
+	DA Address `json:"da,omitempty"` // C / Recipient Address
+	UD TPDU    `json:"ud,omitempty"` // M / User Data
 }
 
-// EncodeMO returns binary data
-func (d Data) EncodeMO() []byte {
+// MarshalRPMO returns binary data
+func (d Data) MarshalRPMO() []byte {
 	w := new(bytes.Buffer)
 	w.WriteByte(0) // MTI
 	w.WriteByte(d.MR)
@@ -22,15 +22,15 @@ func (d Data) EncodeMO() []byte {
 	l, a := d.DA.Encode()
 	w.WriteByte(l)
 	w.Write(a)
-	b := d.UD.Encode()
+	b := d.UD.MarshalTP()
 	w.WriteByte(byte(len(b)))
 	w.Write(b)
 
 	return w.Bytes()
 }
 
-// EncodeMT returns binary data
-func (d Data) EncodeMT() []byte {
+// MarshalRPMT returns binary data
+func (d Data) MarshalRPMT() []byte {
 	w := new(bytes.Buffer)
 	w.WriteByte(1) // MTI
 	w.WriteByte(d.MR)
@@ -38,15 +38,21 @@ func (d Data) EncodeMT() []byte {
 	w.WriteByte(l)
 	w.Write(a)
 	w.WriteByte(0) // DA
-	b := d.UD.Encode()
+	b := d.UD.MarshalTP()
 	w.WriteByte(byte(len(b)))
 	w.Write(b)
 
 	return w.Bytes()
 }
 
-// DecodeMO reads binary data
-func (d *Data) DecodeMO(b []byte) error {
+// UnmarshalDataMO decode Data MO from bytes
+func UnmarshalDataMO(b []byte) (a Data, e error) {
+	e = a.UnmarshalRPMO(b)
+	return
+}
+
+// UnmarshalRPMO reads binary data
+func (d *Data) UnmarshalRPMO(b []byte) error {
 	if d == nil {
 		return fmt.Errorf("nil data")
 	}
@@ -76,12 +82,18 @@ func (d *Data) DecodeMO(b []byte) error {
 	if _, e := r.Read(b); e != nil {
 		return e
 	}
-	d.UD, e = DecodeAsSC(b)
+	d.UD, e = UnmarshalMOTP(b)
 	return e
 }
 
-// DecodeMT reads binary data
-func (d *Data) DecodeMT(b []byte) error {
+// UnmarshalDataMT decode Data MO from bytes
+func UnmarshalDataMT(b []byte) (a Data, e error) {
+	e = a.UnmarshalRPMT(b)
+	return
+}
+
+// UnmarshalRPMT reads binary data
+func (d *Data) UnmarshalRPMT(b []byte) error {
 	if d == nil {
 		return fmt.Errorf("nil data")
 	}
@@ -111,7 +123,7 @@ func (d *Data) DecodeMT(b []byte) error {
 	if _, e = r.Read(b); e != nil {
 		return e
 	}
-	d.UD, e = DecodeAsMS(b)
+	d.UD, e = UnmarshalMTTP(b)
 	return e
 }
 

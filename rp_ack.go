@@ -8,26 +8,26 @@ import (
 
 // Ack is RP-ACK RPDU
 type Ack struct {
-	MR byte // M / Message Reference
-	UD TPDU // O / User Data
+	MR byte `json:"mr"`           // M / Message Reference
+	UD TPDU `json:"ud,omitempty"` // O / User Data
 }
 
-// EncodeMO returns binary data
-func (d Ack) EncodeMO() []byte {
-	return d.encode(2)
+// MarshalRPMO returns binary data
+func (d Ack) MarshalRPMO() []byte {
+	return d.marshal(2)
 }
 
-// EncodeMT returns binary data
-func (d Ack) EncodeMT() []byte {
-	return d.encode(3)
+// MarshalRPMT returns binary data
+func (d Ack) MarshalRPMT() []byte {
+	return d.marshal(3)
 }
 
-func (d Ack) encode(mti byte) []byte {
+func (d Ack) marshal(mti byte) []byte {
 	w := new(bytes.Buffer)
 	w.WriteByte(mti)
 	w.WriteByte(d.MR)
 	if d.UD != nil {
-		b := d.UD.Encode()
+		b := d.UD.MarshalTP()
 		w.WriteByte(41)
 		w.WriteByte(byte(len(b)))
 		w.Write(b)
@@ -35,31 +35,43 @@ func (d Ack) encode(mti byte) []byte {
 	return w.Bytes()
 }
 
-// DecodeMO reads binary data
-func (d *Ack) DecodeMO(b []byte) error {
-	ud, e := d.decode(b, 2)
+// UnmarshalAckMO decode Ack MO from bytes
+func UnmarshalAckMO(b []byte) (a Ack, e error) {
+	e = a.UnmarshalRPMO(b)
+	return
+}
+
+// UnmarshalRPMO reads binary data
+func (d *Ack) UnmarshalRPMO(b []byte) error {
+	ud, e := d.unmarshal(b, 2)
 	if e != nil {
 		return e
 	}
 	if ud != nil {
-		d.UD, e = DecodeAsSC(ud)
+		d.UD, e = UnmarshalMOTP(ud)
 	}
 	return e
 }
 
-// DecodeMT reads binary data
-func (d *Ack) DecodeMT(b []byte) error {
-	ud, e := d.decode(b, 3)
+// UnmarshalAckMT decode Ack MT from bytes
+func UnmarshalAckMT(b []byte) (a Ack, e error) {
+	e = a.UnmarshalRPMT(b)
+	return
+}
+
+// UnmarshalRPMT reads binary data
+func (d *Ack) UnmarshalRPMT(b []byte) error {
+	ud, e := d.unmarshal(b, 3)
 	if e != nil {
 		return e
 	}
 	if ud != nil {
-		d.UD, e = DecodeAsMS(ud)
+		d.UD, e = UnmarshalMTTP(ud)
 	}
 	return e
 }
 
-func (d *Ack) decode(b []byte, mti byte) ([]byte, error) {
+func (d *Ack) unmarshal(b []byte, mti byte) ([]byte, error) {
 	if d == nil {
 		return nil, fmt.Errorf("nil data")
 	}

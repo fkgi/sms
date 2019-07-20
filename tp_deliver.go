@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"time"
 )
 
@@ -21,8 +22,8 @@ type Deliver struct {
 	UD   UD        `json:"ud,omitempty"` // O / User Data
 }
 
-// Encode output byte data of this TPDU
-func (d Deliver) Encode() []byte {
+// MarshalTP output byte data of this TPDU
+func (d Deliver) MarshalTP() []byte {
 	w := new(bytes.Buffer)
 
 	b := byte(0x00)
@@ -57,10 +58,16 @@ func (d Deliver) Encode() []byte {
 	return w.Bytes()
 }
 
-// Decode get data of this TPDU
-func (d *Deliver) Decode(b []byte) (e error) {
-	if d == nil {
-		return fmt.Errorf("nil data")
+// UnmarshalDeliver decode Deliver from bytes
+func UnmarshalDeliver(b []byte) (d Deliver, e error) {
+	e = d.UnmarshalTP(b)
+	return
+}
+
+// UnmarshalTP get data of this TPDU
+func (d *Deliver) UnmarshalTP(b []byte) (e error) {
+	if len(b) == 0 {
+		return io.EOF
 	}
 	if b[0]&0x03 != 0x00 {
 		e = &InvalidDataError{
@@ -100,25 +107,6 @@ func (d *Deliver) Decode(b []byte) (e error) {
 	return
 }
 
-// UnmarshalJSON provide custom marshaller
-func (d *Deliver) UnmarshalJSON(b []byte) error {
-	type alias Deliver
-	al := struct {
-		Dcs byte `json:"dcs"`
-		Ud  *UD  `json:"ud,omitempty"`
-		*alias
-	}{
-		alias: (*alias)(d)}
-	if e := json.Unmarshal(b, &al); e != nil {
-		return e
-	}
-	d.DCS = DecodeDCS(al.Dcs)
-	if al.Ud != nil {
-		d.UD = *al.Ud
-	}
-	return nil
-}
-
 // MarshalJSON provide custom marshaller
 func (d Deliver) MarshalJSON() ([]byte, error) {
 	type alias Deliver
@@ -137,6 +125,28 @@ func (d Deliver) MarshalJSON() ([]byte, error) {
 		al.Ud = &d.UD
 	}
 	return json.Marshal(al)
+}
+
+// UnmarshalJSON provide custom marshaller
+func (d *Deliver) UnmarshalJSON(b []byte) error {
+	if string(b) == "null" {
+		return nil
+	}
+	type alias Deliver
+	al := struct {
+		Dcs byte `json:"dcs"`
+		Ud  *UD  `json:"ud,omitempty"`
+		*alias
+	}{
+		alias: (*alias)(d)}
+	if e := json.Unmarshal(b, &al); e != nil {
+		return e
+	}
+	d.DCS = DecodeDCS(al.Dcs)
+	if al.Ud != nil {
+		d.UD = *al.Ud
+	}
+	return nil
 }
 
 func (d Deliver) String() string {
@@ -168,8 +178,8 @@ type DeliverReport struct {
 	UD  UD    `json:"ud,omitempty"`  // O / User Data
 }
 
-// Encode output byte data of this TPDU
-func (d DeliverReport) Encode() []byte {
+// MarshalTP output byte data of this TPDU
+func (d DeliverReport) MarshalTP() []byte {
 	w := new(bytes.Buffer)
 
 	b := byte(0x00)
@@ -203,10 +213,16 @@ func (d DeliverReport) Encode() []byte {
 	return w.Bytes()
 }
 
-// Decode get data of this TPDU
-func (d *DeliverReport) Decode(b []byte) (e error) {
-	if d == nil {
-		return fmt.Errorf("nil data")
+// UnmarshalDeliverReport decode DeliverReport from bytes
+func UnmarshalDeliverReport(b []byte) (d DeliverReport, e error) {
+	e = d.UnmarshalTP(b)
+	return
+}
+
+// UnmarshalTP get data of this TPDU
+func (d *DeliverReport) UnmarshalTP(b []byte) (e error) {
+	if len(b) == 0 {
+		return io.EOF
 	}
 	if b[0]&0x03 != 0x00 {
 		e = &InvalidDataError{
@@ -250,6 +266,9 @@ func (d *DeliverReport) Decode(b []byte) (e error) {
 
 // UnmarshalJSON provide custom marshaller
 func (d *DeliverReport) UnmarshalJSON(b []byte) error {
+	if string(b) == "null" {
+		return nil
+	}
 	al := struct {
 		Fcs *byte `json:"fcs,omitempty"`
 		Pid *byte `json:"pid,omitempty"`

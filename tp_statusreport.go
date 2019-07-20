@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"time"
 )
 
@@ -23,8 +24,8 @@ type StatusReport struct {
 	UD   UD        `json:"ud,omitempty"`  // O / User Data
 }
 
-// Encode output byte data of this TPDU
-func (d StatusReport) Encode() []byte {
+// MarshalTP output byte data of this TPDU
+func (d StatusReport) MarshalTP() []byte {
 	w := new(bytes.Buffer)
 
 	b := byte(0x02)
@@ -74,10 +75,16 @@ func (d StatusReport) Encode() []byte {
 	return w.Bytes()
 }
 
-// Decode get data of this TPDU
-func (d *StatusReport) Decode(b []byte) (e error) {
-	if d == nil {
-		return fmt.Errorf("nil data")
+// UnmarshalStatusReport decode StatusReport from bytes
+func UnmarshalStatusReport(b []byte) (d StatusReport, e error) {
+	e = d.UnmarshalTP(b)
+	return
+}
+
+// UnmarshalTP get data of this TPDU
+func (d *StatusReport) UnmarshalTP(b []byte) (e error) {
+	if len(b) == 0 {
+		return io.EOF
 	}
 	if b[0]&0x03 != 0x02 {
 		e = &InvalidDataError{
@@ -142,29 +149,6 @@ func (d *StatusReport) Decode(b []byte) (e error) {
 	return
 }
 
-// UnmarshalJSON provide custom marshaller
-func (d *StatusReport) UnmarshalJSON(b []byte) error {
-	type alias StatusReport
-	al := struct {
-		Pid *byte `json:"pid,omitempty"`
-		Dcs *byte `json:"dcs,omitempty"`
-		Ud  *UD   `json:"ud,omitempty"`
-		*alias
-	}{
-		alias: (*alias)(d)}
-	if e := json.Unmarshal(b, &al); e != nil {
-		return e
-	}
-	d.PID = al.Pid
-	if al.Dcs != nil {
-		d.DCS = DecodeDCS(*al.Dcs)
-	}
-	if al.Ud != nil {
-		d.UD = *al.Ud
-	}
-	return nil
-}
-
 // MarshalJSON provide custom marshaller
 func (d StatusReport) MarshalJSON() ([]byte, error) {
 	type alias StatusReport
@@ -184,6 +168,32 @@ func (d StatusReport) MarshalJSON() ([]byte, error) {
 		al.Ud = &d.UD
 	}
 	return json.Marshal(al)
+}
+
+// UnmarshalJSON provide custom marshaller
+func (d *StatusReport) UnmarshalJSON(b []byte) error {
+	if string(b) == "null" {
+		return nil
+	}
+	type alias StatusReport
+	al := struct {
+		Pid *byte `json:"pid,omitempty"`
+		Dcs *byte `json:"dcs,omitempty"`
+		Ud  *UD   `json:"ud,omitempty"`
+		*alias
+	}{
+		alias: (*alias)(d)}
+	if e := json.Unmarshal(b, &al); e != nil {
+		return e
+	}
+	d.PID = al.Pid
+	if al.Dcs != nil {
+		d.DCS = DecodeDCS(*al.Dcs)
+	}
+	if al.Ud != nil {
+		d.UD = *al.Ud
+	}
+	return nil
 }
 
 func (d StatusReport) String() string {
