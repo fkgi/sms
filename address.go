@@ -112,8 +112,8 @@ func (a Address) RegexpMatch(re *regexp.Regexp) bool {
 	return re.MatchString(a.Addr.String())
 }
 
-// Encode generate binary data and semi-octet length of this Address
-func (a Address) Encode() (l byte, b []byte) {
+// Marshal generate binary data and semi-octet length of this Address
+func (a Address) Marshal() (l byte, b []byte) {
 	switch a.Addr.(type) {
 	case teldata.TBCD:
 		l = byte(a.Addr.Length())
@@ -141,8 +141,8 @@ func (a Address) Encode() (l byte, b []byte) {
 	return
 }
 
-// Decode make Address from binary data and semi-octet length
-func (a *Address) Decode(l byte, b []byte) {
+// Unmarshal make Address from binary data and semi-octet length
+func (a *Address) Unmarshal(l byte, b []byte) {
 	if a == nil {
 		return
 	}
@@ -153,7 +153,7 @@ func (a *Address) Decode(l byte, b []byte) {
 	b = b[1:]
 	if a.TON == TypeAlphanumeric {
 		l = l * 4 / 7
-		a.Addr = DecodeGSM7bit(int(l), b)
+		a.Addr = UnmarshalGSM7bit(int(l), b)
 	} else {
 		if l%2 == 1 {
 			b[len(b)-1] |= 0xf0
@@ -175,7 +175,7 @@ func readAddr(r *bytes.Reader) (a Address, e error) {
 		if i != len(b) {
 			e = io.EOF
 		} else {
-			a.Decode(l, b)
+			a.Unmarshal(l, b)
 		}
 	}
 	return

@@ -62,11 +62,11 @@ func TestGSM7bitStringByteConv(t *testing.T) {
 		if e != nil {
 			t.Fatalf("conversion failure: %s", e)
 		}
-		b := s.encode(o)
+		b := s.marshal(o)
 		t.Logf("\nlen=%d\nhex=% x\n", len(b), b)
 
 		s = GSM7bitString(make([]rune, l))
-		s.decode(o, b)
+		s.unmarshal(o, b)
 
 		r := s.String()
 		if r != org {

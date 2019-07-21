@@ -7,13 +7,13 @@ import (
 
 // DCS indicate Data Coding Scheme
 type DCS interface {
-	Encode() byte
+	Marshal() byte
 	fmt.Stringer
 	charset() charset
 }
 
-// DecodeDCS make DCS from byte data
-func DecodeDCS(b byte) DCS {
+// UnmarshalDCS make DCS from byte data
+func UnmarshalDCS(b byte) DCS {
 	switch b & 0xc0 {
 	case 0x00:
 		return &GeneralDataCoding{
@@ -57,7 +57,7 @@ func readDCS(r *bytes.Reader) (DCS, error) {
 	if e != nil {
 		return nil, e
 	}
-	d := DecodeDCS(p)
+	d := UnmarshalDCS(p)
 	if d == nil {
 		return nil, &InvalidDataError{
 			Name:  "TP-DCS",
@@ -97,8 +97,8 @@ type GeneralDataCoding struct {
 	Charset    charset
 }
 
-// Encode make byte data
-func (c *GeneralDataCoding) Encode() (b byte) {
+// Marshal make byte data
+func (c *GeneralDataCoding) Marshal() (b byte) {
 	if c == nil {
 		return
 	}
@@ -186,8 +186,8 @@ type MessageWaiting struct {
 	WaitingType waitType
 }
 
-// Encode make byte data
-func (c *MessageWaiting) Encode() (b byte) {
+// Marshal make byte data
+func (c *MessageWaiting) Marshal() (b byte) {
 	if c == nil {
 		return
 	}
@@ -246,8 +246,8 @@ type DataCodingMessage struct {
 	MsgClass msgClass
 }
 
-// Encode make byte data
-func (c *DataCodingMessage) Encode() (b byte) {
+// Marshal make byte data
+func (c *DataCodingMessage) Marshal() (b byte) {
 	if c == nil {
 		return
 	}

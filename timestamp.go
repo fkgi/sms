@@ -2,7 +2,7 @@ package sms
 
 import "time"
 
-func encodeSCTimeStamp(t time.Time) (r []byte) {
+func marshalSCTimeStamp(t time.Time) (r []byte) {
 	r = make([]byte, 7)
 	r[0] = int2SemiOctet(t.Year())
 	r[1] = int2SemiOctet(int(t.Month()))
@@ -21,7 +21,7 @@ func encodeSCTimeStamp(t time.Time) (r []byte) {
 	return
 }
 
-func decodeSCTimeStamp(t [7]byte) time.Time {
+func unmarshalSCTimeStamp(t [7]byte) time.Time {
 	d := [6]int{}
 	for i := range d {
 		d[i] = semiOctet2Int(t[i])

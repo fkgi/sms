@@ -43,11 +43,11 @@ func (d StatusReport) MarshalTP() []byte {
 	}
 	w.WriteByte(b)
 	w.WriteByte(d.MR)
-	b, a := d.RA.Encode()
+	b, a := d.RA.Marshal()
 	w.WriteByte(b)
 	w.Write(a)
-	w.Write(encodeSCTimeStamp(d.SCTS))
-	w.Write(encodeSCTimeStamp(d.DT))
+	w.Write(marshalSCTimeStamp(d.SCTS))
+	w.Write(marshalSCTimeStamp(d.DT))
 	w.WriteByte(d.ST)
 	b = byte(0x00)
 	if d.PID != nil {
@@ -67,7 +67,7 @@ func (d StatusReport) MarshalTP() []byte {
 		w.WriteByte(*d.PID)
 	}
 	if d.DCS != nil {
-		w.WriteByte(d.DCS.Encode())
+		w.WriteByte(d.DCS.Marshal())
 	}
 	if len(d.UD.Text) != 0 || len(d.UD.UDH) != 0 {
 		d.UD.write(w, d.DCS)
@@ -107,11 +107,11 @@ func (d *StatusReport) UnmarshalTP(b []byte) (e error) {
 	if p, e = read7Bytes(r); e != nil {
 		return
 	}
-	d.SCTS = decodeSCTimeStamp(p)
+	d.SCTS = unmarshalSCTimeStamp(p)
 	if p, e = read7Bytes(r); e != nil {
 		return
 	}
-	d.DT = decodeSCTimeStamp(p)
+	d.DT = unmarshalSCTimeStamp(p)
 	if d.ST, e = r.ReadByte(); e != nil {
 		return
 	}
@@ -161,7 +161,7 @@ func (d StatusReport) MarshalJSON() ([]byte, error) {
 		alias: (*alias)(&d)}
 	al.Pid = d.PID
 	if d.DCS != nil {
-		tmp := d.DCS.Encode()
+		tmp := d.DCS.Marshal()
 		al.Dcs = &tmp
 	}
 	if !d.UD.isEmpty() {
@@ -188,7 +188,7 @@ func (d *StatusReport) UnmarshalJSON(b []byte) error {
 	}
 	d.PID = al.Pid
 	if al.Dcs != nil {
-		d.DCS = DecodeDCS(*al.Dcs)
+		d.DCS = UnmarshalDCS(*al.Dcs)
 	}
 	if al.Ud != nil {
 		d.UD = *al.Ud

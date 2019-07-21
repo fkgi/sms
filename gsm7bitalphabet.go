@@ -84,14 +84,14 @@ func StringToGSM7bit(s string) (GSM7bitString, error) {
 	return txt, nil
 }
 
-// DecodeGSM7bit generate GSM7bitString from byte slice
-func DecodeGSM7bit(l int, b []byte) GSM7bitString {
+// UnmarshalGSM7bit generate GSM7bitString from byte slice
+func UnmarshalGSM7bit(l int, b []byte) GSM7bitString {
 	s := GSM7bitString(make([]rune, 0, l))
-	s.decode(0, b)
+	s.unmarshal(0, b)
 	return s
 }
 
-func (s GSM7bitString) decode(o int, b []byte) {
+func (s GSM7bitString) unmarshal(o int, b []byte) {
 	o = 7 - o
 	var next byte
 	var sh uint
@@ -152,10 +152,10 @@ func (s GSM7bitString) Bytes() []byte {
 	if s == nil {
 		return []byte{}
 	}
-	return s.encode(0)
+	return s.marshal(0)
 }
 
-func (s GSM7bitString) encode(o int) []byte {
+func (s GSM7bitString) marshal(o int) []byte {
 	l := s.Length()*7 + o
 	b := make([]byte, l/8+1)
 	if l%8 == 0 {

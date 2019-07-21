@@ -24,6 +24,7 @@ func (d Ack) MarshalRPMT() []byte {
 
 func (d Ack) marshal(mti byte) []byte {
 	w := new(bytes.Buffer)
+
 	w.WriteByte(mti)
 	w.WriteByte(d.MR)
 	if d.UD != nil {
@@ -32,17 +33,18 @@ func (d Ack) marshal(mti byte) []byte {
 		w.WriteByte(byte(len(b)))
 		w.Write(b)
 	}
+
 	return w.Bytes()
 }
 
 // UnmarshalAckMO decode Ack MO from bytes
 func UnmarshalAckMO(b []byte) (a Ack, e error) {
-	e = a.UnmarshalRPMO(b)
+	e = a.UnmarshalMORP(b)
 	return
 }
 
-// UnmarshalRPMO reads binary data
-func (d *Ack) UnmarshalRPMO(b []byte) error {
+// UnmarshalMORP reads binary data
+func (d *Ack) UnmarshalMORP(b []byte) error {
 	ud, e := d.unmarshal(b, 2)
 	if e != nil {
 		return e
@@ -55,12 +57,12 @@ func (d *Ack) UnmarshalRPMO(b []byte) error {
 
 // UnmarshalAckMT decode Ack MT from bytes
 func UnmarshalAckMT(b []byte) (a Ack, e error) {
-	e = a.UnmarshalRPMT(b)
+	e = a.UnmarshalMTRP(b)
 	return
 }
 
-// UnmarshalRPMT reads binary data
-func (d *Ack) UnmarshalRPMT(b []byte) error {
+// UnmarshalMTRP reads binary data
+func (d *Ack) UnmarshalMTRP(b []byte) error {
 	ud, e := d.unmarshal(b, 3)
 	if e != nil {
 		return e
@@ -72,17 +74,40 @@ func (d *Ack) UnmarshalRPMT(b []byte) error {
 }
 
 func (d *Ack) unmarshal(b []byte, mti byte) ([]byte, error) {
-	if d == nil {
-		return nil, fmt.Errorf("nil data")
-	}
-	if len(b) < 2 {
+	if len(b) == 0 {
 		return nil, io.EOF
 	}
 	if b[0] != mti {
-		return nil, fmt.Errorf("invalid data")
+		return nil, &InvalidDataError{
+			Name: "invalid MTI"}
 	}
-	d.MR = b[1]
-	return readOptionalUD(b[2:])
+
+	r := bytes.NewReader(b[1:])
+	var e error
+	if d.MR, e = r.ReadByte(); e != nil {
+		return nil, e
+	}
+	if tmp, e := r.ReadByte(); e == io.EOF {
+		return nil, nil
+	} else if tmp != 41 {
+		return nil, &InvalidDataError{
+			Name: "unknown IE"}
+	}
+	if l, e := r.ReadByte(); e == nil {
+		b = make([]byte, int(l))
+	} else {
+		return nil, e
+	}
+	if n, e := r.Read(b); e != nil {
+		return nil, e
+	} else if n != len(b) {
+		return nil, io.EOF
+	}
+	if r.Len() != 0 {
+		return nil, &InvalidDataError{
+			Name: "extra part"}
+	}
+	return b, nil
 }
 
 func (d Ack) String() string {

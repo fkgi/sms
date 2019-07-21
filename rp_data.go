@@ -3,6 +3,7 @@ package sms
 import (
 	"bytes"
 	"fmt"
+	"io"
 )
 
 // Data is RP-DATA RPDU
@@ -16,10 +17,11 @@ type Data struct {
 // MarshalRPMO returns binary data
 func (d Data) MarshalRPMO() []byte {
 	w := new(bytes.Buffer)
+
 	w.WriteByte(0) // MTI
 	w.WriteByte(d.MR)
 	w.WriteByte(0) // OA
-	l, a := d.DA.Encode()
+	l, a := d.DA.Marshal()
 	w.WriteByte(l)
 	w.Write(a)
 	b := d.UD.MarshalTP()
@@ -32,9 +34,10 @@ func (d Data) MarshalRPMO() []byte {
 // MarshalRPMT returns binary data
 func (d Data) MarshalRPMT() []byte {
 	w := new(bytes.Buffer)
+
 	w.WriteByte(1) // MTI
 	w.WriteByte(d.MR)
-	l, a := d.OA.Encode()
+	l, a := d.OA.Marshal()
 	w.WriteByte(l)
 	w.Write(a)
 	w.WriteByte(0) // DA
@@ -47,15 +50,12 @@ func (d Data) MarshalRPMT() []byte {
 
 // UnmarshalDataMO decode Data MO from bytes
 func UnmarshalDataMO(b []byte) (a Data, e error) {
-	e = a.UnmarshalRPMO(b)
+	e = a.UnmarshalMORP(b)
 	return
 }
 
-// UnmarshalRPMO reads binary data
-func (d *Data) UnmarshalRPMO(b []byte) error {
-	if d == nil {
-		return fmt.Errorf("nil data")
-	}
+// UnmarshalMORP reads binary data
+func (d *Data) UnmarshalMORP(b []byte) error {
 	r := bytes.NewReader(b)
 	var e error
 	if tmp, e := r.ReadByte(); e != nil {
@@ -79,24 +79,27 @@ func (d *Data) UnmarshalRPMO(b []byte) error {
 	} else {
 		return e
 	}
-	if _, e := r.Read(b); e != nil {
+	if n, e := r.Read(b); e != nil {
 		return e
+	} else if n != len(b) {
+		return io.EOF
 	}
 	d.UD, e = UnmarshalMOTP(b)
+	if r.Len() != 0 {
+		return &InvalidDataError{
+			Name: "extra part"}
+	}
 	return e
 }
 
 // UnmarshalDataMT decode Data MO from bytes
 func UnmarshalDataMT(b []byte) (a Data, e error) {
-	e = a.UnmarshalRPMT(b)
+	e = a.UnmarshalMTRP(b)
 	return
 }
 
-// UnmarshalRPMT reads binary data
-func (d *Data) UnmarshalRPMT(b []byte) error {
-	if d == nil {
-		return fmt.Errorf("nil data")
-	}
+// UnmarshalMTRP reads binary data
+func (d *Data) UnmarshalMTRP(b []byte) error {
 	r := bytes.NewReader(b)
 	var e error
 	if tmp, e := r.ReadByte(); e != nil {
@@ -120,10 +123,16 @@ func (d *Data) UnmarshalRPMT(b []byte) error {
 	} else {
 		return e
 	}
-	if _, e = r.Read(b); e != nil {
+	if n, e := r.Read(b); e != nil {
 		return e
+	} else if n != len(b) {
+		return io.EOF
 	}
 	d.UD, e = UnmarshalMTTP(b)
+	if r.Len() != 0 {
+		return &InvalidDataError{
+			Name: "extra part"}
+	}
 	return e
 }
 

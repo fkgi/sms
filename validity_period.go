@@ -76,7 +76,7 @@ func ValidityPeriodOf(t time.Duration, s bool) VP {
 		vp[3] = int2SemiOctet(int(t / time.Hour))
 		return vp
 	}
-	vp := encodeSCTimeStamp(time.Now().Add(t))
+	vp := marshalSCTimeStamp(time.Now().Add(t))
 	return VPAbsolute{vp[0], vp[1], vp[2], vp[3], vp[4], vp[5], vp[6]}
 }
 
@@ -133,17 +133,17 @@ func (f VPRelative) SingleAttempt() bool {
 type VPAbsolute [7]byte
 
 func (f VPAbsolute) String() string {
-	return fmt.Sprintf("absolute, %s", decodeSCTimeStamp(f))
+	return fmt.Sprintf("absolute, %s", unmarshalSCTimeStamp(f))
 }
 
 // ExpireTime return expire time
 func (f VPAbsolute) ExpireTime(t time.Time) time.Time {
-	return decodeSCTimeStamp(f)
+	return unmarshalSCTimeStamp(f)
 }
 
 // Duration return duration to expire time
 func (f VPAbsolute) Duration() time.Duration {
-	return time.Until(decodeSCTimeStamp(f))
+	return time.Until(unmarshalSCTimeStamp(f))
 }
 
 // SingleAttempt return single attempt is required or not

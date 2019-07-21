@@ -15,7 +15,7 @@ var bytedata = []byte{
 	0x41, 0x52, 0x04, 0x63, 0x00}
 
 func TestEncodeStatusReport(t *testing.T) {
-	p, e := sms.DecodeAsMS(bytedata)
+	p, e := sms.UnmarshalMTTP(bytedata)
 	if e != nil {
 		t.Fatalf("encode failed: %s", e)
 	}
@@ -38,7 +38,7 @@ func TestDecodeStatusReport(t *testing.T) {
 		ST: 0x00}
 	p.RA.Addr, _ = teldata.ParseTBCD("1234")
 
-	b := p.Encode()
+	b := p.MarshalTP()
 	t.Logf("% x", b)
 }
 

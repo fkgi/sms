@@ -23,33 +23,39 @@ func (d MemoryAvailable) MarshalRPMT() []byte {
 
 // UnmarshalMemoryAvailableMO decode MemoryAvailable MO from bytes
 func UnmarshalMemoryAvailableMO(b []byte) (a MemoryAvailable, e error) {
-	e = a.UnmarshalRPMO(b)
+	e = a.UnmarshalMORP(b)
 	return
 }
 
-// UnmarshalRPMO reads binary data
-func (d *MemoryAvailable) UnmarshalRPMO(b []byte) error {
-	if d == nil {
-		return fmt.Errorf("nil data")
-	}
-	if len(b) < 2 {
+// UnmarshalMORP reads binary data
+func (d *MemoryAvailable) UnmarshalMORP(b []byte) error {
+	if len(b) == 0 {
 		return io.EOF
 	}
 	if b[0] != 6 {
-		return fmt.Errorf("invalid data")
+		return &InvalidDataError{
+			Name: "invalid MTI"}
 	}
-	d.MR = b[1]
+	r := bytes.NewReader(b[1:])
+	var e error
+	if d.MR, e = r.ReadByte(); e != nil {
+		return e
+	}
+	if r.Len() != 0 {
+		return &InvalidDataError{
+			Name: "extra part"}
+	}
 	return nil
 }
 
 // UnmarshalMemoryAvailableMT decode MemoryAvailable MO from bytes
 func UnmarshalMemoryAvailableMT(b []byte) (a MemoryAvailable, e error) {
-	e = a.UnmarshalRPMT(b)
+	e = a.UnmarshalMTRP(b)
 	return
 }
 
-// UnmarshalRPMT reads binary data
-func (d *MemoryAvailable) UnmarshalRPMT(b []byte) error {
+// UnmarshalMTRP reads binary data
+func (d *MemoryAvailable) UnmarshalMTRP(b []byte) error {
 	return fmt.Errorf("invalid data")
 }
 

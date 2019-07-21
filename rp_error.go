@@ -26,6 +26,7 @@ func (d Error) MarshalRPMT() []byte {
 
 func (d Error) marshal(mti byte) []byte {
 	w := new(bytes.Buffer)
+
 	w.WriteByte(mti)
 	w.WriteByte(d.MR)
 	if d.Diag != nil {
@@ -47,12 +48,12 @@ func (d Error) marshal(mti byte) []byte {
 
 // UnmarshalErrorMO decode Error MO from bytes
 func UnmarshalErrorMO(b []byte) (a Error, e error) {
-	e = a.UnmarshalRPMO(b)
+	e = a.UnmarshalMORP(b)
 	return
 }
 
-// UnmarshalRPMO reads binary data
-func (d *Error) UnmarshalRPMO(b []byte) error {
+// UnmarshalMORP reads binary data
+func (d *Error) UnmarshalMORP(b []byte) error {
 	ud, e := d.unmarshal(b, 4)
 	if e != nil {
 		return e
@@ -65,12 +66,12 @@ func (d *Error) UnmarshalRPMO(b []byte) error {
 
 // UnmarshalErrorMT decode Error MO from bytes
 func UnmarshalErrorMT(b []byte) (a Error, e error) {
-	e = a.UnmarshalRPMT(b)
+	e = a.UnmarshalMTRP(b)
 	return
 }
 
-// UnmarshalRPMT reads binary data
-func (d *Error) UnmarshalRPMT(b []byte) error {
+// UnmarshalMTRP reads binary data
+func (d *Error) UnmarshalMTRP(b []byte) error {
 	ud, e := d.unmarshal(b, 5)
 	if e != nil {
 		return e
@@ -82,23 +83,58 @@ func (d *Error) UnmarshalRPMT(b []byte) error {
 }
 
 func (d *Error) unmarshal(b []byte, mti byte) ([]byte, error) {
-	if d == nil {
-		return nil, fmt.Errorf("nil data")
-	}
-	if len(b) < 4 {
+	if len(b) == 0 {
 		return nil, io.EOF
 	}
 	if b[0] != mti {
-		return nil, fmt.Errorf("invalid data")
+		return nil, &InvalidDataError{
+			Name: "invalid MTI"}
 	}
-	d.MR = b[1]
-	d.CS = b[3]
-	if b[2] == 2 {
-		tmp := b[4]
+
+	r := bytes.NewReader(b[1:])
+	var e error
+	if d.MR, e = r.ReadByte(); e != nil {
+		return nil, e
+	}
+	var tmp byte
+	if tmp, e = r.ReadByte(); e != nil {
+		return nil, e
+	}
+	if tmp == 0 || tmp > 2 {
+		return nil, &InvalidDataError{
+			Name: "invalid MTI"}
+	}
+	if d.CS, e = r.ReadByte(); e != nil {
+		return nil, e
+	}
+	if tmp == 2 {
+		if tmp, e = r.ReadByte(); e != nil {
+			return nil, e
+		}
 		d.Diag = &tmp
-		return readOptionalUD(b[5:])
 	}
-	return readOptionalUD(b[4:])
+
+	if tmp, e = r.ReadByte(); e == io.EOF {
+		return nil, nil
+	} else if tmp != 41 {
+		return nil, &InvalidDataError{
+			Name: "unknown IE"}
+	}
+	if l, e := r.ReadByte(); e == nil {
+		b = make([]byte, int(l))
+	} else {
+		return nil, e
+	}
+	if n, e := r.Read(b); e != nil {
+		return nil, e
+	} else if n != len(b) {
+		return nil, io.EOF
+	}
+	if r.Len() != 0 {
+		return nil, &InvalidDataError{
+			Name: "extra part"}
+	}
+	return b, nil
 }
 
 func (d Error) String() string {

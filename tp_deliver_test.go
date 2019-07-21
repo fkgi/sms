@@ -15,7 +15,7 @@ func TestEncodeDeliver(t *testing.T) {
 		0x30, 0x22, 0x41, 0x52, 0x04, 0x63, 0x10, 0x05,
 		0x00, 0x03, 0x87, 0x02, 0x01, 0x30, 0x42, 0x30,
 		0x44, 0x30, 0x46, 0x30, 0x48, 0x30, 0x4a}
-	p, e := sms.DecodeAsMS(bytedata)
+	p, e := sms.UnmarshalMTTP(bytedata)
 	if e != nil {
 		t.Fatalf("encode failed: %s", e)
 	}
@@ -43,7 +43,7 @@ func TestDecodeDeliver(t *testing.T) {
 		RefNum: 0x84, MaxNum: 0x0a, SeqNum: 0x01})
 	p.OA.Addr, _ = teldata.ParseTBCD("1234")
 
-	b := p.Encode()
+	b := p.MarshalTP()
 	t.Logf("% x", b)
 }
 
@@ -86,7 +86,7 @@ func TestMarshalJSON_deliver(t *testing.T) {
 func TestEncodeDeliverReport(t *testing.T) {
 	bytedata := []byte{
 		0x00, 0x00}
-	p, e := sms.DecodeAsSC(bytedata)
+	p, e := sms.UnmarshalMOTP(bytedata)
 	if e != nil {
 		t.Fatalf("encode failed: %s", e)
 	}
@@ -98,7 +98,7 @@ func TestDecodeDeliverReport(t *testing.T) {
 		PID: nil,
 		DCS: nil}
 
-	b := p.Encode()
+	b := p.MarshalTP()
 	t.Logf("% x", b)
 }
 

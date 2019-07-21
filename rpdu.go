@@ -55,19 +55,3 @@ func UnmarshalMTRP(b []byte) (t RPDU, e error) {
 		Name:  "reserved RPDU type",
 		Bytes: b}
 }
-
-func readOptionalUD(b []byte) ([]byte, error) {
-	if len(b) == 0 {
-		return nil, nil
-	}
-	if len(b) < 3 {
-		return nil, fmt.Errorf("invalid data")
-	}
-	if b[0] != 41 {
-		return nil, fmt.Errorf("invalid data")
-	}
-	if len(b) != int(b[1]+2) {
-		return nil, fmt.Errorf("invalid data")
-	}
-	return b[2:], nil
-}

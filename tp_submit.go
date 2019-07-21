@@ -55,14 +55,14 @@ func (d Submit) MarshalTP() []byte {
 	}
 	w.WriteByte(b)
 	w.WriteByte(d.MR)
-	b, a := d.DA.Encode()
+	b, a := d.DA.Marshal()
 	w.WriteByte(b)
 	w.Write(a)
 	w.WriteByte(d.PID)
 	if d.DCS == nil {
 		w.WriteByte(0x00)
 	} else {
-		w.WriteByte(d.DCS.Encode())
+		w.WriteByte(d.DCS.Marshal())
 	}
 	w.Write(vp)
 	d.UD.write(w, d.DCS)
@@ -91,6 +91,7 @@ func (d *Submit) UnmarshalTP(b []byte) (e error) {
 	d.RP = b[0]&0x80 == 0x80
 
 	r := bytes.NewReader(b[1:])
+
 	if d.MR, e = r.ReadByte(); e != nil {
 		return
 	}
@@ -146,7 +147,7 @@ func (d Submit) MarshalJSON() ([]byte, error) {
 	}{
 		alias: (*alias)(&d)}
 	if d.DCS != nil {
-		al.Dcs = d.DCS.Encode()
+		al.Dcs = d.DCS.Marshal()
 	} else {
 		al.Dcs = 0
 	}
@@ -177,7 +178,7 @@ func (d *Submit) UnmarshalJSON(b []byte) error {
 	if e := json.Unmarshal(b, &al); e != nil {
 		return e
 	}
-	d.DCS = DecodeDCS(al.Dcs)
+	d.DCS = UnmarshalDCS(al.Dcs)
 	if al.Vp != nil {
 		d.VP = ValidityPeriodOf(al.Vp.T, al.Vp.S)
 	}
@@ -238,12 +239,12 @@ func (d SubmitReport) MarshalTP() []byte {
 		b |= 0x04
 	}
 	w.WriteByte(b)
-	w.Write(encodeSCTimeStamp(d.SCTS))
+	w.Write(marshalSCTimeStamp(d.SCTS))
 	if d.PID != nil {
 		w.WriteByte(*d.PID)
 	}
 	if d.DCS != nil {
-		w.WriteByte(d.DCS.Encode())
+		w.WriteByte(d.DCS.Marshal())
 	}
 	if len(d.UD.Text) != 0 || len(d.UD.UDH) != 0 {
 		d.UD.write(w, d.DCS)
@@ -281,7 +282,7 @@ func (d *SubmitReport) UnmarshalTP(b []byte) (e error) {
 	if p, e = read7Bytes(r); e != nil {
 		return
 	}
-	d.SCTS = decodeSCTimeStamp(p)
+	d.SCTS = unmarshalSCTimeStamp(p)
 	if pi&0x01 == 0x01 {
 		var p byte
 		if p, e = r.ReadByte(); e != nil {
@@ -322,7 +323,7 @@ func (d SubmitReport) MarshalJSON() ([]byte, error) {
 	al.Scts = d.SCTS
 	al.Pid = d.PID
 	if d.DCS != nil {
-		tmp := d.DCS.Encode()
+		tmp := d.DCS.Marshal()
 		al.Dcs = &tmp
 	}
 	if !d.UD.isEmpty() {
@@ -352,7 +353,7 @@ func (d *SubmitReport) UnmarshalJSON(b []byte) error {
 	d.SCTS = al.Scts
 	d.PID = al.Pid
 	if al.Dcs != nil {
-		d.DCS = DecodeDCS(*al.Dcs)
+		d.DCS = UnmarshalDCS(*al.Dcs)
 	}
 	if al.Ud != nil {
 		d.UD = *al.Ud
