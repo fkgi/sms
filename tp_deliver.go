@@ -43,8 +43,8 @@ func (d Deliver) MarshalTP() []byte {
 		b |= 0x80
 	}
 	w.WriteByte(b)
-	b, a := d.OA.Marshal()
-	w.WriteByte(b)
+	l, a := d.OA.Marshal()
+	w.WriteByte(l)
 	w.Write(a)
 	w.WriteByte(d.PID)
 	if d.DCS == nil {
@@ -70,8 +70,8 @@ func (d *Deliver) UnmarshalTP(b []byte) (e error) {
 		return io.EOF
 	}
 	if b[0]&0x03 != 0x00 {
-		e = &InvalidDataError{
-			Name: "invalid MTI"}
+		return UnexpectedMessageTypeError{
+			Expected: 0x00, Actual: b[0] & 0x03}
 	}
 
 	d.MMS = b[0]&0x04 != 0x04
@@ -91,20 +91,16 @@ func (d *Deliver) UnmarshalTP(b []byte) (e error) {
 		return
 	}
 	var tmp [7]byte
-	if tmp, e = read7Bytes(r); e == nil {
-		d.SCTS = unmarshalSCTimeStamp(tmp)
+	if tmp, e = read7Bytes(r); e != nil {
+		return
 	}
-	if e == nil {
-		e = d.UD.read(r, d.DCS, b[0]&0x40 == 0x40)
+	d.SCTS = unmarshalSCTimeStamp(tmp)
+	if e = d.UD.read(r, d.DCS, b[0]&0x40 == 0x40); e != nil {
+		return
 	}
-	if e == nil && r.Len() != 0 {
-		tmp := make([]byte, r.Len())
-		r.Read(tmp)
-		e = &InvalidDataError{
-			Name:  "extra part",
-			Bytes: tmp}
+	if r.Len() != 0 {
+		e = InvalidLengthError{}
 	}
-
 	return
 }
 
@@ -152,6 +148,7 @@ func (d *Deliver) UnmarshalJSON(b []byte) error {
 
 func (d Deliver) String() string {
 	w := new(bytes.Buffer)
+
 	fmt.Fprintf(w, "SMS message stack: Deliver\n")
 	fmt.Fprintf(w, "%sTP-MMS:  %s\n", Indent, mmsStat(d.MMS))
 	fmt.Fprintf(w, "%sTP-LP:   %s\n", Indent, lpStat(d.LP))
@@ -168,6 +165,7 @@ func (d Deliver) String() string {
 	if !d.UD.isEmpty() {
 		fmt.Fprintf(w, "%s", d.UD.String())
 	}
+
 	return w.String()
 }
 
@@ -211,6 +209,7 @@ func (d DeliverReport) MarshalTP() []byte {
 	if !d.UD.isEmpty() {
 		d.UD.write(w, d.DCS)
 	}
+
 	return w.Bytes()
 }
 
@@ -226,8 +225,8 @@ func (d *DeliverReport) UnmarshalTP(b []byte) (e error) {
 		return io.EOF
 	}
 	if b[0]&0x03 != 0x00 {
-		e = &InvalidDataError{
-			Name: "invalid MTI"}
+		return UnexpectedMessageTypeError{
+			Expected: 0x00, Actual: b[0] & 0x03}
 	}
 
 	r := bytes.NewReader(b[1:])
@@ -253,14 +252,13 @@ func (d *DeliverReport) UnmarshalTP(b []byte) (e error) {
 		}
 	}
 	if pi&0x04 == 0x04 {
-		d.UD.read(r, d.DCS, b[0]&0x40 == 0x40)
+		e = d.UD.read(r, d.DCS, b[0]&0x40 == 0x40)
+		if e != nil {
+			return
+		}
 	}
-	if e == nil && r.Len() != 0 {
-		tmp := make([]byte, r.Len())
-		r.Read(tmp)
-		e = &InvalidDataError{
-			Name:  "extra part",
-			Bytes: tmp}
+	if r.Len() != 0 {
+		e = InvalidLengthError{}
 	}
 	return
 }
@@ -317,6 +315,7 @@ func (d DeliverReport) MarshalJSON() ([]byte, error) {
 
 func (d DeliverReport) String() string {
 	w := new(bytes.Buffer)
+
 	fmt.Fprintf(w, "SMS message stack: Deliver Report")
 	if d.FCS&0x80 == 0x80 {
 		fmt.Fprintf(w, " for RP-ERROR\n")
@@ -334,5 +333,6 @@ func (d DeliverReport) String() string {
 	if !d.UD.isEmpty() {
 		fmt.Fprintf(w, "%s", d.UD.String())
 	}
+
 	return w.String()
 }

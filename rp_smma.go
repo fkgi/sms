@@ -3,7 +3,6 @@ package sms
 import (
 	"bytes"
 	"fmt"
-	"io"
 )
 
 // MemoryAvailable is RP-SMMA RPDU
@@ -29,21 +28,19 @@ func UnmarshalMemoryAvailableMO(b []byte) (a MemoryAvailable, e error) {
 
 // UnmarshalMORP reads binary data
 func (d *MemoryAvailable) UnmarshalMORP(b []byte) error {
-	if len(b) == 0 {
-		return io.EOF
-	}
-	if b[0] != 6 {
-		return &InvalidDataError{
-			Name: "invalid MTI"}
-	}
-	r := bytes.NewReader(b[1:])
+	r := bytes.NewReader(b)
 	var e error
+
+	if tmp, e := r.ReadByte(); e != nil {
+		return e
+	} else if tmp != 6 {
+		return UnexpectedMessageTypeError{Expected: 6, Actual: b[0]}
+	}
 	if d.MR, e = r.ReadByte(); e != nil {
 		return e
 	}
 	if r.Len() != 0 {
-		return &InvalidDataError{
-			Name: "extra part"}
+		return InvalidLengthError{}
 	}
 	return nil
 }
@@ -61,7 +58,9 @@ func (d *MemoryAvailable) UnmarshalMTRP(b []byte) error {
 
 func (d MemoryAvailable) String() string {
 	w := new(bytes.Buffer)
+
 	fmt.Fprintf(w, "SMS message stack: MemoryAvailable\n")
 	fmt.Fprintf(w, "%sRP-MR:   %d\n", Indent, d.MR)
+
 	return w.String()
 }

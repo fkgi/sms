@@ -31,9 +31,7 @@ func UnmarshalMORP(b []byte) (t RPDU, e error) {
 	case 0x06:
 		return UnmarshalMemoryAvailableMO(b)
 	}
-	return nil, &InvalidDataError{
-		Name:  "reserved RPDU type",
-		Bytes: b}
+	return nil, UnexpectedMessageTypeError{Actual: b[0]}
 }
 
 // UnmarshalMTRP parse byte data to TPDU as MS.
@@ -51,7 +49,5 @@ func UnmarshalMTRP(b []byte) (t RPDU, e error) {
 	case 0x06:
 		return UnmarshalMemoryAvailableMT(b)
 	}
-	return nil, &InvalidDataError{
-		Name:  "reserved RPDU type",
-		Bytes: b}
+	return nil, UnexpectedMessageTypeError{Actual: b[0]}
 }

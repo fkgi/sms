@@ -46,10 +46,7 @@ func UnmarshalAckMO(b []byte) (a Ack, e error) {
 // UnmarshalMORP reads binary data
 func (d *Ack) UnmarshalMORP(b []byte) error {
 	ud, e := d.unmarshal(b, 2)
-	if e != nil {
-		return e
-	}
-	if ud != nil {
+	if e == nil && ud != nil {
 		d.UD, e = UnmarshalMOTP(ud)
 	}
 	return e
@@ -64,34 +61,28 @@ func UnmarshalAckMT(b []byte) (a Ack, e error) {
 // UnmarshalMTRP reads binary data
 func (d *Ack) UnmarshalMTRP(b []byte) error {
 	ud, e := d.unmarshal(b, 3)
-	if e != nil {
-		return e
-	}
-	if ud != nil {
+	if e == nil && ud != nil {
 		d.UD, e = UnmarshalMTTP(ud)
 	}
 	return e
 }
 
 func (d *Ack) unmarshal(b []byte, mti byte) ([]byte, error) {
-	if len(b) == 0 {
-		return nil, io.EOF
-	}
-	if b[0] != mti {
-		return nil, &InvalidDataError{
-			Name: "invalid MTI"}
-	}
-
-	r := bytes.NewReader(b[1:])
+	r := bytes.NewReader(b)
 	var e error
+
+	if tmp, e := r.ReadByte(); e != nil {
+		return nil, e
+	} else if tmp != mti {
+		return nil, UnexpectedMessageTypeError{Expected: mti, Actual: b[0]}
+	}
 	if d.MR, e = r.ReadByte(); e != nil {
 		return nil, e
 	}
 	if tmp, e := r.ReadByte(); e == io.EOF {
 		return nil, nil
 	} else if tmp != 41 {
-		return nil, &InvalidDataError{
-			Name: "unknown IE"}
+		return nil, UnexpectedInformationElementError{Expected: 41, Actual: tmp}
 	}
 	if l, e := r.ReadByte(); e == nil {
 		b = make([]byte, int(l))
@@ -104,18 +95,19 @@ func (d *Ack) unmarshal(b []byte, mti byte) ([]byte, error) {
 		return nil, io.EOF
 	}
 	if r.Len() != 0 {
-		return nil, &InvalidDataError{
-			Name: "extra part"}
+		return nil, InvalidLengthError{}
 	}
 	return b, nil
 }
 
 func (d Ack) String() string {
 	w := new(bytes.Buffer)
+
 	fmt.Fprintf(w, "SMS message stack: Ack\n")
 	fmt.Fprintf(w, "%sRP-MR:   %d\n", Indent, d.MR)
 	if d.UD != nil {
 		fmt.Fprintf(w, "%sRP-UD:   %s\n", Indent, d.UD)
 	}
+
 	return w.String()
 }

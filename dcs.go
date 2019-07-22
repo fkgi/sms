@@ -16,13 +16,13 @@ type DCS interface {
 func UnmarshalDCS(b byte) DCS {
 	switch b & 0xc0 {
 	case 0x00:
-		return &GeneralDataCoding{
+		return GeneralDataCoding{
 			AutoDelete: false,
 			Compressed: b&0x20 == 0x20,
 			MsgClass:   msgClass(b & 0x13),
 			Charset:    charset(b & 0x0c)}
 	case 0x40:
-		return &GeneralDataCoding{
+		return GeneralDataCoding{
 			AutoDelete: true,
 			Compressed: b&0x20 == 0x20,
 			MsgClass:   msgClass(b & 0x13),
@@ -30,22 +30,22 @@ func UnmarshalDCS(b byte) DCS {
 	}
 	switch b & 0xf0 {
 	case 0xc0:
-		return &MessageWaiting{
+		return MessageWaiting{
 			Behavior:    DiscardMessageGSM7bit,
 			Active:      b&0x08 == 0x08,
 			WaitingType: waitType(b & 0x03)}
 	case 0xd0:
-		return &MessageWaiting{
+		return MessageWaiting{
 			Behavior:    StoreMessageGSM7bit,
 			Active:      b&0x08 == 0x08,
 			WaitingType: waitType(b & 0x03)}
 	case 0xe0:
-		return &MessageWaiting{
+		return MessageWaiting{
 			Behavior:    StoreMessageUCS2,
 			Active:      b&0x08 == 0x08,
 			WaitingType: waitType(b & 0x03)}
 	case 0xf0:
-		return &DataCodingMessage{
+		return DataCodingMessage{
 			IsData:   b&0x04 == 0x04,
 			MsgClass: msgClass((b & 0x03) | 0x10)}
 	}
@@ -59,9 +59,7 @@ func readDCS(r *bytes.Reader) (DCS, error) {
 	}
 	d := UnmarshalDCS(p)
 	if d == nil {
-		return nil, &InvalidDataError{
-			Name:  "TP-DCS",
-			Bytes: []byte{p}}
+		return nil, UnknownDataCodingError{DCS: p}
 	}
 	return d, nil
 }
@@ -98,11 +96,7 @@ type GeneralDataCoding struct {
 }
 
 // Marshal make byte data
-func (c *GeneralDataCoding) Marshal() (b byte) {
-	if c == nil {
-		return
-	}
-
+func (c GeneralDataCoding) Marshal() (b byte) {
 	if c.AutoDelete {
 		b = 0x40
 	} else {
@@ -116,17 +110,11 @@ func (c *GeneralDataCoding) Marshal() (b byte) {
 	return
 }
 
-func (c *GeneralDataCoding) charset() charset {
-	if c != nil {
-		return c.Charset
-	}
-	return CharsetGSM7bit
+func (c GeneralDataCoding) charset() charset {
+	return c.Charset
 }
 
-func (c *GeneralDataCoding) String() string {
-	if c == nil {
-		return "<nil>"
-	}
+func (c GeneralDataCoding) String() string {
 	var b bytes.Buffer
 	b.WriteString("General Data Coding")
 	if c.AutoDelete {
@@ -187,11 +175,7 @@ type MessageWaiting struct {
 }
 
 // Marshal make byte data
-func (c *MessageWaiting) Marshal() (b byte) {
-	if c == nil {
-		return
-	}
-
+func (c MessageWaiting) Marshal() (b byte) {
 	b = 0xc0
 	b |= byte(c.Behavior & 0xc0)
 	if c.Active {
@@ -201,17 +185,14 @@ func (c *MessageWaiting) Marshal() (b byte) {
 	return
 }
 
-func (c *MessageWaiting) charset() charset {
-	if c != nil && c.Behavior == StoreMessageUCS2 {
+func (c MessageWaiting) charset() charset {
+	if c.Behavior == StoreMessageUCS2 {
 		return CharsetUCS2
 	}
 	return CharsetGSM7bit
 }
 
-func (c *MessageWaiting) String() string {
-	if c == nil {
-		return "<nil>"
-	}
+func (c MessageWaiting) String() string {
 	var b bytes.Buffer
 	b.WriteString("MessageWaiting")
 	switch c.Behavior {
@@ -247,11 +228,7 @@ type DataCodingMessage struct {
 }
 
 // Marshal make byte data
-func (c *DataCodingMessage) Marshal() (b byte) {
-	if c == nil {
-		return
-	}
-
+func (c DataCodingMessage) Marshal() (b byte) {
 	b = 0xf0
 	if c.IsData {
 		b |= 0x40
@@ -260,17 +237,14 @@ func (c *DataCodingMessage) Marshal() (b byte) {
 	return
 }
 
-func (c *DataCodingMessage) charset() charset {
-	if c != nil && c.IsData {
+func (c DataCodingMessage) charset() charset {
+	if c.IsData {
 		return Charset8bitData
 	}
 	return CharsetGSM7bit
 }
 
-func (c *DataCodingMessage) String() string {
-	if c == nil {
-		return "<nil>"
-	}
+func (c DataCodingMessage) String() string {
 	var b bytes.Buffer
 	b.WriteString("Data coding/message")
 	if c.IsData {

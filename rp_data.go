@@ -58,10 +58,11 @@ func UnmarshalDataMO(b []byte) (a Data, e error) {
 func (d *Data) UnmarshalMORP(b []byte) error {
 	r := bytes.NewReader(b)
 	var e error
+
 	if tmp, e := r.ReadByte(); e != nil {
 		return e
 	} else if tmp != 0 {
-		return fmt.Errorf("invalid data")
+		return UnexpectedMessageTypeError{Expected: 0, Actual: tmp}
 	}
 	if d.MR, e = r.ReadByte(); e != nil {
 		return e
@@ -69,7 +70,7 @@ func (d *Data) UnmarshalMORP(b []byte) error {
 	if tmp, e := r.ReadByte(); e != nil {
 		return e
 	} else if tmp != 0 {
-		return fmt.Errorf("invalid data")
+		return UnexpectedInformationElementError{Expected: 0, Actual: tmp}
 	}
 	if d.DA, e = readAddr(r); e != nil {
 		return e
@@ -86,8 +87,7 @@ func (d *Data) UnmarshalMORP(b []byte) error {
 	}
 	d.UD, e = UnmarshalMOTP(b)
 	if r.Len() != 0 {
-		return &InvalidDataError{
-			Name: "extra part"}
+		return InvalidLengthError{}
 	}
 	return e
 }
@@ -102,10 +102,11 @@ func UnmarshalDataMT(b []byte) (a Data, e error) {
 func (d *Data) UnmarshalMTRP(b []byte) error {
 	r := bytes.NewReader(b)
 	var e error
+
 	if tmp, e := r.ReadByte(); e != nil {
 		return e
 	} else if tmp != 1 {
-		return fmt.Errorf("invalid data")
+		return UnexpectedMessageTypeError{Expected: 1, Actual: tmp}
 	}
 	if d.MR, e = r.ReadByte(); e != nil {
 		return e
@@ -116,7 +117,7 @@ func (d *Data) UnmarshalMTRP(b []byte) error {
 	if tmp, e := r.ReadByte(); e != nil {
 		return e
 	} else if tmp != 0 {
-		return fmt.Errorf("invalid data")
+		return UnexpectedInformationElementError{Expected: 0, Actual: tmp}
 	}
 	if l, e := r.ReadByte(); e == nil {
 		b = make([]byte, int(l))
@@ -130,18 +131,19 @@ func (d *Data) UnmarshalMTRP(b []byte) error {
 	}
 	d.UD, e = UnmarshalMTTP(b)
 	if r.Len() != 0 {
-		return &InvalidDataError{
-			Name: "extra part"}
+		return InvalidLengthError{}
 	}
 	return e
 }
 
 func (d Data) String() string {
 	w := new(bytes.Buffer)
+
 	fmt.Fprintf(w, "SMS message stack: Data\n")
 	fmt.Fprintf(w, "%sRP-MR:   %d\n", Indent, d.MR)
 	fmt.Fprintf(w, "%sRP-OA:   %s\n", Indent, d.OA)
 	fmt.Fprintf(w, "%sRP-DA:   %s\n", Indent, d.DA)
 	fmt.Fprintf(w, "%sRP-UD:   %s\n", Indent, d.UD)
+
 	return w.String()
 }

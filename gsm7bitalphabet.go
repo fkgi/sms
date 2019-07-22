@@ -74,9 +74,7 @@ func StringToGSM7bit(s string) (GSM7bitString, error) {
 	for _, r := range s {
 		_, c := getCode(r)
 		if c == 0xff {
-			return nil, &InvalidDataError{
-				Name:  "GSM7bit string",
-				Bytes: []byte(string(r))}
+			return nil, UnknownGSM7bitRuneError{R: r}
 		}
 		txt[i] = r
 		i++

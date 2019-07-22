@@ -82,8 +82,8 @@ func (d *Submit) UnmarshalTP(b []byte) (e error) {
 		return io.EOF
 	}
 	if b[0]&0x03 != 0x01 {
-		e = &InvalidDataError{
-			Name: "invalid MTI"}
+		return UnexpectedMessageTypeError{
+			Expected: 0x01, Actual: b[0] & 0x03}
 	}
 
 	d.RD = b[0]&0x04 == 0x04
@@ -125,13 +125,12 @@ func (d *Submit) UnmarshalTP(b []byte) (e error) {
 	}
 	if e == nil {
 		e = d.UD.read(r, d.DCS, b[0]&0x40 == 0x40)
+		if e != nil {
+			return
+		}
 	}
-	if e == nil && r.Len() != 0 {
-		tmp := make([]byte, r.Len())
-		r.Read(tmp)
-		e = &InvalidDataError{
-			Name:  "extra part",
-			Bytes: tmp}
+	if r.Len() != 0 {
+		e = InvalidLengthError{}
 	}
 	return
 }
@@ -190,6 +189,7 @@ func (d *Submit) UnmarshalJSON(b []byte) error {
 
 func (d Submit) String() string {
 	w := new(bytes.Buffer)
+
 	fmt.Fprintf(w, "SMS message stack: Submit\n")
 	fmt.Fprintf(w, "%sTP-RD:   %s\n", Indent, rdStat(d.RD))
 	fmt.Fprintf(w, "%sTP-SRR:  %s\n", Indent, srrStat(d.SRR))
@@ -204,6 +204,7 @@ func (d Submit) String() string {
 	if !d.UD.isEmpty() {
 		fmt.Fprintf(w, "%s", d.UD.String())
 	}
+
 	return w.String()
 }
 
@@ -249,6 +250,7 @@ func (d SubmitReport) MarshalTP() []byte {
 	if len(d.UD.Text) != 0 || len(d.UD.UDH) != 0 {
 		d.UD.write(w, d.DCS)
 	}
+
 	return w.Bytes()
 }
 
@@ -264,8 +266,8 @@ func (d *SubmitReport) UnmarshalTP(b []byte) (e error) {
 		return io.EOF
 	}
 	if b[0]&0x03 != 0x01 {
-		e = &InvalidDataError{
-			Name: "invalid MTI"}
+		return UnexpectedMessageTypeError{
+			Expected: 0x01, Actual: b[0] & 0x03}
 	}
 
 	r := bytes.NewReader(b[1:])
@@ -296,14 +298,13 @@ func (d *SubmitReport) UnmarshalTP(b []byte) (e error) {
 		}
 	}
 	if pi&0x04 == 0x04 {
-		d.UD.read(r, d.DCS, b[0]&0x40 == 0x40)
+		e = d.UD.read(r, d.DCS, b[0]&0x40 == 0x40)
+		if e != nil {
+			return
+		}
 	}
-	if e == nil && r.Len() != 0 {
-		tmp := make([]byte, r.Len())
-		r.Read(tmp)
-		e = &InvalidDataError{
-			Name:  "extra part",
-			Bytes: tmp}
+	if r.Len() != 0 {
+		e = InvalidLengthError{}
 	}
 	return
 }
@@ -363,6 +364,7 @@ func (d *SubmitReport) UnmarshalJSON(b []byte) error {
 
 func (d SubmitReport) String() string {
 	w := new(bytes.Buffer)
+
 	fmt.Fprintf(w, "SMS message stack: Submit Report")
 	if d.FCS&0x80 == 0x80 {
 		fmt.Fprintf(w, " for RP-ERROR\n")
@@ -381,5 +383,6 @@ func (d SubmitReport) String() string {
 	if !d.UD.isEmpty() {
 		fmt.Fprintf(w, "%s", d.UD.String())
 	}
+
 	return w.String()
 }

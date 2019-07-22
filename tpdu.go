@@ -52,13 +52,9 @@ func UnmarshalMOTP(b []byte) (TPDU, error) {
 		return UnmarshalSubmit(b)
 	case 0x02:
 		// return UnmarshalCommand(b)
-		return nil, InvalidDataError{
-			Name:  "reserved TPDU type",
-			Bytes: b}
+		return nil, UnexpectedMessageTypeError{Actual: b[0] & 0x03}
 	}
-	return nil, InvalidDataError{
-		Name:  "reserved TPDU type",
-		Bytes: b}
+	return nil, UnexpectedMessageTypeError{Actual: b[0] & 0x03}
 }
 
 // UnmarshalMTTP parse byte data to TPDU as MS.
@@ -74,9 +70,7 @@ func UnmarshalMTTP(b []byte) (t TPDU, e error) {
 	case 0x02:
 		return UnmarshalStatusReport(b)
 	}
-	return nil, InvalidDataError{
-		Name:  "reserved TPDU type",
-		Bytes: b}
+	return nil, UnexpectedMessageTypeError{Actual: b[0] & 0x03}
 }
 
 func read7Bytes(r *bytes.Reader) ([7]byte, error) {

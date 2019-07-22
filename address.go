@@ -61,11 +61,9 @@ type Address struct {
 
 func (a Address) String() string {
 	if a.Addr == nil {
-		return fmt.Sprintf(
-			"TON/NPI=%d/%d addr=<empty>", a.TON, a.NPI)
+		return fmt.Sprintf("TON/NPI=%d/%d addr=<empty>", a.TON, a.NPI)
 	}
-	return fmt.Sprintf(
-		"TON/NPI=%d/%d addr=%s", a.TON, a.NPI, a.Addr)
+	return fmt.Sprintf("TON/NPI=%d/%d addr=%s", a.TON, a.NPI, a.Addr)
 }
 
 // UnmarshalJSON provide custom marshaller
