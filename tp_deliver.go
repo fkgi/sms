@@ -81,7 +81,7 @@ func (d *Deliver) UnmarshalTP(b []byte) (e error) {
 
 	r := bytes.NewReader(b[1:])
 
-	if d.OA, e = readAddr(r); e != nil {
+	if d.OA, e = readTPAddr(r); e != nil {
 		return
 	}
 	if d.PID, e = r.ReadByte(); e != nil {

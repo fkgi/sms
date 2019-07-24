@@ -3,6 +3,7 @@ package sms
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"regexp"
@@ -151,7 +152,7 @@ func (a *Address) Unmarshal(l byte, b []byte) {
 	b = b[1:]
 	if a.TON == TypeAlphanumeric {
 		l = l * 4 / 7
-		a.Addr = UnmarshalGSM7bit(int(l), b)
+		a.Addr = UnmarshalGSM7bitString(int(l), b)
 	} else {
 		if l%2 == 1 {
 			b[len(b)-1] |= 0xf0
@@ -161,7 +162,7 @@ func (a *Address) Unmarshal(l byte, b []byte) {
 	return
 }
 
-func readAddr(r *bytes.Reader) (a Address, e error) {
+func readTPAddr(r *bytes.Reader) (a Address, e error) {
 	var l byte
 	if l, e = r.ReadByte(); e != nil {
 		return
@@ -174,6 +175,29 @@ func readAddr(r *bytes.Reader) (a Address, e error) {
 			e = io.EOF
 		} else {
 			a.Unmarshal(l, b)
+		}
+	}
+	return
+}
+
+func readRPAddr(r *bytes.Reader) (a Address, e error) {
+	var l byte
+	if l, e = r.ReadByte(); e != nil {
+		return
+	}
+	if l == 0 {
+		return
+	}
+
+	b := make([]byte, l)
+	var i int
+	if i, e = r.Read(b); e == nil {
+		if i != len(b) {
+			e = io.EOF
+		} else if (b[0]>>4)&0x07 == TypeAlphanumeric {
+			e = errors.New("unexpected type of number")
+		} else {
+			a.Unmarshal((l-1)*2, b)
 		}
 	}
 	return

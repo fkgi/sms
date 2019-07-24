@@ -95,7 +95,7 @@ func (d *Submit) UnmarshalTP(b []byte) (e error) {
 	if d.MR, e = r.ReadByte(); e != nil {
 		return
 	}
-	if d.DA, e = readAddr(r); e != nil {
+	if d.DA, e = readTPAddr(r); e != nil {
 		return
 	}
 	if d.PID, e = r.ReadByte(); e != nil {

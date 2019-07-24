@@ -82,14 +82,14 @@ func StringToGSM7bit(s string) (GSM7bitString, error) {
 	return txt, nil
 }
 
-// UnmarshalGSM7bit generate GSM7bitString from byte slice
-func UnmarshalGSM7bit(l int, b []byte) GSM7bitString {
-	s := GSM7bitString(make([]rune, 0, l))
-	s.unmarshal(0, b)
-	return s
+// UnmarshalGSM7bitString generate GSM7bitString from byte slice
+func UnmarshalGSM7bitString(l int, b []byte) GSM7bitString {
+	return unmarshalGSM7bitString(0, l, b)
 }
 
-func (s GSM7bitString) unmarshal(o int, b []byte) {
+func unmarshalGSM7bitString(o, l int, b []byte) GSM7bitString {
+	s := GSM7bitString(make([]rune, 0, l))
+
 	o = 7 - o
 	var next byte
 	var sh uint
@@ -111,7 +111,7 @@ func (s GSM7bitString) unmarshal(o int, b []byte) {
 
 		sh = 7 - sh
 		next = (r >> sh) & (0x7f >> (sh - 1))
-		if sh == 1 && i < cap(s) {
+		if sh == 1 && len(s) < cap(s) {
 			if next == 0x1b {
 				esc = true
 			} else if esc {
@@ -123,11 +123,15 @@ func (s GSM7bitString) unmarshal(o int, b []byte) {
 			next = 0x00
 		}
 	}
-	return
+	return s
 }
 
 // Length return length of the GSM 7bit String
 func (s GSM7bitString) Length() int {
+	return len(s)
+}
+
+func (s GSM7bitString) septetLength() int {
 	i := 0
 	for _, c := range s {
 		i++
@@ -154,7 +158,7 @@ func (s GSM7bitString) Bytes() []byte {
 }
 
 func (s GSM7bitString) marshal(o int) []byte {
-	l := s.Length()*7 + o
+	l := s.septetLength()*7 + o
 	b := make([]byte, l/8+1)
 	if l%8 == 0 {
 		b = b[:l/8]

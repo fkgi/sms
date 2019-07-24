@@ -144,8 +144,7 @@ func (u *UD) read(r *bytes.Reader, d DCS, h bool) error {
 
 	switch c {
 	case CharsetGSM7bit:
-		s := GSM7bitString(make([]rune, 0, l))
-		s.unmarshal(o, ud)
+		s := unmarshalGSM7bitString(o, l, ud)
 		u.Text = s.String()
 	case Charset8bitData:
 		u.Text = base64.StdEncoding.EncodeToString(ud)
@@ -179,7 +178,7 @@ func (u UD) write(w *bytes.Buffer, d DCS) {
 		}
 		s, _ := StringToGSM7bit(u.Text)
 		ud = s.marshal(o)
-		l += s.Length()
+		l += s.septetLength()
 	case Charset8bitData:
 		var e error
 		ud, e = base64.StdEncoding.DecodeString(u.Text)

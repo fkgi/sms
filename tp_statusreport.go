@@ -100,7 +100,7 @@ func (d *StatusReport) UnmarshalTP(b []byte) (e error) {
 	if d.MR, e = r.ReadByte(); e != nil {
 		return
 	}
-	if d.RA, e = readAddr(r); e != nil {
+	if d.RA, e = readTPAddr(r); e != nil {
 		return
 	}
 	var p [7]byte

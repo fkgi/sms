@@ -67,12 +67,10 @@ func (d *Data) UnmarshalMORP(b []byte) error {
 	if d.MR, e = r.ReadByte(); e != nil {
 		return e
 	}
-	if tmp, e := r.ReadByte(); e != nil {
+	if d.OA, e = readRPAddr(r); e != nil {
 		return e
-	} else if tmp != 0 {
-		return UnexpectedInformationElementError{Expected: 0, Actual: tmp}
 	}
-	if d.DA, e = readAddr(r); e != nil {
+	if d.DA, e = readRPAddr(r); e != nil {
 		return e
 	}
 	if l, e := r.ReadByte(); e == nil {
@@ -111,13 +109,11 @@ func (d *Data) UnmarshalMTRP(b []byte) error {
 	if d.MR, e = r.ReadByte(); e != nil {
 		return e
 	}
-	if d.OA, e = readAddr(r); e != nil {
+	if d.OA, e = readRPAddr(r); e != nil {
 		return e
 	}
-	if tmp, e := r.ReadByte(); e != nil {
+	if d.DA, e = readRPAddr(r); e != nil {
 		return e
-	} else if tmp != 0 {
-		return UnexpectedInformationElementError{Expected: 0, Actual: tmp}
 	}
 	if l, e := r.ReadByte(); e == nil {
 		b = make([]byte, int(l))

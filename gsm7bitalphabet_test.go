@@ -32,26 +32,28 @@ func TestGetGSM7bitString(t *testing.T) {
 
 func TestGSM7bitStringLength(t *testing.T) {
 	rand.Seed(time.Now().Unix())
-	txt := randText(rand.Int() % 1000)
-	t.Logf("\ntest text=%s", strconv.QuoteToGraphic(txt))
+	for i := 0; i < 500; i++ {
+		txt := randText(rand.Int() % 1000)
+		t.Logf("\ntest text=%s", strconv.QuoteToGraphic(txt))
 
-	s, e := StringToGSM7bit(txt)
-	if e != nil {
-		t.Fatalf("conversion failure: %s", e)
-	}
-	t.Logf("\norig len=%d\nconv len=%d",
-		utf8.RuneCountInString(txt), s.Length())
-
-	if s.Length() != utf8.RuneCountInString(txt) {
-		t.Fatalf("detect length failed orig=%d detect=%d",
+		s, e := StringToGSM7bit(txt)
+		if e != nil {
+			t.Fatalf("conversion failure: %s", e)
+		}
+		t.Logf("\norig len=%d\nconv len=%d",
 			utf8.RuneCountInString(txt), s.Length())
+
+		if s.Length() != utf8.RuneCountInString(txt) {
+			t.Fatalf("detect length failed orig=%d detect=%d",
+				utf8.RuneCountInString(txt), s.Length())
+		}
 	}
 }
 
 func TestGSM7bitStringByteConv(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
-	for i := 0; i < 50; i++ {
+	for i := 0; i < 500; i++ {
 		org := randText(rand.Int() % 1000)
 		l := utf8.RuneCountInString(org)
 		o := rand.Int() % 8
@@ -65,10 +67,7 @@ func TestGSM7bitStringByteConv(t *testing.T) {
 		b := s.marshal(o)
 		t.Logf("\nlen=%d\nhex=% x\n", len(b), b)
 
-		s = GSM7bitString(make([]rune, l))
-		s.unmarshal(o, b)
-
-		r := s.String()
+		r := unmarshalGSM7bitString(o, l, b).String()
 		if r != org {
 			t.Fatalf("\ndetect=%s", strconv.QuoteToGraphic(r))
 		}

@@ -40,13 +40,13 @@ func UnmarshalMTRP(b []byte) (t RPDU, e error) {
 		return nil, io.EOF
 	}
 	switch b[0] & 0x03 {
-	case 0x00:
+	case 0x01:
 		return UnmarshalDataMT(b)
-	case 0x02:
+	case 0x03:
 		return UnmarshalAckMT(b)
-	case 0x04:
+	case 0x05:
 		return UnmarshalErrorMT(b)
-	case 0x06:
+	case 0x07:
 		return UnmarshalMemoryAvailableMT(b)
 	}
 	return nil, UnexpectedMessageTypeError{Actual: b[0]}
