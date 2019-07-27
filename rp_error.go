@@ -6,6 +6,60 @@ import (
 	"io"
 )
 
+func csStat(c byte) string {
+	switch c {
+	case 1:
+		return "Unassigned (unallocated) number"
+	case 8:
+		return "Operator determined barring"
+	case 10:
+		return "Call barred"
+	case 11:
+		return "Reserved"
+	case 21:
+		return "Short message transfer rejected"
+	case 22:
+		return "Memory capacity exceeded"
+	case 27:
+		return "Destination out of order"
+	case 28:
+		return "Unidentified subscriber"
+	case 29:
+		return "Facility rejected"
+	case 30:
+		return "Unknown subscriber"
+	case 38:
+		return "Network out of order"
+	case 41:
+		return "Temporary failure"
+	case 42:
+		return "Congestion"
+	case 47:
+		return "Resources unavailable, unspecified"
+	case 50:
+		return "Requested facility not subscribed"
+	case 69:
+		return "Requested facility not implemented"
+	case 81:
+		return "Invalid short message transfer reference value"
+	case 95:
+		return "Semantically incorrect message"
+	case 96:
+		return "Invalid mandatory information"
+	case 97:
+		return "Message type non existent or not implemented"
+	case 98:
+		return "Message not compatible with short message protocol state"
+	case 99:
+		return "Information element non existent or not implemented"
+	case 111:
+		return "Protocol error, unspecified"
+	case 127:
+		return "Interworking, unspecified"
+	}
+	return fmt.Sprintf("Reserved(%d)", c)
+}
+
 // Error is RP-ERROR RPDU
 type Error struct {
 	MR   byte  `json:"mr"`             // M / Message Reference
@@ -104,8 +158,8 @@ func (d *Error) unmarshal(b []byte, mti byte) ([]byte, error) {
 
 	if tmp, e := r.ReadByte(); e == io.EOF {
 		return nil, nil
-	} else if tmp != 41 {
-		return nil, UnexpectedInformationElementError{Expected: 41, Actual: tmp}
+	} else if tmp != 0x41 {
+		return nil, UnexpectedInformationElementError{Expected: 0x41, Actual: tmp}
 	}
 	if l, e := r.ReadByte(); e == nil {
 		b = make([]byte, int(l))
@@ -128,7 +182,7 @@ func (d Error) String() string {
 
 	fmt.Fprintf(w, "SMS message stack: Error\n")
 	fmt.Fprintf(w, "%sRP-MR:   %d\n", Indent, d.MR)
-	fmt.Fprintf(w, "%sRP-CS:   cause=%d, diagnostic=%d\n", Indent, d.CS, d.Diag)
+	fmt.Fprintf(w, "%sRP-CS:   cause=%s, diagnostic=%d\n", Indent, csStat(d.CS), d.Diag)
 	if d.UD != nil {
 		fmt.Fprintf(w, "%sRP-UD:   %s\n", Indent, d.UD)
 	}

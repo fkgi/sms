@@ -81,8 +81,8 @@ func (d *Ack) unmarshal(b []byte, mti byte) ([]byte, error) {
 	}
 	if tmp, e := r.ReadByte(); e == io.EOF {
 		return nil, nil
-	} else if tmp != 41 {
-		return nil, UnexpectedInformationElementError{Expected: 41, Actual: tmp}
+	} else if tmp != 0x41 {
+		return nil, UnexpectedInformationElementError{Expected: 0x41, Actual: tmp}
 	}
 	if l, e := r.ReadByte(); e == nil {
 		b = make([]byte, int(l))
