@@ -8,6 +8,7 @@ import (
 // DCS indicate Data Coding Scheme
 type DCS interface {
 	Marshal() byte
+	Equal(DCS) bool
 	fmt.Stringer
 	charset() charset
 }
@@ -16,12 +17,24 @@ type DCS interface {
 func UnmarshalDCS(b byte) DCS {
 	switch b & 0xc0 {
 	case 0x00:
+		if b&0x0c == 0x0c && b&0x03 != 0x00 {
+			return nil
+		}
+		if b&0x0c == 0x0c {
+			return nil
+		}
 		return GeneralDataCoding{
 			AutoDelete: false,
 			Compressed: b&0x20 == 0x20,
 			MsgClass:   msgClass(b & 0x13),
 			Charset:    charset(b & 0x0c)}
 	case 0x40:
+		if b&0x0c == 0x0c && b&0x03 != 0x00 {
+			return nil
+		}
+		if b&0x0c == 0x0c {
+			return nil
+		}
 		return GeneralDataCoding{
 			AutoDelete: true,
 			Compressed: b&0x20 == 0x20,
@@ -30,16 +43,25 @@ func UnmarshalDCS(b byte) DCS {
 	}
 	switch b & 0xf0 {
 	case 0xc0:
+		if b&0x04 == 0x04 {
+			return nil
+		}
 		return MessageWaiting{
 			Behavior:    DiscardMessageGSM7bit,
 			Active:      b&0x08 == 0x08,
 			WaitingType: waitType(b & 0x03)}
 	case 0xd0:
+		if b&0x04 == 0x04 {
+			return nil
+		}
 		return MessageWaiting{
 			Behavior:    StoreMessageGSM7bit,
 			Active:      b&0x08 == 0x08,
 			WaitingType: waitType(b & 0x03)}
 	case 0xe0:
+		if b&0x04 == 0x04 {
+			return nil
+		}
 		return MessageWaiting{
 			Behavior:    StoreMessageUCS2,
 			Active:      b&0x08 == 0x08,
@@ -93,6 +115,27 @@ type GeneralDataCoding struct {
 	Compressed bool
 	MsgClass   msgClass
 	Charset    charset
+}
+
+// Equal reports a and b are same
+func (c GeneralDataCoding) Equal(b DCS) bool {
+	a, ok := b.(GeneralDataCoding)
+	if !ok {
+		return false
+	}
+	if a.AutoDelete != c.AutoDelete {
+		return false
+	}
+	if a.Compressed != c.Compressed {
+		return false
+	}
+	if a.MsgClass != c.MsgClass {
+		return false
+	}
+	if a.Charset != c.Charset {
+		return false
+	}
+	return true
 }
 
 // Marshal make byte data
@@ -174,12 +217,30 @@ type MessageWaiting struct {
 	WaitingType waitType
 }
 
+// Equal reports a and b are same
+func (c MessageWaiting) Equal(b DCS) bool {
+	a, ok := b.(MessageWaiting)
+	if !ok {
+		return false
+	}
+	if a.Behavior != c.Behavior {
+		return false
+	}
+	if a.Active != c.Active {
+		return false
+	}
+	if a.WaitingType != c.WaitingType {
+		return false
+	}
+	return true
+}
+
 // Marshal make byte data
 func (c MessageWaiting) Marshal() (b byte) {
 	b = 0xc0
-	b |= byte(c.Behavior & 0xc0)
+	b |= byte(c.Behavior & 0x30)
 	if c.Active {
-		b |= 0x80
+		b |= 0x08
 	}
 	b |= byte(c.WaitingType & 0x03)
 	return
@@ -227,11 +288,26 @@ type DataCodingMessage struct {
 	MsgClass msgClass
 }
 
+// Equal reports a and b are same
+func (c DataCodingMessage) Equal(b DCS) bool {
+	a, ok := b.(DataCodingMessage)
+	if !ok {
+		return false
+	}
+	if a.IsData != c.IsData {
+		return false
+	}
+	if a.MsgClass != c.MsgClass {
+		return false
+	}
+	return true
+}
+
 // Marshal make byte data
 func (c DataCodingMessage) Marshal() (b byte) {
 	b = 0xf0
 	if c.IsData {
-		b |= 0x40
+		b |= 0x04
 	}
 	b |= byte(c.MsgClass & 0x03)
 	return

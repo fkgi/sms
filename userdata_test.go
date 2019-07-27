@@ -51,3 +51,32 @@ func subfuncMarshalJSON(u sms.UD, t *testing.T) {
 	}
 	t.Log(u.String())
 }
+
+/*
+func TestConvertUDH(t *testing.T) {
+}
+
+func getRandomUDH() UDH {
+	h := randByte()
+	switch h {
+	case 0x00:
+		return sms.ConcatenatedSM{
+			RefNum: randByte(),
+			MaxNum: randByte(),
+			SeqNum: randByte()}
+	case 0x08:
+		return sms.ConcatenatedSM16bit{
+			RefNum: uint16(rand.Int() % 65536),
+			MaxNum: randByte(),
+			SeqNum: randByte()}
+	default:
+		iei := sms.GenericIEI{
+			K: h,
+			V: make([]byte, rand.Int()%5+1)}
+		for i := range iei.V {
+			iei.V[i] = randByte()
+		}
+		return iei
+	}
+}
+*/

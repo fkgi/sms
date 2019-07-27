@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"reflect"
 	"regexp"
 
 	"github.com/fkgi/teldata"
@@ -65,6 +66,20 @@ func (a Address) String() string {
 		return fmt.Sprintf("TON/NPI=%d/%d addr=<empty>", a.TON, a.NPI)
 	}
 	return fmt.Sprintf("TON/NPI=%d/%d addr=%s", a.TON, a.NPI, a.Addr)
+}
+
+// Equal reports a and b are same
+func (a Address) Equal(b Address) bool {
+	if a.TON != b.TON {
+		return false
+	}
+	if a.NPI != b.NPI {
+		return false
+	}
+	if reflect.TypeOf(a.Addr) != reflect.TypeOf(b.Addr) {
+		return false
+	}
+	return a.Addr.String() == b.Addr.String()
 }
 
 // UnmarshalJSON provide custom marshaller
@@ -140,19 +155,15 @@ func (a Address) Marshal() (l byte, b []byte) {
 	return
 }
 
-// Unmarshal make Address from binary data and semi-octet length
-func (a *Address) Unmarshal(l byte, b []byte) {
-	if a == nil {
-		return
-	}
-
+// UnmarshalAddress make Address from binary data and semi-octet length
+func UnmarshalAddress(l byte, b []byte) (a Address) {
 	a.TON = (b[0] >> 4) & 0x07
 	a.NPI = b[0] & 0x0f
 
 	b = b[1:]
 	if a.TON == TypeAlphanumeric {
 		l = l * 4 / 7
-		a.Addr = UnmarshalGSM7bitString(int(l), b)
+		a.Addr = UnmarshalGSM7bitString(0, int(l), b)
 	} else {
 		if l%2 == 1 {
 			b[len(b)-1] |= 0xf0
@@ -174,7 +185,7 @@ func readTPAddr(r *bytes.Reader) (a Address, e error) {
 		if i != len(b) {
 			e = io.EOF
 		} else {
-			a.Unmarshal(l, b)
+			a = UnmarshalAddress(l, b)
 		}
 	}
 	return
@@ -197,7 +208,7 @@ func readRPAddr(r *bytes.Reader) (a Address, e error) {
 		} else if (b[0]>>4)&0x07 == TypeAlphanumeric {
 			e = errors.New("unexpected type of number")
 		} else {
-			a.Unmarshal((l-1)*2, b)
+			a = UnmarshalAddress((l-1)*2, b)
 		}
 	}
 	return

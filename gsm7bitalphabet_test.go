@@ -1,4 +1,4 @@
-package sms
+package sms_test
 
 import (
 	"bytes"
@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 	"unicode/utf8"
+
+	"github.com/fkgi/sms"
 )
 
 func TestGetGSM7bitString(t *testing.T) {
@@ -14,7 +16,7 @@ func TestGetGSM7bitString(t *testing.T) {
 	bin := []byte{0xC8, 0x32, 0x9B, 0xFD, 0x86, 0x85, 0x00}
 	cnv := []byte{}
 
-	if s, e := StringToGSM7bit(txt); e != nil {
+	if s, e := sms.StringToGSM7bit(txt); e != nil {
 		t.Fatalf("conversion failure: %s", e)
 	} else {
 		t.Logf("\ntest text=%s", s)
@@ -36,7 +38,7 @@ func TestGSM7bitStringLength(t *testing.T) {
 		txt := randText(rand.Int() % 1000)
 		t.Logf("\ntest text=%s", strconv.QuoteToGraphic(txt))
 
-		s, e := StringToGSM7bit(txt)
+		s, e := sms.StringToGSM7bit(txt)
 		if e != nil {
 			t.Fatalf("conversion failure: %s", e)
 		}
@@ -60,19 +62,36 @@ func TestGSM7bitStringByteConv(t *testing.T) {
 		t.Logf("\nid=%d, len=%d, offset=%d\norigin=%s",
 			i, l, o, strconv.QuoteToGraphic(org))
 
-		s, e := StringToGSM7bit(org)
+		s, e := sms.StringToGSM7bit(org)
 		if e != nil {
 			t.Fatalf("conversion failure: %s", e)
 		}
-		b := s.marshal(o)
+		b := s.Marshal(o)
 		t.Logf("\nlen=%d\nhex=% x\n", len(b), b)
 
-		r := unmarshalGSM7bitString(o, l, b).String()
+		r := sms.UnmarshalGSM7bitString(o, l, b).String()
 		if r != org {
 			t.Fatalf("\ndetect=%s", strconv.QuoteToGraphic(r))
 		}
 	}
 }
+
+var code = [128 + 16]rune{
+	'@', '£', '$', '¥', 'è', 'é', 'ù', 'ì', 'ò', 'Ç',
+	'\n', 'Ø', 'ø', '\r', 'Å', 'å', 'Δ', '_', 'Φ', 'Γ',
+	'Λ', 'Ω', 'Π', 'Ψ', 'Σ', 'Θ', 'Ξ', '\x1b', 'Æ', 'æ',
+	'ß', 'É', ' ', '!', '"', '#', '¤', '%', '&', '\'',
+	'(', ')', '*', '+', ',', '-', '.', '/', '0', '1',
+	'2', '3', '4', '5', '6', '7', '8', '9', ':', ';',
+	'<', '=', '>', '?', '¡', 'A', 'B', 'C', 'D', 'E',
+	'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
+	'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y',
+	'Z', 'Ä', 'Ö', 'Ñ', 'Ü', '§', '¿', 'a', 'b', 'c',
+	'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+	'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w',
+	'x', 'y', 'z', 'ä', 'ö', 'ñ', 'ü', 'à',
+	'|', '\x00', '\x00', '\x00', '^', '€', '\x00', '\x00',
+	'{', '}', '\f', '\x00', '[', '~', ']', '\\'}
 
 func randText(len int) string {
 	var b bytes.Buffer
@@ -82,6 +101,14 @@ func randText(len int) string {
 			c = rand.Int() % (128 + 16)
 		}
 		b.WriteRune(code[c])
+	}
+	return b.String()
+}
+
+func randDigit(len int) string {
+	var b bytes.Buffer
+	for i := 0; i < len; i++ {
+		b.WriteString(strconv.Itoa(rand.Int() % 10))
 	}
 	return b.String()
 }

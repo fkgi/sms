@@ -56,37 +56,11 @@ func UnmarshalDataMO(b []byte) (a Data, e error) {
 
 // UnmarshalMORP reads binary data
 func (d *Data) UnmarshalMORP(b []byte) error {
-	r := bytes.NewReader(b)
-	var e error
-
-	if tmp, e := r.ReadByte(); e != nil {
-		return e
-	} else if tmp != 0 {
-		return UnexpectedMessageTypeError{Expected: 0, Actual: tmp}
-	}
-	if d.MR, e = r.ReadByte(); e != nil {
+	ud, e := d.unmarshal(b, 0)
+	if e != nil {
 		return e
 	}
-	if d.OA, e = readRPAddr(r); e != nil {
-		return e
-	}
-	if d.DA, e = readRPAddr(r); e != nil {
-		return e
-	}
-	if l, e := r.ReadByte(); e == nil {
-		b = make([]byte, int(l))
-	} else {
-		return e
-	}
-	if n, e := r.Read(b); e != nil {
-		return e
-	} else if n != len(b) {
-		return io.EOF
-	}
-	d.UD, e = UnmarshalMOTP(b)
-	if r.Len() != 0 {
-		return InvalidLengthError{}
-	}
+	d.UD, e = UnmarshalMOTP(ud)
 	return e
 }
 
@@ -98,38 +72,46 @@ func UnmarshalDataMT(b []byte) (a Data, e error) {
 
 // UnmarshalMTRP reads binary data
 func (d *Data) UnmarshalMTRP(b []byte) error {
+	ud, e := d.unmarshal(b, 1)
+	if e != nil {
+		return e
+	}
+	d.UD, e = UnmarshalMTTP(ud)
+	return e
+}
+
+func (d *Data) unmarshal(b []byte, mti byte) ([]byte, error) {
 	r := bytes.NewReader(b)
 	var e error
 
 	if tmp, e := r.ReadByte(); e != nil {
-		return e
-	} else if tmp != 1 {
-		return UnexpectedMessageTypeError{Expected: 1, Actual: tmp}
+		return nil, e
+	} else if tmp != mti {
+		return nil, UnexpectedMessageTypeError{Expected: mti, Actual: tmp}
 	}
 	if d.MR, e = r.ReadByte(); e != nil {
-		return e
+		return nil, e
 	}
 	if d.OA, e = readRPAddr(r); e != nil {
-		return e
+		return nil, e
 	}
 	if d.DA, e = readRPAddr(r); e != nil {
-		return e
+		return nil, e
 	}
 	if l, e := r.ReadByte(); e == nil {
 		b = make([]byte, int(l))
 	} else {
-		return e
+		return nil, e
 	}
 	if n, e := r.Read(b); e != nil {
-		return e
+		return nil, e
 	} else if n != len(b) {
-		return io.EOF
+		return nil, io.EOF
 	}
-	d.UD, e = UnmarshalMTTP(b)
 	if r.Len() != 0 {
-		return InvalidLengthError{}
+		return nil, InvalidLengthError{}
 	}
-	return e
+	return b, nil
 }
 
 func (d Data) String() string {

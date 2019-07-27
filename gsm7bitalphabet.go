@@ -82,12 +82,8 @@ func StringToGSM7bit(s string) (GSM7bitString, error) {
 	return txt, nil
 }
 
-// UnmarshalGSM7bitString generate GSM7bitString from byte slice
-func UnmarshalGSM7bitString(l int, b []byte) GSM7bitString {
-	return unmarshalGSM7bitString(0, l, b)
-}
-
-func unmarshalGSM7bitString(o, l int, b []byte) GSM7bitString {
+// UnmarshalGSM7bitString generate GSM7bitString from byte slice with offset
+func UnmarshalGSM7bitString(o, l int, b []byte) GSM7bitString {
 	s := GSM7bitString(make([]rune, 0, l))
 
 	o = 7 - o
@@ -126,6 +122,11 @@ func unmarshalGSM7bitString(o, l int, b []byte) GSM7bitString {
 	return s
 }
 
+// Equal reports a and b are same
+func (s GSM7bitString) Equal(b GSM7bitString) bool {
+	return s.String() == b.String()
+}
+
 // Length return length of the GSM 7bit String
 func (s GSM7bitString) Length() int {
 	return len(s)
@@ -151,13 +152,11 @@ func (s GSM7bitString) String() string {
 
 // Bytes return byte data
 func (s GSM7bitString) Bytes() []byte {
-	if s == nil {
-		return []byte{}
-	}
-	return s.marshal(0)
+	return s.Marshal(0)
 }
 
-func (s GSM7bitString) marshal(o int) []byte {
+// Marshal return byte data with offset shift
+func (s GSM7bitString) Marshal(o int) []byte {
 	l := s.septetLength()*7 + o
 	b := make([]byte, l/8+1)
 	if l%8 == 0 {

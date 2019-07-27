@@ -28,6 +28,19 @@ func (u UD) String() string {
 	return w.String()
 }
 
+// Equal reports a and b are same
+func (u UD) Equal(b UD) bool {
+	if len(u.UDH) != len(b.UDH) {
+		return false
+	}
+	for i := range u.UDH {
+		if !u.UDH[i].Equal(b.UDH[i]) {
+			return false
+		}
+	}
+	return u.Text == b.Text
+}
+
 type judh struct {
 	Key byte   `json:"key"`
 	Val []byte `json:"value"`
@@ -144,7 +157,7 @@ func (u *UD) read(r *bytes.Reader, d DCS, h bool) error {
 
 	switch c {
 	case CharsetGSM7bit:
-		s := unmarshalGSM7bitString(o, l, ud)
+		s := UnmarshalGSM7bitString(o, l, ud)
 		u.Text = s.String()
 	case Charset8bitData:
 		u.Text = base64.StdEncoding.EncodeToString(ud)
@@ -177,7 +190,7 @@ func (u UD) write(w *bytes.Buffer, d DCS) {
 			l++
 		}
 		s, _ := StringToGSM7bit(u.Text)
-		ud = s.marshal(o)
+		ud = s.Marshal(o)
 		l += s.septetLength()
 	case Charset8bitData:
 		var e error

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"reflect"
 )
 
 type udh interface {
@@ -12,6 +13,7 @@ type udh interface {
 	fmt.Stringer
 	Key() byte
 	Value() []byte
+	Equal(udh) bool
 }
 
 func decodeUDH(b []byte) (h []udh) {
@@ -56,6 +58,18 @@ func encodeUDH(h []udh) []byte {
 type GenericIEI struct {
 	K byte   `json:"key"`
 	V []byte `json:"value"`
+}
+
+// Equal reports a and b are same
+func (h *GenericIEI) Equal(b udh) bool {
+	a, ok := b.(*GenericIEI)
+	if !ok {
+		return false
+	}
+	if a.K != h.K {
+		return false
+	}
+	return reflect.DeepEqual(h.V, a.V)
 }
 
 // Key of this IEI
@@ -108,6 +122,24 @@ type ConcatenatedSM struct {
 	SeqNum byte
 }
 
+// Equal reports a and b are same
+func (h *ConcatenatedSM) Equal(b udh) bool {
+	a, ok := b.(*ConcatenatedSM)
+	if !ok {
+		return false
+	}
+	if a.RefNum != h.RefNum {
+		return false
+	}
+	if a.MaxNum != h.MaxNum {
+		return false
+	}
+	if a.SeqNum != h.SeqNum {
+		return false
+	}
+	return true
+}
+
 // Key of this IEI
 func (h *ConcatenatedSM) Key() byte {
 	return 0x00
@@ -155,6 +187,24 @@ type ConcatenatedSM16bit struct {
 	RefNum uint16
 	MaxNum byte
 	SeqNum byte
+}
+
+// Equal reports a and b are same
+func (h *ConcatenatedSM16bit) Equal(b udh) bool {
+	a, ok := b.(*ConcatenatedSM16bit)
+	if !ok {
+		return false
+	}
+	if a.RefNum != h.RefNum {
+		return false
+	}
+	if a.MaxNum != h.MaxNum {
+		return false
+	}
+	if a.SeqNum != h.SeqNum {
+		return false
+	}
+	return true
 }
 
 // Key of this IEI
