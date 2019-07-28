@@ -12,7 +12,7 @@ import (
 // UD is TP-UD
 type UD struct {
 	Text string `json:"text,omitempty"`
-	UDH  []udh  `json:"hdr,omitempty"`
+	UDH  []UDH  `json:"hdr,omitempty"`
 }
 
 func (u UD) String() string {
@@ -72,32 +72,19 @@ func (u *UD) UnmarshalJSON(b []byte) (e error) {
 	if e = json.Unmarshal(b, &al); e != nil {
 		return
 	}
-	u.UDH = make([]udh, 0, len(al.UDH))
+	u.UDH = make([]UDH, 0, len(al.UDH))
 	for _, h := range al.UDH {
 		switch h.Key {
 		case 0x00:
-			t := &ConcatenatedSM{}
-			t.decode(h.Val)
+			t := UnmarshalConcatenatedSM(h.Val)
 			u.UDH = append(u.UDH, t)
 		default:
-			t := &GenericIEI{K: h.Key}
-			t.decode(h.Val)
+			t := UnmarshalGeneric(h.Val)
+			t.K = h.Key
 			u.UDH = append(u.UDH, t)
 		}
 	}
 	return nil
-}
-
-// AddUDH add additional User-Data header
-func (u *UD) AddUDH(h udh) {
-	if h == nil || u == nil {
-		return
-	}
-	if u.UDH == nil {
-		u.UDH = []udh{h}
-	} else {
-		u.UDH = append(u.UDH, h)
-	}
 }
 
 // Set8bitData set binary data as UD
@@ -120,7 +107,7 @@ func (u *UD) read(r *bytes.Reader, d DCS, h bool) error {
 
 	c := CharsetGSM7bit
 	if d != nil {
-		c = d.charset()
+		c = d.Charset()
 	}
 	l := int(p)
 	if c == CharsetGSM7bit {
@@ -151,7 +138,7 @@ func (u *UD) read(r *bytes.Reader, d DCS, h bool) error {
 		} else {
 			l -= int(ud[0] + 1)
 		}
-		u.UDH = decodeUDH(ud[0 : ud[0]+1])
+		u.UDH = UnmarshalUDHs(ud[0 : ud[0]+1])
 		ud = ud[ud[0]+1:]
 	}
 
@@ -174,9 +161,9 @@ func (u *UD) read(r *bytes.Reader, d DCS, h bool) error {
 func (u UD) write(w *bytes.Buffer, d DCS) {
 	c := CharsetGSM7bit
 	if d != nil {
-		c = d.charset()
+		c = d.Charset()
 	}
-	udh := encodeUDH(u.UDH)
+	udh := MarshalUDHs(u.UDH)
 	var ud []byte
 	l := len(udh)
 
@@ -227,16 +214,16 @@ func MakeSeparatedText(s string, c msgClass, id byte) (
 		Compressed: false,
 		MsgClass:   c}
 
-	dcs.Charset = CharsetGSM7bit
+	dcs.MsgCharset = CharsetGSM7bit
 	for _, r := range s {
 		_, code := getCode(r)
 		if code == 0xff {
-			dcs.Charset = CharsetUCS2
+			dcs.MsgCharset = CharsetUCS2
 			break
 		}
 	}
 
-	if dcs.Charset == CharsetGSM7bit {
+	if dcs.MsgCharset == CharsetGSM7bit {
 		r := []rune(s)
 		maxlen := 160
 
@@ -266,7 +253,7 @@ func MakeSeparatedText(s string, c msgClass, id byte) (
 
 	if len(ud) > 1 {
 		for i := range ud {
-			ud[i].AddUDH(&ConcatenatedSM{
+			ud[i].UDH = append(ud[i].UDH, ConcatenatedSM{
 				RefNum: id,
 				MaxNum: byte(len(ud)),
 				SeqNum: byte(i + 1)})

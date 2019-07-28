@@ -2,7 +2,10 @@ package sms_test
 
 import (
 	"encoding/json"
+	"math/rand"
 	"testing"
+	"time"
+	"unicode"
 
 	"github.com/fkgi/sms"
 )
@@ -11,15 +14,15 @@ func TestMarshalJSON_multiUDH(t *testing.T) {
 	u := sms.UD{
 		Text: "hoge",
 	}
-	u.AddUDH(&sms.ConcatenatedSM{RefNum: 3, MaxNum: 2, SeqNum: 1})
-	u.AddUDH(&sms.GenericIEI{K: 99, V: []byte{0x01}})
+	u.UDH = append(u.UDH, sms.ConcatenatedSM{RefNum: 3, MaxNum: 2, SeqNum: 1})
+	u.UDH = append(u.UDH, sms.GenericIEI{K: 99, V: []byte{0x01}})
 	t.Log(u.String())
 	subfuncMarshalJSON(u, t)
 }
 
 func TestMarshalJSON_emptytxt(t *testing.T) {
 	u := sms.UD{}
-	u.AddUDH(&sms.ConcatenatedSM{RefNum: 3, MaxNum: 2, SeqNum: 1})
+	u.UDH = append(u.UDH, sms.ConcatenatedSM{RefNum: 3, MaxNum: 2, SeqNum: 1})
 	t.Log(u.String())
 	subfuncMarshalJSON(u, t)
 }
@@ -52,11 +55,27 @@ func subfuncMarshalJSON(u sms.UD, t *testing.T) {
 	t.Log(u.String())
 }
 
-/*
 func TestConvertUDH(t *testing.T) {
+	rand.Seed(time.Now().Unix())
+
+	origs := make([]sms.UDH, rand.Int()%500)
+	for i := range origs {
+		origs[i] = getRandomUDH()
+	}
+	b := sms.MarshalUDHs(origs)
+	t.Logf("\ndata=% x", b)
+
+	ocoms := sms.UnmarshalUDHs(b)
+	for i := range ocoms {
+		t.Logf("%s", origs[i])
+		t.Logf("%s", ocoms[i])
+		if !origs[i].Equal(ocoms[i]) {
+			t.Fatalf("mismatch orig=%s ocom=%s", origs[i], ocoms[i])
+		}
+	}
 }
 
-func getRandomUDH() UDH {
+func getRandomUDH() sms.UDH {
 	h := randByte()
 	switch h {
 	case 0x00:
@@ -79,4 +98,50 @@ func getRandomUDH() UDH {
 		return iei
 	}
 }
+
+/*
+func TestConvertUD(t *testing.T) {
+	rand.Seed(time.Now().Unix())
+
+	for i := 0; i < 500; i++ {
+		d := getRandomDCS()
+		orig := getRandomUDText(d)
+		t.Logf("%s", orig)
+		b := orig.Marshal()
+		t.Logf("\ndata=% x", b)
+		ocom := sms.UnmarshalUD(b)
+		t.Logf("%s", ocom)
+		if !orig.Equal(ocom) {
+			t.Fatalf("mismatch orig=%s ocom=%s", orig, ocom)
+		}
+	}
+}
 */
+
+func getRandomUD(d sms.DCS) sms.UD {
+	u := sms.UD{}
+	u.UDH = make([]sms.UDH, rand.Int31n(5))
+	for i := range u.UDH {
+		u.UDH[i] = getRandomUDH()
+	}
+
+	switch d.Charset() {
+	case sms.CharsetGSM7bit:
+		u.Text = randText(rand.Int() % 100)
+	case sms.Charset8bitData:
+		tmp := make([]byte, rand.Int()%100)
+		for i := range tmp {
+			tmp[i] = randByte()
+		}
+		u.Set8bitData(tmp)
+	case sms.CharsetUCS2:
+		tmp := make([]rune, rand.Int()%50)
+		for i := range tmp {
+			for !unicode.IsPrint(tmp[i]) {
+				tmp[i] = int32(rand.Int() % 2147483648)
+			}
+		}
+		u.Text = string(tmp)
+	}
+	return u
+}

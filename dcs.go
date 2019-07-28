@@ -10,7 +10,7 @@ type DCS interface {
 	Marshal() byte
 	Equal(DCS) bool
 	fmt.Stringer
-	charset() charset
+	Charset() Charset
 }
 
 // UnmarshalDCS make DCS from byte data
@@ -27,7 +27,7 @@ func UnmarshalDCS(b byte) DCS {
 			AutoDelete: false,
 			Compressed: b&0x20 == 0x20,
 			MsgClass:   msgClass(b & 0x13),
-			Charset:    charset(b & 0x0c)}
+			MsgCharset: Charset(b & 0x0c)}
 	case 0x40:
 		if b&0x0c == 0x0c && b&0x03 != 0x00 {
 			return nil
@@ -39,7 +39,7 @@ func UnmarshalDCS(b byte) DCS {
 			AutoDelete: true,
 			Compressed: b&0x20 == 0x20,
 			MsgClass:   msgClass(b & 0x13),
-			Charset:    charset(b & 0x0c)}
+			MsgCharset: Charset(b & 0x0c)}
 	}
 	switch b & 0xf0 {
 	case 0xc0:
@@ -87,7 +87,9 @@ func readDCS(r *bytes.Reader) (DCS, error) {
 }
 
 type msgClass byte
-type charset byte
+
+// Charset is UD text data charset
+type Charset byte
 
 const (
 	// NoMessageClass means no message class
@@ -102,11 +104,11 @@ const (
 	MessageClass3 msgClass = 0x13
 
 	// CharsetGSM7bit means GSM 7 bit default alphabet charset
-	CharsetGSM7bit charset = 0x00
+	CharsetGSM7bit Charset = 0x00
 	// Charset8bitData means 8 bit data charset
-	Charset8bitData charset = 0x04
+	Charset8bitData Charset = 0x04
 	// CharsetUCS2 means UCS2 charset
-	CharsetUCS2 charset = 0x08
+	CharsetUCS2 Charset = 0x08
 )
 
 // GeneralDataCoding is group of SMS Data Coding Scheme
@@ -114,7 +116,7 @@ type GeneralDataCoding struct {
 	AutoDelete bool
 	Compressed bool
 	MsgClass   msgClass
-	Charset    charset
+	MsgCharset Charset
 }
 
 // Equal reports a and b are same
@@ -132,7 +134,7 @@ func (c GeneralDataCoding) Equal(b DCS) bool {
 	if a.MsgClass != c.MsgClass {
 		return false
 	}
-	if a.Charset != c.Charset {
+	if a.MsgCharset != c.MsgCharset {
 		return false
 	}
 	return true
@@ -149,12 +151,13 @@ func (c GeneralDataCoding) Marshal() (b byte) {
 		b |= 0x20
 	}
 	b |= byte(c.MsgClass)
-	b |= byte(c.Charset & 0x0c)
+	b |= byte(c.MsgCharset & 0x0c)
 	return
 }
 
-func (c GeneralDataCoding) charset() charset {
-	return c.Charset
+// Charset returns text data charset
+func (c GeneralDataCoding) Charset() Charset {
+	return c.MsgCharset
 }
 
 func (c GeneralDataCoding) String() string {
@@ -178,7 +181,7 @@ func (c GeneralDataCoding) String() string {
 	case MessageClass3:
 		b.WriteString(", class 3")
 	}
-	switch c.Charset {
+	switch c.MsgCharset {
 	case CharsetGSM7bit:
 		b.WriteString(", GSM 7bit default alphabet")
 	case Charset8bitData:
@@ -246,7 +249,8 @@ func (c MessageWaiting) Marshal() (b byte) {
 	return
 }
 
-func (c MessageWaiting) charset() charset {
+// Charset returns text data charset
+func (c MessageWaiting) Charset() Charset {
 	if c.Behavior == StoreMessageUCS2 {
 		return CharsetUCS2
 	}
@@ -313,7 +317,8 @@ func (c DataCodingMessage) Marshal() (b byte) {
 	return
 }
 
-func (c DataCodingMessage) charset() charset {
+// Charset returns text data charset
+func (c DataCodingMessage) Charset() Charset {
 	if c.IsData {
 		return Charset8bitData
 	}

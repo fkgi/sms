@@ -36,10 +36,10 @@ func TestDecodeSubmit(t *testing.T) {
 			AutoDelete: false,
 			Compressed: false,
 			MsgClass:   sms.NoMessageClass,
-			Charset:    sms.CharsetUCS2},
+			MsgCharset: sms.CharsetUCS2},
 		VP: nil,
 		UD: sms.UD{Text: "あいうえお"}}
-	p.UD.AddUDH(&sms.ConcatenatedSM{
+	p.UD.UDH = append(p.UD.UDH, sms.ConcatenatedSM{
 		RefNum: 0x84, MaxNum: 0x0a, SeqNum: 0x01})
 	p.DA.Addr, _ = teldata.ParseTBCD("09012345678")
 
@@ -59,7 +59,7 @@ func TestMarshalJSON_submit(t *testing.T) {
 			AutoDelete: false,
 			Compressed: false,
 			MsgClass:   sms.NoMessageClass,
-			Charset:    sms.CharsetUCS2},
+			MsgCharset: sms.CharsetUCS2},
 		VP: nil,
 		UD: sms.UD{Text: "あいうえお"}}
 	p.DA.Addr, _ = teldata.ParseTBCD("09012345678")
