@@ -8,7 +8,7 @@ type UnknownDataCodingError struct {
 }
 
 func (e UnknownDataCodingError) Error() string {
-	return fmt.Sprintf("unknown DCS %x", e.DCS)
+	return fmt.Sprintf("unknown DCS % x", e.DCS)
 }
 
 // UnknownGSM7bitRuneError show invalid DCS

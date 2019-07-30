@@ -11,11 +11,15 @@ import (
 func TestConvertDCS(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
-	for i := 0; i < 500; i++ {
-		orig := getRandomDCS()
+	for i := 0; i < 256; i++ {
+		// orig := getRandomDCS()
+		orig := sms.UnmarshalDCS(byte(i))
+		if orig == nil {
+			continue
+		}
 		t.Logf("%s", orig)
 		b := orig.Marshal()
-		t.Logf("\ndata=% x", b)
+		t.Logf("% x", b)
 		ocom := sms.UnmarshalDCS(b)
 		t.Logf("%s", ocom)
 		if !orig.Equal(ocom) {

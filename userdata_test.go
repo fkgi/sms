@@ -85,13 +85,13 @@ func getRandomUDH() sms.UDH {
 			SeqNum: randByte()}
 	case 0x08:
 		return sms.ConcatenatedSM16bit{
-			RefNum: uint16(rand.Int() % 65536),
+			RefNum: uint16(rand.Int31n(65536)),
 			MaxNum: randByte(),
 			SeqNum: randByte()}
 	default:
 		iei := sms.GenericIEI{
 			K: h,
-			V: make([]byte, rand.Int()%5+1)}
+			V: make([]byte, rand.Int31n(5))}
 		for i := range iei.V {
 			iei.V[i] = randByte()
 		}
@@ -124,18 +124,26 @@ func getRandomUD(d sms.DCS) sms.UD {
 	for i := range u.UDH {
 		u.UDH[i] = getRandomUDH()
 	}
+	l := len(sms.MarshalUDHs(u.UDH))
+	l = 140 - l
 
 	switch d.Charset() {
 	case sms.CharsetGSM7bit:
-		u.Text = randText(rand.Int() % 100)
+		l = l / 7
+		l++
+		u.Text = randText(rand.Int() % l)
 	case sms.Charset8bitData:
-		tmp := make([]byte, rand.Int()%100)
+		l = l / 8
+		l++
+		tmp := make([]byte, rand.Int()%l)
 		for i := range tmp {
 			tmp[i] = randByte()
 		}
 		u.Set8bitData(tmp)
 	case sms.CharsetUCS2:
-		tmp := make([]rune, rand.Int()%50)
+		l = l / 8
+		l++
+		tmp := make([]rune, rand.Int()%l)
 		for i := range tmp {
 			for !unicode.IsPrint(tmp[i]) {
 				tmp[i] = int32(rand.Int() % 2147483648)

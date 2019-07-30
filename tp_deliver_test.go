@@ -57,33 +57,28 @@ func randByte() byte {
 }
 
 func randDate() time.Time {
+	z := int(rand.Int31n(105) - 48)
 	return time.Date(
 		2000+rand.Int()%100, time.Month(rand.Int()%12+1),
 		rand.Int()%32, rand.Int()%24, rand.Int()%60, rand.Int()%60, 0,
-		time.FixedZone("", 9*60*60)).Local()
+		time.FixedZone("", z*15*60))
 }
 
 func TestConvertDeliver(t *testing.T) {
 	rand.Seed(time.Now().Unix())
-	var e error
 
 	for i := 0; i < 1000; i++ {
 		orig := sms.Deliver{
-			MMS: randBool(),
-			LP:  randBool(),
-			SRI: randBool(),
-			RP:  randBool(),
-			// OA:  ,
+			MMS:  randBool(),
+			LP:   randBool(),
+			SRI:  randBool(),
+			RP:   randBool(),
 			PID:  randByte(),
 			DCS:  getRandomDCS(),
 			SCTS: randDate(),
-			// UD: sms.UD{}
 		}
 
-		orig.OA, e = genRandomAddress()
-		if e != nil {
-			t.Fatal(e)
-		}
+		orig.OA = genRandomAddress()
 		orig.UD = getRandomUD(orig.DCS)
 
 		t.Logf("%s", orig)
@@ -202,4 +197,62 @@ func TestMarshalJSON_deliverreport(t *testing.T) {
 		t.Fatalf("unmarshal failed: %s", e)
 	}
 	t.Log(p.String())
+}
+
+func TestConvertDeliverreport(t *testing.T) {
+	rand.Seed(time.Now().Unix())
+
+	for i := 0; i < 1000; i++ {
+		orig := sms.DeliverReport{
+			FCS: byte(rand.Int31n(129)),
+			DCS: sms.UnmarshalDCS(randByte()),
+		}
+
+		if orig.FCS == 128 {
+			orig.FCS = 0
+		} else {
+			orig.FCS += 128
+		}
+		if tmp := rand.Int31n(257); tmp != 256 {
+			b := byte(tmp)
+			orig.PID = &b
+		}
+		if orig.DCS != nil {
+			orig.UD = getRandomUD(orig.DCS)
+		}
+
+		t.Logf("%s", orig)
+		b := orig.MarshalTP()
+		t.Logf("% x", b)
+		ocom, e := sms.UnmarshalDeliverReport(b)
+		if e != nil {
+			t.Fatal(e)
+		}
+		t.Logf("%s", ocom)
+
+		if orig.FCS != ocom.FCS {
+			t.Fatal("FCS mismatch")
+		}
+		if orig.PID == nil && ocom.PID != nil {
+			t.Fatal("PID mismatch")
+		}
+		if orig.PID != nil && ocom.PID == nil {
+			t.Fatal("PID mismatch")
+		}
+		if orig.PID != nil && ocom.PID != nil && *orig.PID != *ocom.PID {
+			t.Fatal("PID mismatch")
+		}
+		if orig.DCS == nil && ocom.DCS != nil {
+			t.Fatal("DCS mismatch")
+		}
+		if orig.DCS != nil && ocom.DCS == nil {
+			t.Fatal("DCS mismatch")
+		}
+		if orig.DCS != nil && ocom.DCS != nil && !orig.DCS.Equal(ocom.DCS) {
+			t.Fatal("DCS mismatch")
+		}
+		if !orig.UD.Equal(ocom.UD) {
+			t.Fatal("UD text mismatch")
+		}
+	}
 }

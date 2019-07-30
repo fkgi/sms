@@ -1,6 +1,8 @@
 package sms
 
-import "time"
+import (
+	"time"
+)
 
 func marshalSCTimeStamp(t time.Time) (r []byte) {
 	r = make([]byte, 7)
@@ -13,10 +15,14 @@ func marshalSCTimeStamp(t time.Time) (r []byte) {
 
 	_, z := t.Zone()
 	z /= 900
-	r[6] = byte((z % 10) & 0x0f)
-	r[6] = (r[6] << 4) | byte(((z/10)%10)&0x0f)
 	if z < 0 {
+		z = -z
+		r[6] = byte(z % 10)
+		r[6] = (r[6] << 4) | byte(((z/10)%10)&0x07)
 		r[6] = r[6] | 0x08
+	} else {
+		r[6] = byte(z % 10)
+		r[6] = (r[6] << 4) | byte(((z/10)%10)&0x07)
 	}
 	return
 }
@@ -26,11 +32,11 @@ func unmarshalSCTimeStamp(t [7]byte) time.Time {
 	for i := range d {
 		d[i] = semiOctet2Int(t[i])
 	}
-	l := semiOctet2Int(t[6] & 0x7f)
-	if t[6]&0x80 == 0x80 {
+	l := semiOctet2Int(t[6] & 0xf7)
+	if t[6]&0x08 == 0x08 {
 		l = -l
 	}
 	return time.Date(2000+d[0],
 		time.Month(d[1]), d[2], d[3], d[4], d[5], 0,
-		time.FixedZone("", l*15*60)).Local()
+		time.FixedZone("", l*900))
 }

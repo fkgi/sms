@@ -33,10 +33,7 @@ func TestConvertAddress(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
-		orig, e := genRandomAddress()
-		if e != nil {
-			t.Fatal(e)
-		}
+		orig := genRandomAddress()
 		t.Logf("%s", orig)
 		l, b := orig.Marshal()
 		t.Logf("\nlen=%d\ndata=% x", l, b)
@@ -48,16 +45,24 @@ func TestConvertAddress(t *testing.T) {
 	}
 }
 
-func genRandomAddress() (a sms.Address, e error) {
+func genRandomAddress() (a sms.Address) {
 	a.TON = byte(rand.Int() % 7)
 	if a.TON == sms.TypeAlphanumeric {
 		a.NPI = sms.PlanUnknown
-		tmp := randText(rand.Int() % 10)
+		tmp := randText(rand.Int() % 11)
+		var e error
 		a.Addr, e = sms.StringToGSM7bit(tmp)
+		if e != nil {
+			panic(e)
+		}
 	} else {
 		a.NPI = byte(rand.Int() % 11)
-		tmp := randDigit(rand.Int() % 10)
+		tmp := randDigit(rand.Int() % 20)
+		var e error
 		a.Addr, e = teldata.ParseTBCD(tmp)
+		if e != nil {
+			panic(e)
+		}
 	}
 	return
 }
