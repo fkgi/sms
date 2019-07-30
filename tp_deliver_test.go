@@ -67,7 +67,7 @@ func TestConvertDeliver(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 	var e error
 
-	for i := 0; i < 500; i++ {
+	for i := 0; i < 1000; i++ {
 		orig := sms.Deliver{
 			MMS: randBool(),
 			LP:  randBool(),

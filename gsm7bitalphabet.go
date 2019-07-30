@@ -90,6 +90,7 @@ func UnmarshalGSM7bitString(o, l int, b []byte) GSM7bitString {
 	var next byte
 	var sh uint
 	var esc bool
+	var sep int
 
 	for i, r := range b {
 		sh = uint((i + o) % 7)
@@ -99,22 +100,26 @@ func UnmarshalGSM7bitString(o, l int, b []byte) GSM7bitString {
 				esc = true
 			} else if esc {
 				s = append(s, code[next&0x0f|0x80])
+				sep += 2
 				esc = false
 			} else {
 				s = append(s, code[next])
+				sep++
 			}
 		}
 
 		sh = 7 - sh
 		next = (r >> sh) & (0x7f >> (sh - 1))
-		if sh == 1 && len(s) < cap(s) {
+		if sh == 1 && sep < l {
 			if next == 0x1b {
 				esc = true
 			} else if esc {
 				s = append(s, code[next&0x0f|0x80])
+				sep += 2
 				esc = false
 			} else {
 				s = append(s, code[next])
+				sep++
 			}
 			next = 0x00
 		}
@@ -129,10 +134,6 @@ func (s GSM7bitString) Equal(b GSM7bitString) bool {
 
 // Length return length of the GSM 7bit String
 func (s GSM7bitString) Length() int {
-	return len(s)
-}
-
-func (s GSM7bitString) septetLength() int {
 	i := 0
 	for _, c := range s {
 		i++
@@ -157,7 +158,7 @@ func (s GSM7bitString) Bytes() []byte {
 
 // Marshal return byte data with offset shift
 func (s GSM7bitString) Marshal(o int) []byte {
-	l := s.septetLength()*7 + o
+	l := s.Length()*7 + o
 	b := make([]byte, l/8+1)
 	if l%8 == 0 {
 		b = b[:l/8]

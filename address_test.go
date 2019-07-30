@@ -32,7 +32,7 @@ func TestUnmarshalJSON(t *testing.T) {
 func TestConvertAddress(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
-	for i := 0; i < 500; i++ {
+	for i := 0; i < 1000; i++ {
 		orig, e := genRandomAddress()
 		if e != nil {
 			t.Fatal(e)

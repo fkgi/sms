@@ -178,7 +178,7 @@ func (u UD) write(w *bytes.Buffer, d DCS) {
 		}
 		s, _ := StringToGSM7bit(u.Text)
 		ud = s.Marshal(o)
-		l += s.septetLength()
+		l += s.Length()
 	case Charset8bitData:
 		var e error
 		ud, e = base64.StdEncoding.DecodeString(u.Text)

@@ -55,7 +55,7 @@ func TestGSM7bitStringLength(t *testing.T) {
 func TestGSM7bitStringByteConv(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
-	for i := 0; i < 500; i++ {
+	for i := 0; i < 1000; i++ {
 		org := randText(rand.Int() % 1000)
 		l := utf8.RuneCountInString(org)
 		o := rand.Int() % 8
@@ -69,7 +69,7 @@ func TestGSM7bitStringByteConv(t *testing.T) {
 		b := s.Marshal(o)
 		t.Logf("\nlen=%d\nhex=% x\n", len(b), b)
 
-		r := sms.UnmarshalGSM7bitString(o, l, b).String()
+		r := sms.UnmarshalGSM7bitString(o, s.Length(), b).String()
 		if r != org {
 			t.Fatalf("\ndetect=%s", strconv.QuoteToGraphic(r))
 		}

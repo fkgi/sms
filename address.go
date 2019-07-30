@@ -200,7 +200,7 @@ func readRPAddr(r *bytes.Reader) (a Address, e error) {
 		return
 	}
 
-	b := make([]byte, l)
+	b := make([]byte, (l/2)+(l%2))
 	var i int
 	if i, e = r.Read(b); e == nil {
 		if i != len(b) {
