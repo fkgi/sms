@@ -2,6 +2,7 @@ package sms_test
 
 import (
 	"encoding/json"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -79,6 +80,62 @@ func TestMarshalJSON_submit(t *testing.T) {
 	t.Log(p.String())
 }
 
+func TestConvertSubmit(t *testing.T) {
+	rand.Seed(time.Now().Unix())
+
+	for i := 0; i < 1000; i++ {
+		orig := sms.Submit{
+			RD:  randBool(),
+			SRR: randBool(),
+			RP:  randBool(),
+			MR:  randByte(),
+			DA:  genRandomAddress(),
+			PID: randByte(),
+			DCS: getRandomDCS(),
+			// VP
+		}
+
+		orig.UD = getRandomUD(orig.DCS)
+
+		t.Logf("%s", orig)
+		b := orig.MarshalTP()
+		t.Logf("% x", b)
+		ocom, e := sms.UnmarshalSubmit(b)
+		if e != nil {
+			t.Fatal(e)
+		}
+		t.Logf("%s", ocom)
+
+		if orig.RD != ocom.RD {
+			t.Fatal("RD mismatch")
+		}
+		if orig.SRR != ocom.SRR {
+			t.Fatal("SRR mismatch")
+		}
+		if orig.RP != ocom.RP {
+			t.Fatal("RP mismatch")
+		}
+		if orig.MR != ocom.MR {
+			t.Fatal("MR mismatch")
+		}
+		if !orig.DA.Equal(ocom.DA) {
+			t.Fatal("DA mismatch")
+		}
+		if orig.PID != ocom.PID {
+			t.Fatal("PID mismatch")
+		}
+		if !orig.DCS.Equal(ocom.DCS) {
+			t.Fatal("DCS mismatch")
+		}
+		//if !orig.VP.Equal(ocom.VP) {
+		//	t.Fatal("VP mismatch")
+		//}
+		if !orig.UD.Equal(ocom.UD) {
+			t.Fatal("UD text mismatch")
+		}
+	}
+}
+
 func TestEncodeSubmitReport(t *testing.T) {
 	bytedata := []byte{
 		0x01, 0x00, 0x11, 0x30, 0x22, 0x41, 0x52, 0x04, 0x63}
@@ -122,4 +179,66 @@ func TestMarshalJSON_submitreport(t *testing.T) {
 		t.Fatalf("unmarshal failed: %s", e)
 	}
 	t.Log(p.String())
+}
+
+func TestConvertSubmitreport(t *testing.T) {
+	rand.Seed(time.Now().Unix())
+
+	for i := 0; i < 1000; i++ {
+		orig := sms.SubmitReport{
+			FCS:  byte(rand.Int31n(129)),
+			SCTS: randDate(),
+			DCS:  sms.UnmarshalDCS(randByte()),
+		}
+
+		if orig.FCS == 128 {
+			orig.FCS = 0
+		} else {
+			orig.FCS += 128
+		}
+		if tmp := rand.Int31n(257); tmp != 256 {
+			b := byte(tmp)
+			orig.PID = &b
+		}
+		if orig.DCS != nil {
+			orig.UD = getRandomUD(orig.DCS)
+		}
+
+		t.Logf("%s", orig)
+		b := orig.MarshalTP()
+		t.Logf("% x", b)
+		ocom, e := sms.UnmarshalSubmitReport(b)
+		if e != nil {
+			t.Fatal(e)
+		}
+		t.Logf("%s", ocom)
+
+		if orig.FCS != ocom.FCS {
+			t.Fatal("FCS mismatch")
+		}
+		if !orig.SCTS.Equal(ocom.SCTS) {
+			t.Fatal("SCTS text mismatch")
+		}
+		if orig.PID == nil && ocom.PID != nil {
+			t.Fatal("PID mismatch")
+		}
+		if orig.PID != nil && ocom.PID == nil {
+			t.Fatal("PID mismatch")
+		}
+		if orig.PID != nil && ocom.PID != nil && *orig.PID != *ocom.PID {
+			t.Fatal("PID mismatch")
+		}
+		if orig.DCS == nil && ocom.DCS != nil {
+			t.Fatal("DCS mismatch")
+		}
+		if orig.DCS != nil && ocom.DCS == nil {
+			t.Fatal("DCS mismatch")
+		}
+		if orig.DCS != nil && ocom.DCS != nil && !orig.DCS.Equal(ocom.DCS) {
+			t.Fatal("DCS mismatch")
+		}
+		if !orig.UD.Equal(ocom.UD) {
+			t.Fatal("UD text mismatch")
+		}
+	}
 }

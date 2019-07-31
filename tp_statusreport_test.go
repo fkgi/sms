@@ -2,6 +2,7 @@ package sms_test
 
 import (
 	"encoding/json"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -70,4 +71,80 @@ func TestMarshalJSON_statusreport(t *testing.T) {
 		t.Fatalf("unmarshal failed: %s", e)
 	}
 	t.Log(p.String())
+}
+
+func TestConvertStatusreport(t *testing.T) {
+	rand.Seed(time.Now().Unix())
+
+	for i := 0; i < 1000; i++ {
+		orig := sms.StatusReport{
+			MMS:  randBool(),
+			LP:   randBool(),
+			SRQ:  randBool(),
+			MR:   randByte(),
+			RA:   genRandomAddress(),
+			SCTS: randDate(),
+			DT:   randDate(),
+			DCS:  sms.UnmarshalDCS(randByte()),
+		}
+		if tmp := rand.Int31n(257); tmp != 256 {
+			b := byte(tmp)
+			orig.PID = &b
+		}
+		if orig.DCS != nil {
+			orig.UD = getRandomUD(orig.DCS)
+		}
+
+		t.Logf("%s", orig)
+		b := orig.MarshalTP()
+		t.Logf("% x", b)
+		ocom, e := sms.UnmarshalStatusReport(b)
+		if e != nil {
+			t.Fatal(e)
+		}
+		t.Logf("%s", ocom)
+
+		if orig.MMS != ocom.MMS {
+			t.Fatal("MMS mismatch")
+		}
+		if orig.LP != ocom.LP {
+			t.Fatal("LP mismatch")
+		}
+		if orig.SRQ != ocom.SRQ {
+			t.Fatal("SRQ mismatch")
+		}
+		if orig.MR != ocom.MR {
+			t.Fatal("MR mismatch")
+		}
+		if !orig.RA.Equal(ocom.RA) {
+			t.Fatal("RA mismatch")
+		}
+		if !orig.SCTS.Equal(ocom.SCTS) {
+			t.Fatal("SCTS mismatch")
+		}
+		if !orig.DT.Equal(ocom.DT) {
+			t.Fatal("DT mismatch")
+		}
+		if orig.PID == nil && ocom.PID != nil {
+			t.Fatal("PID mismatch")
+		}
+		if orig.PID != nil && ocom.PID == nil {
+			t.Fatal("PID mismatch")
+		}
+		if orig.PID != nil && ocom.PID != nil && *orig.PID != *ocom.PID {
+			t.Fatal("PID mismatch")
+		}
+		if orig.DCS == nil && ocom.DCS != nil {
+			t.Fatal("DCS mismatch")
+		}
+		if orig.DCS != nil && ocom.DCS == nil {
+			t.Fatal("DCS mismatch")
+		}
+		if orig.DCS != nil && ocom.DCS != nil && !orig.DCS.Equal(ocom.DCS) {
+			t.Fatal("DCS mismatch")
+		}
+		if !orig.UD.Equal(ocom.UD) {
+			t.Fatal("UD text mismatch")
+		}
+	}
 }

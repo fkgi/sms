@@ -73,12 +73,12 @@ func TestConvertDeliver(t *testing.T) {
 			LP:   randBool(),
 			SRI:  randBool(),
 			RP:   randBool(),
+			OA:   genRandomAddress(),
 			PID:  randByte(),
 			DCS:  getRandomDCS(),
 			SCTS: randDate(),
 		}
 
-		orig.OA = genRandomAddress()
 		orig.UD = getRandomUD(orig.DCS)
 
 		t.Logf("%s", orig)
