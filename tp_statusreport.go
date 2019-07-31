@@ -30,34 +30,34 @@ func (d StatusReport) MarshalTP() []byte {
 
 	b := byte(0x02)
 	if !d.MMS {
-		b = b | 0x04
+		b |= 0x04
 	}
 	if d.LP {
-		b = b | 0x08
+		b |= 0x08
 	}
 	if d.SRQ {
-		b = b | 0x20
+		b |= 0x20
 	}
-	if d.UD.UDH != nil && len(d.UD.UDH) != 0 {
-		b = b | 0x40
+	if len(d.UD.UDH) != 0 {
+		b |= 0x40
 	}
 	w.WriteByte(b)
 	w.WriteByte(d.MR)
-	b, a := d.RA.Marshal()
-	w.WriteByte(b)
+	l, a := d.RA.Marshal()
+	w.WriteByte(l)
 	w.Write(a)
 	w.Write(marshalSCTimeStamp(d.SCTS))
 	w.Write(marshalSCTimeStamp(d.DT))
 	w.WriteByte(d.ST)
 	b = byte(0x00)
 	if d.PID != nil {
-		b = b | 0x01
+		b |= 0x01
 	}
 	if d.DCS != nil {
-		b = b | 0x02
+		b |= 0x02
 	}
-	if len(d.UD.Text) != 0 || len(d.UD.UDH) != 0 {
-		b = b | 0x04
+	if !d.UD.isEmpty() {
+		b |= 0x04
 	}
 	if b == 0x00 {
 		return w.Bytes()
@@ -69,7 +69,7 @@ func (d StatusReport) MarshalTP() []byte {
 	if d.DCS != nil {
 		w.WriteByte(d.DCS.Marshal())
 	}
-	if len(d.UD.Text) != 0 || len(d.UD.UDH) != 0 {
+	if !d.UD.isEmpty() {
 		d.UD.write(w, d.DCS)
 	}
 	return w.Bytes()
@@ -123,7 +123,6 @@ func (d *StatusReport) UnmarshalTP(b []byte) (e error) {
 		e = nil
 		return
 	}
-	b = make([]byte, 1)
 	if pi&0x01 == 0x01 {
 		var p byte
 		if p, e = r.ReadByte(); e != nil {
@@ -137,8 +136,7 @@ func (d *StatusReport) UnmarshalTP(b []byte) (e error) {
 		}
 	}
 	if pi&0x04 == 0x04 {
-		e = d.UD.read(r, d.DCS, b[0]&0x40 == 0x40)
-		if e != nil {
+		if e = d.UD.read(r, d.DCS, b[0]&0x40 == 0x40); e != nil {
 			return
 		}
 	}

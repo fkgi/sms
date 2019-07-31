@@ -12,6 +12,7 @@ type VP interface {
 	ExpireTime(t time.Time) time.Time
 	Duration() time.Duration
 	SingleAttempt() bool
+	Equal(VP) bool
 }
 
 type jvp struct {
@@ -129,6 +130,15 @@ func (f VPRelative) SingleAttempt() bool {
 	return false
 }
 
+// Equal reports a and b are same
+func (f VPRelative) Equal(b VP) bool {
+	a, ok := b.(VPRelative)
+	if !ok {
+		return false
+	}
+	return a == f
+}
+
 // VPAbsolute is absolute format VP value
 type VPAbsolute [7]byte
 
@@ -149,6 +159,20 @@ func (f VPAbsolute) Duration() time.Duration {
 // SingleAttempt return single attempt is required or not
 func (f VPAbsolute) SingleAttempt() bool {
 	return false
+}
+
+// Equal reports a and b are same
+func (f VPAbsolute) Equal(b VP) bool {
+	a, ok := b.(VPAbsolute)
+	if !ok {
+		return false
+	}
+	for i := range f {
+		if a[i] != f[i] {
+			return false
+		}
+	}
+	return true
 }
 
 // VPEnhanced is enhanced format VP value
@@ -221,4 +245,18 @@ func (f VPEnhanced) SingleAttempt() bool {
 		return true
 	}
 	return false
+}
+
+// Equal reports a and b are same
+func (f VPEnhanced) Equal(b VP) bool {
+	a, ok := b.(VPEnhanced)
+	if !ok {
+		return false
+	}
+	for i := range f {
+		if a[i] != f[i] {
+			return false
+		}
+	}
+	return true
 }

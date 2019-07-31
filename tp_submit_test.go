@@ -80,6 +80,44 @@ func TestMarshalJSON_submit(t *testing.T) {
 	t.Log(p.String())
 }
 
+func randVP() sms.VP {
+	switch rand.Int31n(4) {
+	case 1:
+		return sms.VPRelative(randByte())
+	case 2:
+		t := randDate()
+		var r [7]byte
+		r[0] = int2SemiOctet(t.Year())
+		r[1] = int2SemiOctet(int(t.Month()))
+		r[2] = int2SemiOctet(t.Day())
+		r[3] = int2SemiOctet(t.Hour())
+		r[4] = int2SemiOctet(t.Minute())
+		r[5] = int2SemiOctet(t.Second())
+
+		_, z := t.Zone()
+		z /= 900
+		if z < 0 {
+			z = -z
+			r[6] = byte(z % 10)
+			r[6] = (r[6] << 4) | byte(((z/10)%10)&0x07)
+			r[6] = r[6] | 0x08
+		} else {
+			r[6] = byte(z % 10)
+			r[6] = (r[6] << 4) | byte(((z/10)%10)&0x07)
+		}
+		return sms.VPAbsolute(r)
+	case 3:
+		return sms.VPEnhanced{
+			randByte(), randByte(), randByte(), randByte(), randByte(), randByte(), randByte()}
+	}
+	return nil
+}
+func int2SemiOctet(i int) (b byte) {
+	b = byte(i % 10)
+	b = (b << 4) | byte((i/10)%10)
+	return
+}
+
 func TestConvertSubmit(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
@@ -92,7 +130,7 @@ func TestConvertSubmit(t *testing.T) {
 			DA:  genRandomAddress(),
 			PID: randByte(),
 			DCS: getRandomDCS(),
-			// VP
+			VP:  randVP(),
 		}
 
 		orig.UD = getRandomUD(orig.DCS)
@@ -127,9 +165,15 @@ func TestConvertSubmit(t *testing.T) {
 		if !orig.DCS.Equal(ocom.DCS) {
 			t.Fatal("DCS mismatch")
 		}
-		//if !orig.VP.Equal(ocom.VP) {
-		//	t.Fatal("VP mismatch")
-		//}
+		if orig.VP == nil && ocom.VP != nil {
+			t.Fatal("VP mismatch")
+		}
+		if orig.VP != nil && ocom.VP == nil {
+			t.Fatal("VP mismatch")
+		}
+		if orig.VP != nil && ocom.VP != nil && !orig.VP.Equal(ocom.VP) {
+			t.Fatal("VP mismatch")
+		}
 		if !orig.UD.Equal(ocom.UD) {
 			t.Fatal("UD text mismatch")
 		}

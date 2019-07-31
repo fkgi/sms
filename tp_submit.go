@@ -55,8 +55,8 @@ func (d Submit) MarshalTP() []byte {
 	}
 	w.WriteByte(b)
 	w.WriteByte(d.MR)
-	b, a := d.DA.Marshal()
-	w.WriteByte(b)
+	l, a := d.DA.Marshal()
+	w.WriteByte(l)
 	w.Write(a)
 	w.WriteByte(d.PID)
 	if d.DCS == nil {
@@ -111,23 +111,26 @@ func (d *Submit) UnmarshalTP(b []byte) (e error) {
 		var p byte
 		if p, e = r.ReadByte(); e == nil {
 			d.VP = VPRelative(p)
+		} else {
+			return
 		}
 	case 0x08:
 		var p [7]byte
 		if p, e = read7Bytes(r); e == nil {
 			d.VP = VPEnhanced(p)
+		} else {
+			return
 		}
 	case 0x18:
 		var p [7]byte
 		if p, e = read7Bytes(r); e == nil {
 			d.VP = VPAbsolute(p)
-		}
-	}
-	if e == nil {
-		e = d.UD.read(r, d.DCS, b[0]&0x40 == 0x40)
-		if e != nil {
+		} else {
 			return
 		}
+	}
+	if e = d.UD.read(r, d.DCS, b[0]&0x40 == 0x40); e != nil {
+		return
 	}
 	if r.Len() != 0 {
 		e = InvalidLengthError{}
@@ -247,7 +250,7 @@ func (d SubmitReport) MarshalTP() []byte {
 	if d.DCS != nil {
 		w.WriteByte(d.DCS.Marshal())
 	}
-	if len(d.UD.Text) != 0 || len(d.UD.UDH) != 0 {
+	if !d.UD.isEmpty() {
 		d.UD.write(w, d.DCS)
 	}
 
