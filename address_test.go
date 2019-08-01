@@ -33,7 +33,7 @@ func TestConvertAddress(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
-		orig := genRandomAddress()
+		orig := randAddress()
 		t.Logf("%s", orig)
 		l, b := orig.Marshal()
 		t.Logf("\nlen=%d\ndata=% x", l, b)
@@ -45,7 +45,7 @@ func TestConvertAddress(t *testing.T) {
 	}
 }
 
-func genRandomAddress() (a sms.Address) {
+func randAddress() (a sms.Address) {
 	a.TON = byte(rand.Int() % 7)
 	if a.TON == sms.TypeAlphanumeric {
 		a.NPI = sms.PlanUnknown

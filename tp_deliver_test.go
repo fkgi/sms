@@ -64,29 +64,38 @@ func randDate() time.Time {
 		time.FixedZone("", z*15*60))
 }
 
+func randDeliver() sms.Deliver {
+	orig := sms.Deliver{
+		MMS:  randBool(),
+		LP:   randBool(),
+		SRI:  randBool(),
+		RP:   randBool(),
+		OA:   randAddress(),
+		PID:  randByte(),
+		DCS:  randDCS(),
+		SCTS: randDate(),
+	}
+
+	orig.UD = randUD(orig.DCS)
+	return orig
+}
+
 func TestConvertDeliver(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
-		orig := sms.Deliver{
-			MMS:  randBool(),
-			LP:   randBool(),
-			SRI:  randBool(),
-			RP:   randBool(),
-			OA:   genRandomAddress(),
-			PID:  randByte(),
-			DCS:  getRandomDCS(),
-			SCTS: randDate(),
-		}
-
-		orig.UD = getRandomUD(orig.DCS)
+		orig := randDeliver()
 
 		t.Logf("%s", orig)
 		b := orig.MarshalTP()
 		t.Logf("% x", b)
-		ocom, e := sms.UnmarshalDeliver(b)
+		res, e := sms.UnmarshalMTTP(b)
 		if e != nil {
 			t.Fatal(e)
+		}
+		ocom, ok := res.(sms.Deliver)
+		if !ok {
+			t.Fatal("mti mismatch")
 		}
 		t.Logf("%s", ocom)
 
@@ -199,34 +208,43 @@ func TestMarshalJSON_deliverreport(t *testing.T) {
 	t.Log(p.String())
 }
 
+func randDeliverreport() sms.DeliverReport {
+	orig := sms.DeliverReport{
+		FCS: byte(rand.Int31n(129)),
+		DCS: sms.UnmarshalDCS(randByte()),
+	}
+
+	if orig.FCS == 128 {
+		orig.FCS = 0
+	} else {
+		orig.FCS += 128
+	}
+	if tmp := rand.Int31n(257); tmp != 256 {
+		b := byte(tmp)
+		orig.PID = &b
+	}
+	if orig.DCS != nil {
+		orig.UD = randUD(orig.DCS)
+	}
+	return orig
+}
+
 func TestConvertDeliverreport(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
-		orig := sms.DeliverReport{
-			FCS: byte(rand.Int31n(129)),
-			DCS: sms.UnmarshalDCS(randByte()),
-		}
-
-		if orig.FCS == 128 {
-			orig.FCS = 0
-		} else {
-			orig.FCS += 128
-		}
-		if tmp := rand.Int31n(257); tmp != 256 {
-			b := byte(tmp)
-			orig.PID = &b
-		}
-		if orig.DCS != nil {
-			orig.UD = getRandomUD(orig.DCS)
-		}
+		orig := randDeliverreport()
 
 		t.Logf("%s", orig)
 		b := orig.MarshalTP()
 		t.Logf("% x", b)
-		ocom, e := sms.UnmarshalDeliverReport(b)
+		res, e := sms.UnmarshalMOTP(b)
 		if e != nil {
 			t.Fatal(e)
+		}
+		ocom, ok := res.(sms.DeliverReport)
+		if !ok {
+			t.Fatal("mti mismatch")
 		}
 		t.Logf("%s", ocom)
 

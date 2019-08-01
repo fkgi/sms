@@ -60,7 +60,7 @@ func TestConvertUDH(t *testing.T) {
 
 	origs := make([]sms.UDH, rand.Int()%500)
 	for i := range origs {
-		origs[i] = getRandomUDH()
+		origs[i] = randUDH()
 	}
 	b := sms.MarshalUDHs(origs)
 	t.Logf("\ndata=% x", b)
@@ -75,7 +75,7 @@ func TestConvertUDH(t *testing.T) {
 	}
 }
 
-func getRandomUDH() sms.UDH {
+func randUDH() sms.UDH {
 	h := randByte()
 	switch h {
 	case 0x00:
@@ -118,11 +118,11 @@ func TestConvertUD(t *testing.T) {
 }
 */
 
-func getRandomUD(d sms.DCS) sms.UD {
+func randUD(d sms.DCS) sms.UD {
 	u := sms.UD{}
 	u.UDH = make([]sms.UDH, rand.Int31n(5))
 	for i := range u.UDH {
-		u.UDH[i] = getRandomUDH()
+		u.UDH[i] = randUDH()
 	}
 	l := len(sms.MarshalUDHs(u.UDH))
 	l = 140 - l

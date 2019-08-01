@@ -112,35 +112,45 @@ func randVP() sms.VP {
 	}
 	return nil
 }
+
 func int2SemiOctet(i int) (b byte) {
 	b = byte(i % 10)
 	b = (b << 4) | byte((i/10)%10)
 	return
 }
 
+func randSubmit() sms.Submit {
+	orig := sms.Submit{
+		RD:  randBool(),
+		SRR: randBool(),
+		RP:  randBool(),
+		MR:  randByte(),
+		DA:  randAddress(),
+		PID: randByte(),
+		DCS: randDCS(),
+		VP:  randVP(),
+	}
+
+	orig.UD = randUD(orig.DCS)
+	return orig
+}
+
 func TestConvertSubmit(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
-		orig := sms.Submit{
-			RD:  randBool(),
-			SRR: randBool(),
-			RP:  randBool(),
-			MR:  randByte(),
-			DA:  genRandomAddress(),
-			PID: randByte(),
-			DCS: getRandomDCS(),
-			VP:  randVP(),
-		}
-
-		orig.UD = getRandomUD(orig.DCS)
+		orig := randSubmit()
 
 		t.Logf("%s", orig)
 		b := orig.MarshalTP()
 		t.Logf("% x", b)
-		ocom, e := sms.UnmarshalSubmit(b)
+		res, e := sms.UnmarshalMOTP(b)
 		if e != nil {
 			t.Fatal(e)
+		}
+		ocom, ok := res.(sms.Submit)
+		if !ok {
+			t.Fatal("mti mismatch")
 		}
 		t.Logf("%s", ocom)
 
@@ -225,35 +235,44 @@ func TestMarshalJSON_submitreport(t *testing.T) {
 	t.Log(p.String())
 }
 
+func randSubmitreport() sms.SubmitReport {
+	orig := sms.SubmitReport{
+		FCS:  byte(rand.Int31n(129)),
+		SCTS: randDate(),
+		DCS:  sms.UnmarshalDCS(randByte()),
+	}
+
+	if orig.FCS == 128 {
+		orig.FCS = 0
+	} else {
+		orig.FCS += 128
+	}
+	if tmp := rand.Int31n(257); tmp != 256 {
+		b := byte(tmp)
+		orig.PID = &b
+	}
+	if orig.DCS != nil {
+		orig.UD = randUD(orig.DCS)
+	}
+	return orig
+}
+
 func TestConvertSubmitreport(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
-		orig := sms.SubmitReport{
-			FCS:  byte(rand.Int31n(129)),
-			SCTS: randDate(),
-			DCS:  sms.UnmarshalDCS(randByte()),
-		}
-
-		if orig.FCS == 128 {
-			orig.FCS = 0
-		} else {
-			orig.FCS += 128
-		}
-		if tmp := rand.Int31n(257); tmp != 256 {
-			b := byte(tmp)
-			orig.PID = &b
-		}
-		if orig.DCS != nil {
-			orig.UD = getRandomUD(orig.DCS)
-		}
+		orig := randSubmitreport()
 
 		t.Logf("%s", orig)
 		b := orig.MarshalTP()
 		t.Logf("% x", b)
-		ocom, e := sms.UnmarshalSubmitReport(b)
+		res, e := sms.UnmarshalMTTP(b)
 		if e != nil {
 			t.Fatal(e)
+		}
+		ocom, ok := res.(sms.SubmitReport)
+		if !ok {
+			t.Fatal("mti mismatch")
 		}
 		t.Logf("%s", ocom)
 

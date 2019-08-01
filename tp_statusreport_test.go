@@ -73,34 +73,43 @@ func TestMarshalJSON_statusreport(t *testing.T) {
 	t.Log(p.String())
 }
 
+func randStatusreport() sms.StatusReport {
+	orig := sms.StatusReport{
+		MMS:  randBool(),
+		LP:   randBool(),
+		SRQ:  randBool(),
+		MR:   randByte(),
+		RA:   randAddress(),
+		SCTS: randDate(),
+		DT:   randDate(),
+		DCS:  sms.UnmarshalDCS(randByte()),
+	}
+	if tmp := rand.Int31n(257); tmp != 256 {
+		b := byte(tmp)
+		orig.PID = &b
+	}
+	if orig.DCS != nil {
+		orig.UD = randUD(orig.DCS)
+	}
+	return orig
+}
+
 func TestConvertStatusreport(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
-		orig := sms.StatusReport{
-			MMS:  randBool(),
-			LP:   randBool(),
-			SRQ:  randBool(),
-			MR:   randByte(),
-			RA:   genRandomAddress(),
-			SCTS: randDate(),
-			DT:   randDate(),
-			DCS:  sms.UnmarshalDCS(randByte()),
-		}
-		if tmp := rand.Int31n(257); tmp != 256 {
-			b := byte(tmp)
-			orig.PID = &b
-		}
-		if orig.DCS != nil {
-			orig.UD = getRandomUD(orig.DCS)
-		}
+		orig := randStatusreport()
 
 		t.Logf("%s", orig)
 		b := orig.MarshalTP()
 		t.Logf("% x", b)
-		ocom, e := sms.UnmarshalStatusReport(b)
+		res, e := sms.UnmarshalMTTP(b)
 		if e != nil {
 			t.Fatal(e)
+		}
+		ocom, ok := res.(sms.StatusReport)
+		if !ok {
+			t.Fatal("mti mismatch")
 		}
 		t.Logf("%s", ocom)
 

@@ -29,7 +29,7 @@ func (d Ack) marshal(mti byte) []byte {
 	w.WriteByte(d.MR)
 	if d.UD != nil {
 		b := d.UD.MarshalTP()
-		w.WriteByte(41)
+		w.WriteByte(0x41)
 		w.WriteByte(byte(len(b)))
 		w.Write(b)
 	}

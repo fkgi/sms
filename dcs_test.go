@@ -28,7 +28,7 @@ func TestConvertDCS(t *testing.T) {
 	}
 }
 
-func getRandomDCS() (d sms.DCS) {
+func randDCS() (d sms.DCS) {
 	for d == nil {
 		d = sms.UnmarshalDCS(randByte())
 	}
