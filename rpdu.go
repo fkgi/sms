@@ -21,7 +21,7 @@ func UnmarshalMORP(b []byte) (t RPDU, e error) {
 	if len(b) == 0 {
 		return nil, io.EOF
 	}
-	switch b[0] & 0x03 {
+	switch b[0] & 0x07 {
 	case 0x00:
 		return UnmarshalDataMO(b)
 	case 0x02:
@@ -39,7 +39,7 @@ func UnmarshalMTRP(b []byte) (t RPDU, e error) {
 	if len(b) == 0 {
 		return nil, io.EOF
 	}
-	switch b[0] & 0x03 {
+	switch b[0] & 0x07 {
 	case 0x01:
 		return UnmarshalDataMT(b)
 	case 0x03:

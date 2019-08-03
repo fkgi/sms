@@ -200,7 +200,7 @@ func readRPAddr(r *bytes.Reader) (a Address, e error) {
 		return
 	}
 
-	b := make([]byte, (l/2)+(l%2))
+	b := make([]byte, l/2+l%2+1)
 	var i int
 	if i, e = r.Read(b); e == nil {
 		if i != len(b) {
@@ -208,7 +208,7 @@ func readRPAddr(r *bytes.Reader) (a Address, e error) {
 		} else if (b[0]>>4)&0x07 == TypeAlphanumeric {
 			e = errors.New("unexpected type of number")
 		} else {
-			a = UnmarshalAddress((l-1)*2, b)
+			a = UnmarshalAddress(l, b)
 		}
 	}
 	return

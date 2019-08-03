@@ -175,10 +175,7 @@ func TestConvertSubmit(t *testing.T) {
 		if !orig.DCS.Equal(ocom.DCS) {
 			t.Fatal("DCS mismatch")
 		}
-		if orig.VP == nil && ocom.VP != nil {
-			t.Fatal("VP mismatch")
-		}
-		if orig.VP != nil && ocom.VP == nil {
+		if (orig.VP == nil) != (ocom.VP == nil) {
 			t.Fatal("VP mismatch")
 		}
 		if orig.VP != nil && ocom.VP != nil && !orig.VP.Equal(ocom.VP) {
@@ -282,19 +279,13 @@ func TestConvertSubmitreport(t *testing.T) {
 		if !orig.SCTS.Equal(ocom.SCTS) {
 			t.Fatal("SCTS text mismatch")
 		}
-		if orig.PID == nil && ocom.PID != nil {
-			t.Fatal("PID mismatch")
-		}
-		if orig.PID != nil && ocom.PID == nil {
+		if (orig.PID == nil) != (ocom.PID == nil) {
 			t.Fatal("PID mismatch")
 		}
 		if orig.PID != nil && ocom.PID != nil && *orig.PID != *ocom.PID {
 			t.Fatal("PID mismatch")
 		}
-		if orig.DCS == nil && ocom.DCS != nil {
-			t.Fatal("DCS mismatch")
-		}
-		if orig.DCS != nil && ocom.DCS == nil {
+		if (orig.DCS == nil) != (ocom.DCS == nil) {
 			t.Fatal("DCS mismatch")
 		}
 		if orig.DCS != nil && ocom.DCS != nil && !orig.DCS.Equal(ocom.DCS) {

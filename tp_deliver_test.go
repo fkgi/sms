@@ -251,19 +251,13 @@ func TestConvertDeliverreport(t *testing.T) {
 		if orig.FCS != ocom.FCS {
 			t.Fatal("FCS mismatch")
 		}
-		if orig.PID == nil && ocom.PID != nil {
-			t.Fatal("PID mismatch")
-		}
-		if orig.PID != nil && ocom.PID == nil {
+		if (orig.PID == nil) != (ocom.PID == nil) {
 			t.Fatal("PID mismatch")
 		}
 		if orig.PID != nil && ocom.PID != nil && *orig.PID != *ocom.PID {
 			t.Fatal("PID mismatch")
 		}
-		if orig.DCS == nil && ocom.DCS != nil {
-			t.Fatal("DCS mismatch")
-		}
-		if orig.DCS != nil && ocom.DCS == nil {
+		if (orig.DCS == nil) != (ocom.DCS == nil) {
 			t.Fatal("DCS mismatch")
 		}
 		if orig.DCS != nil && ocom.DCS != nil && !orig.DCS.Equal(ocom.DCS) {

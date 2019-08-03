@@ -8,12 +8,17 @@ import (
 	"github.com/fkgi/sms"
 )
 
-func TestConvertMORPACK(t *testing.T) {
+func TestConvertMORPERROR(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
-		orig := sms.Ack{
-			MR: randByte()}
+		orig := sms.Error{
+			MR: randByte(),
+			CS: randByte()}
+		if tmp := rand.Int31n(257); tmp != 256 {
+			bt := byte(tmp)
+			orig.Diag = &bt
+		}
 		if randByte() != 0 {
 			orig.UD = randDeliverreport()
 		}
@@ -25,7 +30,7 @@ func TestConvertMORPACK(t *testing.T) {
 		if e != nil {
 			t.Fatal(e)
 		}
-		ocom, ok := res.(sms.Ack)
+		ocom, ok := res.(sms.Error)
 		if !ok {
 			t.Fatal("mti mismatch")
 		}
@@ -33,6 +38,9 @@ func TestConvertMORPACK(t *testing.T) {
 
 		if orig.MR != ocom.MR {
 			t.Fatal("MR mismatch")
+		}
+		if orig.CS != ocom.CS {
+			t.Fatal("CS mismatch")
 		}
 		if (orig.UD == nil) != (ocom.UD == nil) {
 			t.Fatal("UD mismatch")
@@ -43,12 +51,17 @@ func TestConvertMORPACK(t *testing.T) {
 	}
 }
 
-func TestConvertMTRPACK(t *testing.T) {
+func TestConvertMTRPERROR(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
-		orig := sms.Ack{
-			MR: randByte()}
+		orig := sms.Error{
+			MR: randByte(),
+			CS: randByte()}
+		if tmp := rand.Int31n(257); tmp != 256 {
+			bt := byte(tmp)
+			orig.Diag = &bt
+		}
 		if randByte() != 0 {
 			orig.UD = randSubmitreport()
 		}
@@ -60,7 +73,7 @@ func TestConvertMTRPACK(t *testing.T) {
 		if e != nil {
 			t.Fatal(e)
 		}
-		ocom, ok := res.(sms.Ack)
+		ocom, ok := res.(sms.Error)
 		if !ok {
 			t.Fatal("mti mismatch")
 		}
@@ -68,6 +81,9 @@ func TestConvertMTRPACK(t *testing.T) {
 
 		if orig.MR != ocom.MR {
 			t.Fatal("MR mismatch")
+		}
+		if orig.CS != ocom.CS {
+			t.Fatal("CS mismatch")
 		}
 		if (orig.UD == nil) != (ocom.UD == nil) {
 			t.Fatal("UD mismatch")

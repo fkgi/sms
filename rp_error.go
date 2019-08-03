@@ -134,7 +134,6 @@ func (d *Error) UnmarshalMTRP(b []byte) error {
 func (d *Error) unmarshal(b []byte, mti byte) ([]byte, error) {
 	r := bytes.NewReader(b)
 	var e error
-
 	if tmp, e := r.ReadByte(); e != nil {
 		return nil, e
 	} else if tmp != mti {
@@ -182,7 +181,7 @@ func (d Error) String() string {
 
 	fmt.Fprintf(w, "SMS message stack: Error\n")
 	fmt.Fprintf(w, "%sRP-MR:   %d\n", Indent, d.MR)
-	fmt.Fprintf(w, "%sRP-CS:   cause=%s, diagnostic=%d\n", Indent, csStat(d.CS), d.Diag)
+	fmt.Fprintf(w, "%sRP-CS:   cause=%s, diagnostic=%d\n", Indent, csStat(d.CS), *d.Diag)
 	if d.UD != nil {
 		fmt.Fprintf(w, "%sRP-UD:   %s\n", Indent, d.UD)
 	}
