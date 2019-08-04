@@ -6,13 +6,13 @@ import (
 	"time"
 )
 
-// VP is type of validity period
-type VP interface {
+// ValidityPeriod is type of validity period
+type ValidityPeriod interface {
 	fmt.Stringer
 	ExpireTime(t time.Time) time.Time
 	Duration() time.Duration
 	SingleAttempt() bool
-	Equal(VP) bool
+	Equal(ValidityPeriod) bool
 }
 
 type jvp struct {
@@ -21,7 +21,7 @@ type jvp struct {
 }
 
 // ValidityPeriodOf returns VP from deadend time and single-attempt flag
-func ValidityPeriodOf(t time.Duration, s bool) VP {
+func ValidityPeriodOf(t time.Duration, s bool) ValidityPeriod {
 	t = t.Truncate(time.Second)
 
 	if s {
@@ -131,7 +131,7 @@ func (f VPRelative) SingleAttempt() bool {
 }
 
 // Equal reports a and b are same
-func (f VPRelative) Equal(b VP) bool {
+func (f VPRelative) Equal(b ValidityPeriod) bool {
 	a, ok := b.(VPRelative)
 	if !ok {
 		return false
@@ -162,7 +162,7 @@ func (f VPAbsolute) SingleAttempt() bool {
 }
 
 // Equal reports a and b are same
-func (f VPAbsolute) Equal(b VP) bool {
+func (f VPAbsolute) Equal(b ValidityPeriod) bool {
 	a, ok := b.(VPAbsolute)
 	if !ok {
 		return false
@@ -248,7 +248,7 @@ func (f VPEnhanced) SingleAttempt() bool {
 }
 
 // Equal reports a and b are same
-func (f VPEnhanced) Equal(b VP) bool {
+func (f VPEnhanced) Equal(b ValidityPeriod) bool {
 	a, ok := b.(VPEnhanced)
 	if !ok {
 		return false

@@ -39,7 +39,7 @@ func TestDecodeSubmit(t *testing.T) {
 			MsgClass:   sms.NoMessageClass,
 			MsgCharset: sms.CharsetUCS2},
 		VP: nil,
-		UD: sms.UD{Text: "あいうえお"}}
+		UD: sms.UserData{Text: "あいうえお"}}
 	p.UD.UDH = append(p.UD.UDH, sms.ConcatenatedSM{
 		RefNum: 0x84, MaxNum: 0x0a, SeqNum: 0x01})
 	p.DA.Addr, _ = teldata.ParseTBCD("09012345678")
@@ -62,7 +62,7 @@ func TestMarshalJSON_submit(t *testing.T) {
 			MsgClass:   sms.NoMessageClass,
 			MsgCharset: sms.CharsetUCS2},
 		VP: nil,
-		UD: sms.UD{Text: "あいうえお"}}
+		UD: sms.UserData{Text: "あいうえお"}}
 	p.DA.Addr, _ = teldata.ParseTBCD("09012345678")
 
 	t.Log(p.String())
@@ -80,7 +80,7 @@ func TestMarshalJSON_submit(t *testing.T) {
 	t.Log(p.String())
 }
 
-func randVP() sms.VP {
+func randVP() sms.ValidityPeriod {
 	switch rand.Int31n(4) {
 	case 1:
 		return sms.VPRelative(randByte())
@@ -236,7 +236,7 @@ func randSubmitreport() sms.SubmitReport {
 	orig := sms.SubmitReport{
 		FCS:  byte(rand.Int31n(129)),
 		SCTS: randDate(),
-		DCS:  sms.UnmarshalDCS(randByte()),
+		DCS:  sms.UnmarshalDataCoding(randByte()),
 	}
 
 	if orig.FCS == 128 {

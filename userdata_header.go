@@ -6,18 +6,18 @@ import (
 	"reflect"
 )
 
-// UDH is user data header
-type UDH interface {
+// UserDataHdr is user data header
+type UserDataHdr interface {
 	Marshal() []byte
 	// unmarshal([]byte)
 	fmt.Stringer
 	Key() byte
 	Value() []byte
-	Equal(UDH) bool
+	Equal(UserDataHdr) bool
 }
 
 // UnmarshalUDHs make UDHs
-func UnmarshalUDHs(b []byte) (h []UDH) {
+func UnmarshalUDHs(b []byte) (h []UserDataHdr) {
 	if len(b) == 0 {
 		return
 	}
@@ -44,7 +44,7 @@ func UnmarshalUDHs(b []byte) (h []UDH) {
 }
 
 // MarshalUDHs ganerate binary data of this UDHs
-func MarshalUDHs(h []UDH) []byte {
+func MarshalUDHs(h []UserDataHdr) []byte {
 	if len(h) == 0 {
 		return []byte{}
 	}
@@ -66,7 +66,7 @@ type GenericIEI struct {
 }
 
 // Equal reports a and b are same
-func (h GenericIEI) Equal(b UDH) bool {
+func (h GenericIEI) Equal(b UserDataHdr) bool {
 	a, ok := b.(GenericIEI)
 	if !ok {
 		return false
@@ -121,7 +121,7 @@ type ConcatenatedSM struct {
 }
 
 // Equal reports a and b are same
-func (h ConcatenatedSM) Equal(b UDH) bool {
+func (h ConcatenatedSM) Equal(b UserDataHdr) bool {
 	a, ok := b.(ConcatenatedSM)
 	if !ok {
 		return false
@@ -177,7 +177,7 @@ type ConcatenatedSM16bit struct {
 }
 
 // Equal reports a and b are same
-func (h ConcatenatedSM16bit) Equal(b UDH) bool {
+func (h ConcatenatedSM16bit) Equal(b UserDataHdr) bool {
 	a, ok := b.(ConcatenatedSM16bit)
 	if !ok {
 		return false

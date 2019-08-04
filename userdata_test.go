@@ -11,7 +11,7 @@ import (
 )
 
 func TestMarshalJSON_multiUDH(t *testing.T) {
-	u := sms.UD{
+	u := sms.UserData{
 		Text: "hoge",
 	}
 	u.UDH = append(u.UDH, sms.ConcatenatedSM{RefNum: 3, MaxNum: 2, SeqNum: 1})
@@ -21,14 +21,14 @@ func TestMarshalJSON_multiUDH(t *testing.T) {
 }
 
 func TestMarshalJSON_emptytxt(t *testing.T) {
-	u := sms.UD{}
+	u := sms.UserData{}
 	u.UDH = append(u.UDH, sms.ConcatenatedSM{RefNum: 3, MaxNum: 2, SeqNum: 1})
 	t.Log(u.String())
 	subfuncMarshalJSON(u, t)
 }
 
 func TestMarshalJSON_emptyhdr(t *testing.T) {
-	u := sms.UD{
+	u := sms.UserData{
 		Text: "hoge",
 	}
 	t.Log(u.String())
@@ -36,12 +36,12 @@ func TestMarshalJSON_emptyhdr(t *testing.T) {
 }
 
 func TestMarshalJSON_empty(t *testing.T) {
-	u := sms.UD{}
+	u := sms.UserData{}
 	t.Log(u.String())
 	subfuncMarshalJSON(u, t)
 }
 
-func subfuncMarshalJSON(u sms.UD, t *testing.T) {
+func subfuncMarshalJSON(u sms.UserData, t *testing.T) {
 	var e error
 	bytedata, e = json.Marshal(u)
 	if e != nil {
@@ -58,7 +58,7 @@ func subfuncMarshalJSON(u sms.UD, t *testing.T) {
 func TestConvertUDH(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
-	origs := make([]sms.UDH, rand.Int()%500)
+	origs := make([]sms.UserDataHdr, rand.Int()%500)
 	for i := range origs {
 		origs[i] = randUDH()
 	}
@@ -75,7 +75,7 @@ func TestConvertUDH(t *testing.T) {
 	}
 }
 
-func randUDH() sms.UDH {
+func randUDH() sms.UserDataHdr {
 	h := randByte()
 	switch h {
 	case 0x00:
@@ -118,9 +118,9 @@ func TestConvertUD(t *testing.T) {
 }
 */
 
-func randUD(d sms.DCS) sms.UD {
-	u := sms.UD{}
-	u.UDH = make([]sms.UDH, rand.Int31n(5))
+func randUD(d sms.DataCoding) sms.UserData {
+	u := sms.UserData{}
+	u.UDH = make([]sms.UserDataHdr, rand.Int31n(5))
 	for i := range u.UDH {
 		u.UDH[i] = randUDH()
 	}

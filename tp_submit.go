@@ -14,12 +14,12 @@ type Submit struct {
 	SRR bool `json:"srr"` // O / Status Report Request
 	RP  bool `json:"rp"`  // M / Reply Path
 
-	MR  byte    `json:"mr"`           // M / Message Reference
-	DA  Address `json:"da"`           // M / Destination Address
-	PID byte    `json:"pid"`          // M / Protocol Identifier
-	DCS DCS     `json:"dcs"`          // M / Data Coding Scheme
-	VP  VP      `json:"vp,omitempty"` // O / Validity Period
-	UD  UD      `json:"ud,omitempty"` // O / User Data
+	MR  byte           `json:"mr"`           // M / Message Reference
+	DA  Address        `json:"da"`           // M / Destination Address
+	PID byte           `json:"pid"`          // M / Protocol Identifier
+	DCS DataCoding     `json:"dcs"`          // M / Data Coding Scheme
+	VP  ValidityPeriod `json:"vp,omitempty"` // O / Validity Period
+	UD  UserData       `json:"ud,omitempty"` // O / User Data
 }
 
 // MarshalTP output byte data of this TPDU
@@ -101,7 +101,7 @@ func (d *Submit) UnmarshalTP(b []byte) (e error) {
 	if d.PID, e = r.ReadByte(); e != nil {
 		return
 	}
-	if d.DCS, e = readDCS(r); e != nil {
+	if d.DCS, e = readDataCoding(r); e != nil {
 		return
 	}
 	switch b[0] & 0x18 {
@@ -143,9 +143,9 @@ func (d Submit) MarshalJSON() ([]byte, error) {
 	type alias Submit
 	al := struct {
 		*alias
-		Dcs byte `json:"dcs"`
-		Vp  *jvp `json:"vp,omitempty"`
-		Ud  *UD  `json:"ud,omitempty"`
+		Dcs byte      `json:"dcs"`
+		Vp  *jvp      `json:"vp,omitempty"`
+		Ud  *UserData `json:"ud,omitempty"`
 	}{
 		alias: (*alias)(&d)}
 	if d.DCS != nil {
@@ -171,16 +171,16 @@ func (d *Submit) UnmarshalJSON(b []byte) error {
 	}
 	type alias Submit
 	al := struct {
-		Dcs byte `json:"dcs"`
-		Vp  *jvp `json:"vp,omitempty"`
-		Ud  *UD  `json:"ud,omitempty"`
+		Dcs byte      `json:"dcs"`
+		Vp  *jvp      `json:"vp,omitempty"`
+		Ud  *UserData `json:"ud,omitempty"`
 		*alias
 	}{
 		alias: (*alias)(d)}
 	if e := json.Unmarshal(b, &al); e != nil {
 		return e
 	}
-	d.DCS = UnmarshalDCS(al.Dcs)
+	d.DCS = UnmarshalDataCoding(al.Dcs)
 	if al.Vp != nil {
 		d.VP = ValidityPeriodOf(al.Vp.T, al.Vp.S)
 	}
@@ -213,11 +213,11 @@ func (d Submit) String() string {
 
 // SubmitReport is TPDU message from SC to MS
 type SubmitReport struct {
-	FCS  byte      `json:"fcs,omitempty"` // C / Failure Cause
-	SCTS time.Time `json:"scts"`          // M / Service Centre Time Stamp
-	PID  *byte     `json:"pid,omitempty"` // O / Protocol Identifier
-	DCS  DCS       `json:"dcs,omitempty"` // O / Data Coding Scheme
-	UD   UD        `json:"uid,omitempty"` // O / User Data
+	FCS  byte       `json:"fcs,omitempty"` // C / Failure Cause
+	SCTS time.Time  `json:"scts"`          // M / Service Centre Time Stamp
+	PID  *byte      `json:"pid,omitempty"` // O / Protocol Identifier
+	DCS  DataCoding `json:"dcs,omitempty"` // O / Data Coding Scheme
+	UD   UserData   `json:"uid,omitempty"` // O / User Data
 }
 
 // MarshalTP output byte data of this TPDU
@@ -296,7 +296,7 @@ func (d *SubmitReport) UnmarshalTP(b []byte) (e error) {
 		d.PID = &p
 	}
 	if pi&0x02 == 0x02 {
-		if d.DCS, e = readDCS(r); e != nil {
+		if d.DCS, e = readDataCoding(r); e != nil {
 			return
 		}
 	}
@@ -319,7 +319,7 @@ func (d SubmitReport) MarshalJSON() ([]byte, error) {
 		Scts time.Time `json:"scts"`
 		Pid  *byte     `json:"pid,omitempty"`
 		Dcs  *byte     `json:"dcs,omitempty"`
-		Ud   *UD       `json:"ud,omitempty"`
+		Ud   *UserData `json:"ud,omitempty"`
 	}{}
 	if d.FCS&0x80 == 0x80 {
 		al.Fcs = &d.FCS
@@ -346,7 +346,7 @@ func (d *SubmitReport) UnmarshalJSON(b []byte) error {
 		Scts time.Time `json:"scts"`
 		Pid  *byte     `json:"pid,omitempty"`
 		Dcs  *byte     `json:"dcs,omitempty"`
-		Ud   *UD       `json:"ud,omitempty"`
+		Ud   *UserData `json:"ud,omitempty"`
 	}{}
 	if e := json.Unmarshal(b, &al); e != nil {
 		return e
@@ -357,7 +357,7 @@ func (d *SubmitReport) UnmarshalJSON(b []byte) error {
 	d.SCTS = al.Scts
 	d.PID = al.Pid
 	if al.Dcs != nil {
-		d.DCS = UnmarshalDCS(*al.Dcs)
+		d.DCS = UnmarshalDataCoding(*al.Dcs)
 	}
 	if al.Ud != nil {
 		d.UD = *al.Ud

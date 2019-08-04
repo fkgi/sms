@@ -12,15 +12,14 @@ func TestConvertDCS(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 256; i++ {
-		// orig := getRandomDCS()
-		orig := sms.UnmarshalDCS(byte(i))
+		orig := sms.UnmarshalDataCoding(byte(i))
 		if orig == nil {
 			continue
 		}
 		t.Logf("%s", orig)
 		b := orig.Marshal()
 		t.Logf("% x", b)
-		ocom := sms.UnmarshalDCS(b)
+		ocom := sms.UnmarshalDataCoding(b)
 		t.Logf("%s", ocom)
 		if !orig.Equal(ocom) {
 			t.Fatalf("mismatch orig=%s ocom=%s", orig, ocom)
@@ -28,9 +27,9 @@ func TestConvertDCS(t *testing.T) {
 	}
 }
 
-func randDCS() (d sms.DCS) {
+func randDCS() (d sms.DataCoding) {
 	for d == nil {
-		d = sms.UnmarshalDCS(randByte())
+		d = sms.UnmarshalDataCoding(randByte())
 	}
 	return
 }

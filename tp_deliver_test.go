@@ -39,7 +39,7 @@ func TestDecodeDeliver(t *testing.T) {
 		SCTS: time.Date(
 			2011, time.March, 22, 14, 25, 40, 0,
 			time.FixedZone("unknown", 9*60*60)),
-		UD: sms.UD{Text: "あいうえお"}}
+		UD: sms.UserData{Text: "あいうえお"}}
 	p.UD.UDH = append(p.UD.UDH, sms.ConcatenatedSM{
 		RefNum: 0x84, MaxNum: 0x0a, SeqNum: 0x01})
 	p.OA.Addr, _ = teldata.ParseTBCD("1234")
@@ -145,7 +145,7 @@ func TestMarshalJSON_deliver(t *testing.T) {
 		SCTS: time.Date(
 			2011, time.March, 22, 14, 25, 40, 0,
 			time.FixedZone("unknown", 9*60*60)),
-		UD: sms.UD{Text: "あいうえお"}}
+		UD: sms.UserData{Text: "あいうえお"}}
 	p.UD.UDH = append(p.UD.UDH, sms.ConcatenatedSM{
 		RefNum: 0x84, MaxNum: 0x0a, SeqNum: 0x01})
 	p.OA.Addr, _ = teldata.ParseTBCD("1234")
@@ -191,7 +191,7 @@ func TestMarshalJSON_deliverreport(t *testing.T) {
 			Compressed: false,
 			MsgClass:   sms.NoMessageClass,
 			MsgCharset: sms.CharsetUCS2},
-		UD: sms.UD{Text: "あいうえお"}}
+		UD: sms.UserData{Text: "あいうえお"}}
 	tmp := byte(0x01)
 	p.PID = &tmp
 	t.Log(p.String())
@@ -211,7 +211,7 @@ func TestMarshalJSON_deliverreport(t *testing.T) {
 func randDeliverreport() sms.DeliverReport {
 	orig := sms.DeliverReport{
 		FCS: byte(rand.Int31n(129)),
-		DCS: sms.UnmarshalDCS(randByte()),
+		DCS: sms.UnmarshalDataCoding(randByte()),
 	}
 
 	if orig.FCS == 128 {

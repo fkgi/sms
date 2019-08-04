@@ -5,16 +5,16 @@ import (
 	"fmt"
 )
 
-// DCS indicate Data Coding Scheme
-type DCS interface {
+// DataCoding indicate Data Coding Scheme
+type DataCoding interface {
 	Marshal() byte
-	Equal(DCS) bool
+	Equal(DataCoding) bool
 	fmt.Stringer
 	Charset() Charset
 }
 
-// UnmarshalDCS make DCS from byte data
-func UnmarshalDCS(b byte) DCS {
+// UnmarshalDataCoding make DataCoding from byte data
+func UnmarshalDataCoding(b byte) DataCoding {
 	switch b & 0xc0 {
 	case 0x00:
 		if b&0x0c == 0x0c && b&0x03 != 0x00 {
@@ -74,12 +74,12 @@ func UnmarshalDCS(b byte) DCS {
 	return nil
 }
 
-func readDCS(r *bytes.Reader) (DCS, error) {
+func readDataCoding(r *bytes.Reader) (DataCoding, error) {
 	p, e := r.ReadByte()
 	if e != nil {
 		return nil, e
 	}
-	d := UnmarshalDCS(p)
+	d := UnmarshalDataCoding(p)
 	if d == nil {
 		return nil, UnknownDataCodingError{DCS: p}
 	}
@@ -120,7 +120,7 @@ type GeneralDataCoding struct {
 }
 
 // Equal reports a and b are same
-func (c GeneralDataCoding) Equal(b DCS) bool {
+func (c GeneralDataCoding) Equal(b DataCoding) bool {
 	a, ok := b.(GeneralDataCoding)
 	if !ok {
 		return false
@@ -221,7 +221,7 @@ type MessageWaiting struct {
 }
 
 // Equal reports a and b are same
-func (c MessageWaiting) Equal(b DCS) bool {
+func (c MessageWaiting) Equal(b DataCoding) bool {
 	a, ok := b.(MessageWaiting)
 	if !ok {
 		return false
@@ -293,7 +293,7 @@ type DataCodingMessage struct {
 }
 
 // Equal reports a and b are same
-func (c DataCodingMessage) Equal(b DCS) bool {
+func (c DataCodingMessage) Equal(b DataCoding) bool {
 	a, ok := b.(DataCodingMessage)
 	if !ok {
 		return false

@@ -9,13 +9,13 @@ import (
 	"unicode/utf16"
 )
 
-// UD is TP-UD
-type UD struct {
-	Text string `json:"text,omitempty"`
-	UDH  []UDH  `json:"hdr,omitempty"`
+// UserData is TP-UD
+type UserData struct {
+	Text string        `json:"text,omitempty"`
+	UDH  []UserDataHdr `json:"hdr,omitempty"`
 }
 
-func (u UD) String() string {
+func (u UserData) String() string {
 	w := new(bytes.Buffer)
 	fmt.Fprintf(w, "%sTP-UD:", Indent)
 
@@ -29,7 +29,7 @@ func (u UD) String() string {
 }
 
 // Equal reports a and b are same
-func (u UD) Equal(b UD) bool {
+func (u UserData) Equal(b UserData) bool {
 	if len(u.UDH) != len(b.UDH) {
 		return false
 	}
@@ -47,8 +47,8 @@ type judh struct {
 }
 
 // MarshalJSON provide custom marshaller
-func (u UD) MarshalJSON() ([]byte, error) {
-	type alias UD
+func (u UserData) MarshalJSON() ([]byte, error) {
+	type alias UserData
 	ud := struct {
 		UDH []judh `json:"hdr,omitempty"`
 		*alias
@@ -62,8 +62,8 @@ func (u UD) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON provide custom marshaller
-func (u *UD) UnmarshalJSON(b []byte) (e error) {
-	type alias UD
+func (u *UserData) UnmarshalJSON(b []byte) (e error) {
+	type alias UserData
 	al := struct {
 		UDH []judh `json:"hdr,omitempty"`
 		*alias
@@ -72,7 +72,7 @@ func (u *UD) UnmarshalJSON(b []byte) (e error) {
 	if e = json.Unmarshal(b, &al); e != nil {
 		return
 	}
-	u.UDH = make([]UDH, 0, len(al.UDH))
+	u.UDH = make([]UserDataHdr, 0, len(al.UDH))
 	for _, h := range al.UDH {
 		switch h.Key {
 		case 0x00:
@@ -88,18 +88,18 @@ func (u *UD) UnmarshalJSON(b []byte) (e error) {
 }
 
 // Set8bitData set binary data as UD
-func (u *UD) Set8bitData(d []byte) {
+func (u *UserData) Set8bitData(d []byte) {
 	if u != nil && len(d) != 0 {
 		u.Text = base64.StdEncoding.EncodeToString(d)
 	}
 }
 
 // Get8bitData set binary data as UD
-func (u UD) Get8bitData() ([]byte, error) {
+func (u UserData) Get8bitData() ([]byte, error) {
 	return base64.StdEncoding.DecodeString(u.Text)
 }
 
-func (u *UD) read(r *bytes.Reader, d DCS, h bool) error {
+func (u *UserData) read(r *bytes.Reader, d DataCoding, h bool) error {
 	p, e := r.ReadByte()
 	if e != nil {
 		return e
@@ -158,7 +158,7 @@ func (u *UD) read(r *bytes.Reader, d DCS, h bool) error {
 	return nil
 }
 
-func (u UD) write(w *bytes.Buffer, d DCS) {
+func (u UserData) write(w *bytes.Buffer, d DataCoding) {
 	c := CharsetGSM7bit
 	if d != nil {
 		c = d.Charset()
@@ -201,14 +201,14 @@ func (u UD) write(w *bytes.Buffer, d DCS) {
 	w.Write(ud)
 }
 
-func (u UD) isEmpty() bool {
+func (u UserData) isEmpty() bool {
 	return len(u.Text) == 0 && len(u.UDH) == 0
 }
 
 // MakeSeparatedText generate splited data
 func MakeSeparatedText(s string, c msgClass, id byte) (
-	ud []UD, dcs GeneralDataCoding) {
-	ud = []UD{}
+	ud []UserData, dcs GeneralDataCoding) {
+	ud = []UserData{}
 	dcs = GeneralDataCoding{
 		AutoDelete: false,
 		Compressed: false,
@@ -228,11 +228,11 @@ func MakeSeparatedText(s string, c msgClass, id byte) (
 		maxlen := 160
 
 		for len(r) > maxlen {
-			ud = append(ud, UD{Text: string(r[:153])})
+			ud = append(ud, UserData{Text: string(r[:153])})
 			r = r[153:]
 			maxlen = 153
 		}
-		ud = append(ud, UD{Text: string(r)})
+		ud = append(ud, UserData{Text: string(r)})
 	} else {
 		rs := make([]rune, 0, 70)
 		maxlen := 140
@@ -240,7 +240,7 @@ func MakeSeparatedText(s string, c msgClass, id byte) (
 		for _, r := range s {
 			tmp := append(rs, r)
 			if len(string(tmp)) > maxlen {
-				ud = append(ud, UD{Text: string(rs)})
+				ud = append(ud, UserData{Text: string(rs)})
 				rs = rs[:1]
 				rs[0] = r
 				maxlen = 134
@@ -248,7 +248,7 @@ func MakeSeparatedText(s string, c msgClass, id byte) (
 				rs = tmp
 			}
 		}
-		ud = append(ud, UD{Text: string(rs)})
+		ud = append(ud, UserData{Text: string(rs)})
 	}
 
 	if len(ud) > 1 {

@@ -82,7 +82,7 @@ func randStatusreport() sms.StatusReport {
 		RA:   randAddress(),
 		SCTS: randDate(),
 		DT:   randDate(),
-		DCS:  sms.UnmarshalDCS(randByte()),
+		DCS:  sms.UnmarshalDataCoding(randByte()),
 	}
 	if tmp := rand.Int31n(257); tmp != 256 {
 		b := byte(tmp)
