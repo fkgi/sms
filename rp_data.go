@@ -21,8 +21,8 @@ func (d Data) MarshalRPMO() []byte {
 	w.WriteByte(0) // MTI
 	w.WriteByte(d.MR)
 	w.WriteByte(0) // OA
-	l, a := d.DA.Marshal()
-	w.WriteByte(l)
+	_, a := d.DA.Marshal()
+	w.WriteByte(byte(len(a)))
 	w.Write(a)
 	b := d.UD.MarshalTP()
 	w.WriteByte(byte(len(b)))
@@ -37,8 +37,8 @@ func (d Data) MarshalRPMT() []byte {
 
 	w.WriteByte(1) // MTI
 	w.WriteByte(d.MR)
-	l, a := d.OA.Marshal()
-	w.WriteByte(l)
+	_, a := d.OA.Marshal()
+	w.WriteByte(byte(len(a)))
 	w.Write(a)
 	w.WriteByte(0) // DA
 	b := d.UD.MarshalTP()
