@@ -17,7 +17,7 @@ func TestEncodeSubmit(t *testing.T) {
 		0x76, 0xf8, 0x00, 0x08, 0x10, 0x05, 0x00, 0x03,
 		0x84, 0x0a, 0x01, 0x30, 0x42, 0x30, 0x44, 0x30,
 		0x46, 0x30, 0x48, 0x30, 0x4a}
-	p, e := sms.UnmarshalMOTP(bytedata)
+	p, e := sms.UnmarshalTPMO(bytedata)
 	if e != nil {
 		t.Fatalf("encode failed: %s", e)
 	}
@@ -144,7 +144,7 @@ func TestConvertSubmit(t *testing.T) {
 		t.Logf("%s", orig)
 		b := orig.MarshalTP()
 		t.Logf("% x", b)
-		res, e := sms.UnmarshalMOTP(b)
+		res, e := sms.UnmarshalTPMO(b)
 		if e != nil {
 			t.Fatal(e)
 		}
@@ -190,7 +190,7 @@ func TestConvertSubmit(t *testing.T) {
 func TestEncodeSubmitReport(t *testing.T) {
 	bytedata := []byte{
 		0x01, 0x00, 0x11, 0x30, 0x22, 0x41, 0x52, 0x04, 0x63}
-	p, e := sms.UnmarshalMTTP(bytedata)
+	p, e := sms.UnmarshalTPMT(bytedata)
 	if e != nil {
 		t.Fatalf("encode failed: %s", e)
 	}
@@ -263,7 +263,7 @@ func TestConvertSubmitreport(t *testing.T) {
 		t.Logf("%s", orig)
 		b := orig.MarshalTP()
 		t.Logf("% x", b)
-		res, e := sms.UnmarshalMTTP(b)
+		res, e := sms.UnmarshalTPMT(b)
 		if e != nil {
 			t.Fatal(e)
 		}

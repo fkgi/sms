@@ -40,8 +40,8 @@ type UnmarshalerTP interface {
 	UnmarshalTP([]byte) error
 }
 
-// UnmarshalMOTP parse byte data to TPDU as SC.
-func UnmarshalMOTP(b []byte) (TPDU, error) {
+// UnmarshalTPMO parse byte data to TPDU as SC.
+func UnmarshalTPMO(b []byte) (TPDU, error) {
 	if len(b) == 0 {
 		return nil, io.EOF
 	}
@@ -57,8 +57,8 @@ func UnmarshalMOTP(b []byte) (TPDU, error) {
 	return nil, UnexpectedMessageTypeError{Actual: b[0] & 0x03}
 }
 
-// UnmarshalMTTP parse byte data to TPDU as MS.
-func UnmarshalMTTP(b []byte) (t TPDU, e error) {
+// UnmarshalTPMT parse byte data to TPDU as MS.
+func UnmarshalTPMT(b []byte) (t TPDU, e error) {
 	if len(b) == 0 {
 		return nil, io.EOF
 	}

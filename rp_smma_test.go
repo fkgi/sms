@@ -18,7 +18,7 @@ func TestConvertMORPSMMA(t *testing.T) {
 		t.Logf("%s", orig)
 		b := orig.MarshalRPMO()
 		t.Logf("% x", b)
-		res, e := sms.UnmarshalMORP(b)
+		res, e := sms.UnmarshalRPMO(b)
 		if e != nil {
 			t.Fatal(e)
 		}

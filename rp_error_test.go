@@ -12,7 +12,7 @@ func TestConvertMORPERROR(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
-		orig := sms.Error{
+		orig := sms.RpError{
 			MR: randByte(),
 			CS: randByte()}
 		if tmp := rand.Int31n(257); tmp != 256 {
@@ -26,11 +26,11 @@ func TestConvertMORPERROR(t *testing.T) {
 		t.Logf("%s", orig)
 		b := orig.MarshalRPMO()
 		t.Logf("% x", b)
-		res, e := sms.UnmarshalMORP(b)
+		res, e := sms.UnmarshalRPMO(b)
 		if e != nil {
 			t.Fatal(e)
 		}
-		ocom, ok := res.(sms.Error)
+		ocom, ok := res.(sms.RpError)
 		if !ok {
 			t.Fatal("mti mismatch")
 		}
@@ -55,7 +55,7 @@ func TestConvertMTRPERROR(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
-		orig := sms.Error{
+		orig := sms.RpError{
 			MR: randByte(),
 			CS: randByte()}
 		if tmp := rand.Int31n(257); tmp != 256 {
@@ -69,11 +69,11 @@ func TestConvertMTRPERROR(t *testing.T) {
 		t.Logf("%s", orig)
 		b := orig.MarshalRPMT()
 		t.Logf("% x", b)
-		res, e := sms.UnmarshalMTRP(b)
+		res, e := sms.UnmarshalRPMT(b)
 		if e != nil {
 			t.Fatal(e)
 		}
-		ocom, ok := res.(sms.Error)
+		ocom, ok := res.(sms.RpError)
 		if !ok {
 			t.Fatal("mti mismatch")
 		}

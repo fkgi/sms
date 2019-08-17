@@ -16,8 +16,8 @@ type RPDU interface {
 	//json.Marshaler
 }
 
-// UnmarshalMORP parse byte data to TPDU as SC.
-func UnmarshalMORP(b []byte) (t RPDU, e error) {
+// UnmarshalRPMO parse byte data to TPDU as SC.
+func UnmarshalRPMO(b []byte) (t RPDU, e error) {
 	if len(b) == 0 {
 		return nil, io.EOF
 	}
@@ -34,8 +34,8 @@ func UnmarshalMORP(b []byte) (t RPDU, e error) {
 	return nil, UnexpectedMessageTypeError{Actual: b[0]}
 }
 
-// UnmarshalMTRP parse byte data to TPDU as MS.
-func UnmarshalMTRP(b []byte) (t RPDU, e error) {
+// UnmarshalRPMT parse byte data to TPDU as MS.
+func UnmarshalRPMT(b []byte) (t RPDU, e error) {
 	if len(b) == 0 {
 		return nil, io.EOF
 	}

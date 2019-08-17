@@ -12,7 +12,7 @@ func TestConvertMORPACK(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
-		orig := sms.Ack{
+		orig := sms.RpAck{
 			MR: randByte()}
 		if randByte() != 0 {
 			orig.UD = randDeliverreport()
@@ -21,11 +21,11 @@ func TestConvertMORPACK(t *testing.T) {
 		t.Logf("%s", orig)
 		b := orig.MarshalRPMO()
 		t.Logf("% x", b)
-		res, e := sms.UnmarshalMORP(b)
+		res, e := sms.UnmarshalRPMO(b)
 		if e != nil {
 			t.Fatal(e)
 		}
-		ocom, ok := res.(sms.Ack)
+		ocom, ok := res.(sms.RpAck)
 		if !ok {
 			t.Fatal("mti mismatch")
 		}
@@ -47,7 +47,7 @@ func TestConvertMTRPACK(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
-		orig := sms.Ack{
+		orig := sms.RpAck{
 			MR: randByte()}
 		if randByte() != 0 {
 			orig.UD = randSubmitreport()
@@ -56,11 +56,11 @@ func TestConvertMTRPACK(t *testing.T) {
 		t.Logf("%s", orig)
 		b := orig.MarshalRPMT()
 		t.Logf("% x", b)
-		res, e := sms.UnmarshalMTRP(b)
+		res, e := sms.UnmarshalRPMT(b)
 		if e != nil {
 			t.Fatal(e)
 		}
-		ocom, ok := res.(sms.Ack)
+		ocom, ok := res.(sms.RpAck)
 		if !ok {
 			t.Fatal("mti mismatch")
 		}

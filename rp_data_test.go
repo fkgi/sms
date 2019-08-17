@@ -13,7 +13,7 @@ func TestConvertMORPDATA(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
-		orig := sms.Data{
+		orig := sms.RpData{
 			MR: randByte(),
 			DA: sms.Address{
 				TON: sms.TypeInternational,
@@ -29,11 +29,11 @@ func TestConvertMORPDATA(t *testing.T) {
 		t.Logf("%s", orig)
 		b := orig.MarshalRPMO()
 		t.Logf("% x", b)
-		res, e := sms.UnmarshalMORP(b)
+		res, e := sms.UnmarshalRPMO(b)
 		if e != nil {
 			t.Fatal(e)
 		}
-		ocom, ok := res.(sms.Data)
+		ocom, ok := res.(sms.RpData)
 		if !ok {
 			t.Fatal("mti mismatch")
 		}
@@ -55,7 +55,7 @@ func TestConvertMTRPDATA(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
-		orig := sms.Data{
+		orig := sms.RpData{
 			MR: randByte(),
 			OA: sms.Address{
 				TON: sms.TypeInternational,
@@ -71,11 +71,11 @@ func TestConvertMTRPDATA(t *testing.T) {
 		t.Logf("%s", orig)
 		b := orig.MarshalRPMT()
 		t.Logf("% x", b)
-		res, e := sms.UnmarshalMTRP(b)
+		res, e := sms.UnmarshalRPMT(b)
 		if e != nil {
 			t.Fatal(e)
 		}
-		ocom, ok := res.(sms.Data)
+		ocom, ok := res.(sms.RpData)
 		if !ok {
 			t.Fatal("mti mismatch")
 		}

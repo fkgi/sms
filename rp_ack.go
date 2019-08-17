@@ -6,23 +6,23 @@ import (
 	"io"
 )
 
-// Ack is RP-ACK RPDU
-type Ack struct {
+// RpAck is RP-ACK RPDU
+type RpAck struct {
 	MR byte `json:"mr"`           // M / Message Reference
 	UD TPDU `json:"ud,omitempty"` // O / User Data
 }
 
 // MarshalRPMO returns binary data
-func (d Ack) MarshalRPMO() []byte {
+func (d RpAck) MarshalRPMO() []byte {
 	return d.marshal(2)
 }
 
 // MarshalRPMT returns binary data
-func (d Ack) MarshalRPMT() []byte {
+func (d RpAck) MarshalRPMT() []byte {
 	return d.marshal(3)
 }
 
-func (d Ack) marshal(mti byte) []byte {
+func (d RpAck) marshal(mti byte) []byte {
 	w := new(bytes.Buffer)
 
 	w.WriteByte(mti)
@@ -38,36 +38,36 @@ func (d Ack) marshal(mti byte) []byte {
 }
 
 // UnmarshalAckMO decode Ack MO from bytes
-func UnmarshalAckMO(b []byte) (a Ack, e error) {
-	e = a.UnmarshalMORP(b)
+func UnmarshalAckMO(b []byte) (a RpAck, e error) {
+	e = a.UnmarshalRPMO(b)
 	return
 }
 
-// UnmarshalMORP reads binary data
-func (d *Ack) UnmarshalMORP(b []byte) error {
+// UnmarshalRPMO reads binary data
+func (d *RpAck) UnmarshalRPMO(b []byte) error {
 	ud, e := d.unmarshal(b, 2)
 	if e == nil && ud != nil {
-		d.UD, e = UnmarshalMOTP(ud)
+		d.UD, e = UnmarshalTPMO(ud)
 	}
 	return e
 }
 
 // UnmarshalAckMT decode Ack MT from bytes
-func UnmarshalAckMT(b []byte) (a Ack, e error) {
-	e = a.UnmarshalMTRP(b)
+func UnmarshalAckMT(b []byte) (a RpAck, e error) {
+	e = a.UnmarshalRPMT(b)
 	return
 }
 
-// UnmarshalMTRP reads binary data
-func (d *Ack) UnmarshalMTRP(b []byte) error {
+// UnmarshalRPMT reads binary data
+func (d *RpAck) UnmarshalRPMT(b []byte) error {
 	ud, e := d.unmarshal(b, 3)
 	if e == nil && ud != nil {
-		d.UD, e = UnmarshalMTTP(ud)
+		d.UD, e = UnmarshalTPMT(ud)
 	}
 	return e
 }
 
-func (d *Ack) unmarshal(b []byte, mti byte) ([]byte, error) {
+func (d *RpAck) unmarshal(b []byte, mti byte) ([]byte, error) {
 	r := bytes.NewReader(b)
 	var e error
 
@@ -100,13 +100,13 @@ func (d *Ack) unmarshal(b []byte, mti byte) ([]byte, error) {
 	return b, nil
 }
 
-func (d Ack) String() string {
+func (d RpAck) String() string {
 	w := new(bytes.Buffer)
 
-	fmt.Fprintf(w, "SMS message stack: Ack\n")
-	fmt.Fprintf(w, "%sRP-MR:   %d\n", Indent, d.MR)
+	fmt.Fprintf(w, "SMS message stack: RP-Ack\n")
+	fmt.Fprintf(w, "%sRP-MR: %d\n", Indent, d.MR)
 	if d.UD != nil {
-		fmt.Fprintf(w, "%sRP-UD:   %s\n", Indent, d.UD)
+		fmt.Fprintf(w, "%sRP-UD: %s\n", Indent, d.UD)
 	}
 
 	return w.String()

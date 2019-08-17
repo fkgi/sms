@@ -22,12 +22,12 @@ func (d MemoryAvailable) MarshalRPMT() []byte {
 
 // UnmarshalMemoryAvailableMO decode MemoryAvailable MO from bytes
 func UnmarshalMemoryAvailableMO(b []byte) (a MemoryAvailable, e error) {
-	e = a.UnmarshalMORP(b)
+	e = a.UnmarshalRPMO(b)
 	return
 }
 
-// UnmarshalMORP reads binary data
-func (d *MemoryAvailable) UnmarshalMORP(b []byte) error {
+// UnmarshalRPMO reads binary data
+func (d *MemoryAvailable) UnmarshalRPMO(b []byte) error {
 	r := bytes.NewReader(b)
 	var e error
 
@@ -47,12 +47,12 @@ func (d *MemoryAvailable) UnmarshalMORP(b []byte) error {
 
 // UnmarshalMemoryAvailableMT decode MemoryAvailable MO from bytes
 func UnmarshalMemoryAvailableMT(b []byte) (a MemoryAvailable, e error) {
-	e = a.UnmarshalMTRP(b)
+	e = a.UnmarshalRPMT(b)
 	return
 }
 
-// UnmarshalMTRP reads binary data
-func (d *MemoryAvailable) UnmarshalMTRP(b []byte) error {
+// UnmarshalRPMT reads binary data
+func (d *MemoryAvailable) UnmarshalRPMT(b []byte) error {
 	return fmt.Errorf("invalid data")
 }
 

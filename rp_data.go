@@ -6,8 +6,8 @@ import (
 	"io"
 )
 
-// Data is RP-DATA RPDU
-type Data struct {
+// RpData is RP-DATA RPDU
+type RpData struct {
 	MR byte    `json:"mr"`           // M / Message Reference
 	OA Address `json:"oa,omitempty"` // C / Originator Address
 	DA Address `json:"da,omitempty"` // C / Recipient Address
@@ -15,7 +15,7 @@ type Data struct {
 }
 
 // MarshalRPMO returns binary data
-func (d Data) MarshalRPMO() []byte {
+func (d RpData) MarshalRPMO() []byte {
 	w := new(bytes.Buffer)
 
 	w.WriteByte(0) // MTI
@@ -32,7 +32,7 @@ func (d Data) MarshalRPMO() []byte {
 }
 
 // MarshalRPMT returns binary data
-func (d Data) MarshalRPMT() []byte {
+func (d RpData) MarshalRPMT() []byte {
 	w := new(bytes.Buffer)
 
 	w.WriteByte(1) // MTI
@@ -49,38 +49,38 @@ func (d Data) MarshalRPMT() []byte {
 }
 
 // UnmarshalDataMO decode Data MO from bytes
-func UnmarshalDataMO(b []byte) (a Data, e error) {
-	e = a.UnmarshalMORP(b)
+func UnmarshalDataMO(b []byte) (a RpData, e error) {
+	e = a.UnmarshalRPMO(b)
 	return
 }
 
-// UnmarshalMORP reads binary data
-func (d *Data) UnmarshalMORP(b []byte) error {
+// UnmarshalRPMO reads binary data
+func (d *RpData) UnmarshalRPMO(b []byte) error {
 	ud, e := d.unmarshal(b, 0)
 	if e != nil {
 		return e
 	}
-	d.UD, e = UnmarshalMOTP(ud)
+	d.UD, e = UnmarshalTPMO(ud)
 	return e
 }
 
 // UnmarshalDataMT decode Data MO from bytes
-func UnmarshalDataMT(b []byte) (a Data, e error) {
-	e = a.UnmarshalMTRP(b)
+func UnmarshalDataMT(b []byte) (a RpData, e error) {
+	e = a.UnmarshalRPMT(b)
 	return
 }
 
-// UnmarshalMTRP reads binary data
-func (d *Data) UnmarshalMTRP(b []byte) error {
+// UnmarshalRPMT reads binary data
+func (d *RpData) UnmarshalRPMT(b []byte) error {
 	ud, e := d.unmarshal(b, 1)
 	if e != nil {
 		return e
 	}
-	d.UD, e = UnmarshalMTTP(ud)
+	d.UD, e = UnmarshalTPMT(ud)
 	return e
 }
 
-func (d *Data) unmarshal(b []byte, mti byte) ([]byte, error) {
+func (d *RpData) unmarshal(b []byte, mti byte) ([]byte, error) {
 	r := bytes.NewReader(b)
 	var e error
 
@@ -114,14 +114,14 @@ func (d *Data) unmarshal(b []byte, mti byte) ([]byte, error) {
 	return b, nil
 }
 
-func (d Data) String() string {
+func (d RpData) String() string {
 	w := new(bytes.Buffer)
 
-	fmt.Fprintf(w, "SMS message stack: Data\n")
-	fmt.Fprintf(w, "%sRP-MR:   %d\n", Indent, d.MR)
-	fmt.Fprintf(w, "%sRP-OA:   %s\n", Indent, d.OA)
-	fmt.Fprintf(w, "%sRP-DA:   %s\n", Indent, d.DA)
-	fmt.Fprintf(w, "%sRP-UD:   %s\n", Indent, d.UD)
+	fmt.Fprintf(w, "SMS message stack: RP-Data\n")
+	fmt.Fprintf(w, "%sRP-MR: %d\n", Indent, d.MR)
+	fmt.Fprintf(w, "%sRP-OA: %s\n", Indent, d.OA)
+	fmt.Fprintf(w, "%sRP-DA: %s\n", Indent, d.DA)
+	fmt.Fprintf(w, "%sRP-UD: %s\n", Indent, d.UD)
 
 	return w.String()
 }

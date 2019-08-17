@@ -16,7 +16,7 @@ var bytedata = []byte{
 	0x41, 0x52, 0x04, 0x63, 0x00}
 
 func TestEncodeStatusReport(t *testing.T) {
-	p, e := sms.UnmarshalMTTP(bytedata)
+	p, e := sms.UnmarshalTPMT(bytedata)
 	if e != nil {
 		t.Fatalf("encode failed: %s", e)
 	}
@@ -103,7 +103,7 @@ func TestConvertStatusreport(t *testing.T) {
 		t.Logf("%s", orig)
 		b := orig.MarshalTP()
 		t.Logf("% x", b)
-		res, e := sms.UnmarshalMTTP(b)
+		res, e := sms.UnmarshalTPMT(b)
 		if e != nil {
 			t.Fatal(e)
 		}
