@@ -30,7 +30,7 @@ func TestDecodeSubmit(t *testing.T) {
 		RD:  false,
 		SRR: false,
 		RP:  false,
-		MR:  64,
+		TMR: 64,
 		DA:  sms.Address{TON: 0, NPI: 1},
 		PID: 0,
 		DCS: &sms.GeneralDataCoding{
@@ -53,7 +53,7 @@ func TestMarshalJSON_submit(t *testing.T) {
 		RD:  false,
 		SRR: false,
 		RP:  false,
-		MR:  64,
+		TMR: 64,
 		DA:  sms.Address{TON: 0, NPI: 1},
 		PID: 0,
 		DCS: &sms.GeneralDataCoding{
@@ -124,7 +124,7 @@ func randSubmit() sms.Submit {
 		RD:  randBool(),
 		SRR: randBool(),
 		RP:  randBool(),
-		MR:  randByte(),
+		TMR: randByte(),
 		DA:  randAddress(),
 		PID: randByte(),
 		DCS: randDCS(),
@@ -163,7 +163,7 @@ func TestConvertSubmit(t *testing.T) {
 		if orig.RP != ocom.RP {
 			t.Fatal("RP mismatch")
 		}
-		if orig.MR != ocom.MR {
+		if orig.TMR != ocom.TMR {
 			t.Fatal("MR mismatch")
 		}
 		if !orig.DA.Equal(ocom.DA) {

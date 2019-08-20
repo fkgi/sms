@@ -10,6 +10,11 @@ import (
 
 // StatusReport is TPDU message from SC to MS
 type StatusReport struct {
+	TI byte `json:"ti"` // M / Transaction identifier
+
+	RMR byte    `json:"rmr"` // M / Message Reference for RP
+	SCA Address `json:"sca"` // M / Destination SC Address
+
 	MMS bool `json:"mms"` // M / More Messages to Send (true=more messages)
 	LP  bool `json:"lp"`  // O / Loop Prevention
 	SRQ bool `json:"srq"` // M / Status Report Qualifier (true=status report shall be returned)
@@ -73,6 +78,28 @@ func (d StatusReport) MarshalTP() []byte {
 		d.UD.write(w, d.DCS)
 	}
 	return w.Bytes()
+}
+
+// MarshalRP output byte data of this RPDU
+func (d StatusReport) MarshalRP() []byte {
+	w := new(bytes.Buffer)
+
+	w.WriteByte(1) // MTI
+	w.WriteByte(d.RMR)
+	_, a := d.SCA.Marshal()
+	w.WriteByte(byte(len(a)))
+	w.Write(a)
+	w.WriteByte(0) // DA
+	b := d.MarshalTP()
+	w.WriteByte(byte(len(b)))
+	w.Write(b)
+
+	return w.Bytes()
+}
+
+// MarshalCP output byte data of this CPDU
+func (d StatusReport) MarshalCP() []byte {
+	return marshalCpDataWith(d.TI, d.MarshalRP())
 }
 
 // UnmarshalStatusReport decode StatusReport from bytes
@@ -197,6 +224,10 @@ func (d StatusReport) String() string {
 	w := new(bytes.Buffer)
 
 	fmt.Fprintf(w, "SMS message stack: Status Report\n")
+	fmt.Fprintf(w, "%sCP-TI:   %d\n", Indent, d.TI)
+	fmt.Fprintf(w, "%sRP-MR:   %d\n", Indent, d.RMR)
+	fmt.Fprintf(w, "%sRP-OA:   %d\n", Indent, d.SCA)
+	fmt.Fprintf(w, "%sRP-DA:   <nil>\n", Indent)
 	fmt.Fprintf(w, "%sTP-MMS:  %s\n", Indent, mmsStat(d.MMS))
 	fmt.Fprintf(w, "%sTP-LP:   %s\n", Indent, lpStat(d.LP))
 	fmt.Fprintf(w, "%sTP-SRQ:  %s\n", Indent, srqStat(d.SRQ))

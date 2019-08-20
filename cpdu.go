@@ -1,6 +1,7 @@
 package sms
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 )
@@ -59,4 +60,17 @@ func UnmarshalCPMT(b []byte) (t CPDU, e error) {
 		return UnmarshalCpErrorMT(b)
 	}
 	return nil, UnexpectedMessageTypeError{Actual: b[1]}
+}
+
+func marshalCpDataWith(ti byte, rp []byte) []byte {
+	w := new(bytes.Buffer)
+
+	b := (ti & 0x0f) << 4
+	b |= 0x09
+	w.WriteByte(b)
+	w.WriteByte(0x01)
+	w.WriteByte(byte(len(rp)))
+	w.Write(rp)
+
+	return w.Bytes()
 }
