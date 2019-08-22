@@ -8,46 +8,36 @@ import (
 
 // CPDU represents a SMS CP PDU
 type CPDU interface {
-	MarshalCPMO() []byte
-	MarshalCPMT() []byte
-	//Decode([]byte) error
+	MarshalCP() []byte
 	fmt.Stringer
-	//json.Unmarshaler
-	//json.Marshaler
 }
 
 // UnmarshalCPMO parse byte data to CPDU.
-func UnmarshalCPMO(b []byte) (t CPDU, e error) {
-	if len(b) == 0 {
-		return nil, io.EOF
-	}
-	if b[0]&0x0f != 0x09 {
-		return nil, UnexpectedMessageTypeError{
-			Expected: 0x09, Actual: b[0] & 0x0f}
-	}
+func UnmarshalCPMO(b []byte) (CPDU, error) {
 	if len(b) < 2 {
 		return nil, io.EOF
 	}
 	switch b[1] {
 	case 0x01:
-		return UnmarshalCpDataMO(b)
+		ti, rp, e := unmarshalCpDataWith(b)
+		if e != nil {
+			return nil, e
+		}
+		rpdu, e := UnmarshalRPMO(rp)
+		if e != nil {
+			return nil, e
+		}
+		return rpdu, nil
 	case 0x04:
-		return UnmarshalCpAckMO(b)
+		return UnmarshalCpAck(b)
 	case 0x10:
-		return UnmarshalCpErrorMO(b)
+		return UnmarshalCpError(b)
 	}
 	return nil, UnexpectedMessageTypeError{Actual: b[1]}
 }
 
 // UnmarshalCPMT parse byte data to CPDU.
-func UnmarshalCPMT(b []byte) (t CPDU, e error) {
-	if len(b) == 0 {
-		return nil, io.EOF
-	}
-	if b[0]&0x0f != 0x09 {
-		return nil, UnexpectedMessageTypeError{
-			Expected: 0x09, Actual: b[0] & 0x0f}
-	}
+func UnmarshalCPMT(b []byte) (CPDU, error) {
 	if len(b) < 2 {
 		return nil, io.EOF
 	}
@@ -55,9 +45,9 @@ func UnmarshalCPMT(b []byte) (t CPDU, e error) {
 	case 0x01:
 		return UnmarshalCpDataMT(b)
 	case 0x04:
-		return UnmarshalCpAckMT(b)
+		return UnmarshalCpAck(b)
 	case 0x10:
-		return UnmarshalCpErrorMT(b)
+		return UnmarshalCpError(b)
 	}
 	return nil, UnexpectedMessageTypeError{Actual: b[1]}
 }
@@ -73,4 +63,47 @@ func marshalCpDataWith(ti byte, rp []byte) []byte {
 	w.Write(rp)
 
 	return w.Bytes()
+}
+
+func unmarshalCpDataWith(b []byte) (ti byte, rp []byte, e error) {
+	r := bytes.NewReader(b)
+
+	var tmp byte
+	if tmp, e = r.ReadByte(); e != nil {
+		return
+	}
+	if tmp&0x0f != 0x09 {
+		e = UnexpectedMessageTypeError{
+			Expected: 0x09, Actual: tmp & 0x0f}
+		return
+	}
+	ti = tmp >> 4
+	ti &= 0x0f
+	if tmp, e = r.ReadByte(); e != nil {
+		return
+	}
+	if tmp != 0x01 {
+		e = UnexpectedMessageTypeError{
+			Expected: 0x01, Actual: tmp}
+		return
+	}
+
+	if tmp, e = r.ReadByte(); e != nil {
+		return
+	}
+	rp = make([]byte, int(tmp))
+
+	var l int
+	if l, e = r.Read(rp); e != nil {
+		return
+	}
+	if l != len(rp) {
+		e = io.EOF
+		return
+	}
+	if r.Len() != 0 {
+		e = InvalidLengthError{}
+		return
+	}
+	return
 }

@@ -201,38 +201,11 @@ func (d *Submit) UnmarshalRP(b []byte) (e error) {
 
 // UnmarshalCP get data of this CPDU
 func (d *Submit) UnmarshalCP(b []byte) (e error) {
-	r := bytes.NewReader(b)
-
-	if tmp, e := r.ReadByte(); e != nil {
-		return e
-	} else if tmp&0x0f != 0x09 {
-		return UnexpectedMessageTypeError{
-			Expected: 0x09, Actual: tmp & 0x0f}
-	} else {
-		d.TI = tmp >> 4
-		d.TI &= 0x0f
+	d.TI, b, e = unmarshalCpDataWith(b)
+	if e == nil {
+		e = d.UnmarshalRP(b)
 	}
-	if tmp, e := r.ReadByte(); e != nil {
-		return e
-	} else if tmp != 0x01 {
-		return UnexpectedMessageTypeError{
-			Expected: 0x01, Actual: tmp}
-	}
-
-	if l, e := r.ReadByte(); e == nil {
-		b = make([]byte, int(l))
-	} else {
-		return e
-	}
-	if n, e := r.Read(b); e != nil {
-		return e
-	} else if n != len(b) {
-		return io.EOF
-	}
-	if r.Len() != 0 {
-		return InvalidLengthError{}
-	}
-	return d.UnmarshalRP(b)
+	return
 }
 
 // MarshalJSON provide custom marshaller

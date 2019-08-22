@@ -5,22 +5,13 @@ import (
 	"fmt"
 )
 
-// CpAck is CP-ACK CPDU
-type CpAck struct {
+// Ack is CP-ACK CPDU
+type Ack struct {
 	TI byte `json:"ti"` // M / Transaction identifier
 }
 
-// MarshalCPMO returns binary data
-func (d CpAck) MarshalCPMO() []byte {
-	return d.marshal()
-}
-
-// MarshalCPMT returns binary data
-func (d CpAck) MarshalCPMT() []byte {
-	return d.marshal()
-}
-
-func (d CpAck) marshal() []byte {
+// MarshalCP returns binary data
+func (d Ack) MarshalCP() []byte {
 	b := make([]byte, 2)
 	b[0] = (d.TI & 0x0f) << 4
 	b[0] |= 0x09
@@ -28,29 +19,14 @@ func (d CpAck) marshal() []byte {
 	return b
 }
 
-// UnmarshalCpAckMO decode Ack MT from bytes
-func UnmarshalCpAckMO(b []byte) (a CpAck, e error) {
-	e = a.UnmarshalCPMO(b)
+// UnmarshalAck decode Ack MT from bytes
+func UnmarshalAck(b []byte) (a Ack, e error) {
+	e = a.UnmarshalCP(b)
 	return
 }
 
-// UnmarshalCPMO reads binary data
-func (d *CpAck) UnmarshalCPMO(b []byte) error {
-	return d.unmarshal(b)
-}
-
-// UnmarshalCpAckMT decode Ack MT from bytes
-func UnmarshalCpAckMT(b []byte) (a CpAck, e error) {
-	e = a.UnmarshalCPMT(b)
-	return
-}
-
-// UnmarshalCPMT reads binary data
-func (d *CpAck) UnmarshalCPMT(b []byte) error {
-	return d.unmarshal(b)
-}
-
-func (d *CpAck) unmarshal(b []byte) error {
+// UnmarshalCP reads binary data
+func (d *Ack) UnmarshalCP(b []byte) error {
 	if len(b) != 2 {
 		return InvalidLengthError{}
 	}
@@ -69,10 +45,10 @@ func (d *CpAck) unmarshal(b []byte) error {
 	return nil
 }
 
-func (d CpAck) String() string {
+func (d Ack) String() string {
 	w := new(bytes.Buffer)
 
-	fmt.Fprintf(w, "SMS message stack: CP-Ack\n")
+	fmt.Fprintf(w, "CP-Ack\n")
 	fmt.Fprintf(w, "%sCP-TI:   %d\n", Indent, d.TI)
 
 	return w.String()

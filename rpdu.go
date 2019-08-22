@@ -1,19 +1,13 @@
 package sms
 
 import (
-	"fmt"
 	"io"
 )
 
 // RPDU represents a SMS RP PDU
 type RPDU interface {
-	MarshalRPMO() []byte
-	MarshalRPMT() []byte
-	//DecodeMO([]byte) error
-	//DecodeMT([]byte) error
-	fmt.Stringer
-	//json.Unmarshaler
-	//json.Marshaler
+	CPDU
+	MarshalRP() []byte
 }
 
 // UnmarshalRPMO parse byte data to TPDU as SC.

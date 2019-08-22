@@ -29,23 +29,14 @@ func cpCauseStat(c byte) string {
 	return fmt.Sprintf("Unspecified(%d)", c)
 }
 
-// CpError is CP-ERROR CPDU
-type CpError struct {
+// Error is CP-ERROR CPDU
+type Error struct {
 	TI byte `json:"ti"` // M / Transaction identifier
-	CS byte `json:"cs"` // M /Cause
+	CS byte `json:"cs"` // M / Cause
 }
 
-// MarshalCPMO returns binary data
-func (d CpError) MarshalCPMO() []byte {
-	return d.marshal()
-}
-
-// MarshalCPMT returns binary data
-func (d CpError) MarshalCPMT() []byte {
-	return d.marshal()
-}
-
-func (d CpError) marshal() []byte {
+// MarshalCP returns binary data
+func (d Error) MarshalCP() []byte {
 	b := make([]byte, 3)
 	b[0] = (d.TI & 0x0f) << 4
 	b[0] |= 0x09
@@ -54,29 +45,14 @@ func (d CpError) marshal() []byte {
 	return b
 }
 
-// UnmarshalCpErrorMO decode Ack MT from bytes
-func UnmarshalCpErrorMO(b []byte) (a CpError, e error) {
-	e = a.UnmarshalCPMO(b)
+// UnmarshalError decode Ack MT from bytes
+func UnmarshalError(b []byte) (a Error, e error) {
+	e = a.UnmarshalCP(b)
 	return
 }
 
-// UnmarshalCPMO reads binary data
-func (d *CpError) UnmarshalCPMO(b []byte) error {
-	return d.unmarshal(b)
-}
-
-// UnmarshalCpErrorMT decode Ack MT from bytes
-func UnmarshalCpErrorMT(b []byte) (a CpError, e error) {
-	e = a.UnmarshalCPMT(b)
-	return
-}
-
-// UnmarshalCPMT reads binary data
-func (d *CpError) UnmarshalCPMT(b []byte) error {
-	return d.unmarshal(b)
-}
-
-func (d *CpError) unmarshal(b []byte) error {
+// UnmarshalCP reads binary data
+func (d *Error) UnmarshalCP(b []byte) error {
 	if len(b) != 3 {
 		return InvalidLengthError{}
 	}
@@ -97,10 +73,10 @@ func (d *CpError) unmarshal(b []byte) error {
 	return nil
 }
 
-func (d CpError) String() string {
+func (d Error) String() string {
 	w := new(bytes.Buffer)
 
-	fmt.Fprintf(w, "SMS message stack: CP-Data\n")
+	fmt.Fprintf(w, "CP-Error\n")
 	fmt.Fprintf(w, "%sCP-TI:   %d\n", Indent, d.TI)
 	fmt.Fprintf(w, "%sCP-CS:   %s\n", Indent, cpCauseStat(d.CS))
 

@@ -7,27 +7,28 @@ import (
 
 // MemoryAvailable is RP-SMMA RPDU
 type MemoryAvailable struct {
-	MR byte `json:"mr"` // M / Message Reference
+	TI  byte `json:"ti"`  // M / Transaction identifier
+	RMR byte `json:"rmr"` // M / Message Reference
 }
 
-// MarshalRPMO returns binary data
-func (d MemoryAvailable) MarshalRPMO() []byte {
-	return []byte{6, d.MR}
+// MarshalRP returns binary data
+func (d MemoryAvailable) MarshalRP() []byte {
+	return []byte{6, d.RMR}
 }
 
-// MarshalRPMT returns binary data
-func (d MemoryAvailable) MarshalRPMT() []byte {
-	return []byte{}
+// MarshalCP output byte data of this CPDU
+func (d MemoryAvailable) MarshalCP() []byte {
+	return marshalCpDataWith(d.TI, d.MarshalRP())
 }
 
-// UnmarshalMemoryAvailableMO decode MemoryAvailable MO from bytes
-func UnmarshalMemoryAvailableMO(b []byte) (a MemoryAvailable, e error) {
-	e = a.UnmarshalRPMO(b)
+// UnmarshalMemoryAvailable decode MemoryAvailable MO from bytes
+func UnmarshalMemoryAvailable(b []byte) (a MemoryAvailable, e error) {
+	e = a.UnmarshalRP(b)
 	return
 }
 
-// UnmarshalRPMO reads binary data
-func (d *MemoryAvailable) UnmarshalRPMO(b []byte) error {
+// UnmarshalRP reads binary data
+func (d *MemoryAvailable) UnmarshalRP(b []byte) error {
 	r := bytes.NewReader(b)
 	var e error
 
@@ -36,7 +37,7 @@ func (d *MemoryAvailable) UnmarshalRPMO(b []byte) error {
 	} else if tmp != 6 {
 		return UnexpectedMessageTypeError{Expected: 6, Actual: b[0]}
 	}
-	if d.MR, e = r.ReadByte(); e != nil {
+	if d.RMR, e = r.ReadByte(); e != nil {
 		return e
 	}
 	if r.Len() != 0 {
@@ -45,22 +46,21 @@ func (d *MemoryAvailable) UnmarshalRPMO(b []byte) error {
 	return nil
 }
 
-// UnmarshalMemoryAvailableMT decode MemoryAvailable MO from bytes
-func UnmarshalMemoryAvailableMT(b []byte) (a MemoryAvailable, e error) {
-	e = a.UnmarshalRPMT(b)
+// UnmarshalCP get data of this CPDU
+func (d *MemoryAvailable) UnmarshalCP(b []byte) (e error) {
+	d.TI, b, e = unmarshalCpDataWith(b)
+	if e == nil {
+		e = d.UnmarshalRP(b)
+	}
 	return
-}
-
-// UnmarshalRPMT reads binary data
-func (d *MemoryAvailable) UnmarshalRPMT(b []byte) error {
-	return fmt.Errorf("invalid data")
 }
 
 func (d MemoryAvailable) String() string {
 	w := new(bytes.Buffer)
 
-	fmt.Fprintf(w, "SMS message stack: MemoryAvailable\n")
-	fmt.Fprintf(w, "%sRP-MR:   %d\n", Indent, d.MR)
+	fmt.Fprintf(w, "RP-MemoryAvailable\n")
+	fmt.Fprintf(w, "%sCP-TI:   %d\n", Indent, d.TI)
+	fmt.Fprintf(w, "%sRP-MR:   %d\n", Indent, d.RMR)
 
 	return w.String()
 }

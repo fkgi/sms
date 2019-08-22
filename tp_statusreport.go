@@ -173,6 +173,50 @@ func (d *StatusReport) UnmarshalTP(b []byte) (e error) {
 	return
 }
 
+// UnmarshalRP get data of this TPDU
+func (d *StatusReport) UnmarshalRP(b []byte) (e error) {
+	r := bytes.NewReader(b)
+
+	if tmp, e := r.ReadByte(); e != nil {
+		return e
+	} else if tmp != 0 {
+		return UnexpectedMessageTypeError{
+			Expected: 0, Actual: tmp}
+	}
+	if d.RMR, e = r.ReadByte(); e != nil {
+		return e
+	}
+	if d.SCA, e = readRPAddr(r); e != nil {
+		return e
+	}
+	if _, e = readRPAddr(r); e != nil {
+		return e
+	}
+	if l, e := r.ReadByte(); e == nil {
+		b = make([]byte, int(l))
+	} else {
+		return e
+	}
+	if n, e := r.Read(b); e != nil {
+		return e
+	} else if n != len(b) {
+		return io.EOF
+	}
+	if r.Len() != 0 {
+		return InvalidLengthError{}
+	}
+	return d.UnmarshalTP(b)
+}
+
+// UnmarshalCP get data of this CPDU
+func (d *StatusReport) UnmarshalCP(b []byte) (e error) {
+	d.TI, b, e = unmarshalCpDataWith(b)
+	if e == nil {
+		e = d.UnmarshalRP(b)
+	}
+	return
+}
+
 // MarshalJSON provide custom marshaller
 func (d StatusReport) MarshalJSON() ([]byte, error) {
 	type alias StatusReport

@@ -139,6 +139,68 @@ func (d *DeliverReport) UnmarshalTP(b []byte) (e error) {
 	return
 }
 
+// UnmarshalRP get data of this TPDU
+func (d *DeliverReport) UnmarshalRP(b []byte) (e error) {
+	r := bytes.NewReader(b)
+
+	if mti, e := r.ReadByte(); e != nil {
+		return e
+	} else if mti == 4 {
+		if d.RMR, e = r.ReadByte(); e != nil {
+			return e
+		}
+	} else if mti == 6 {
+		if d.RMR, e = r.ReadByte(); e != nil {
+			return e
+		}
+		if l, e := r.ReadByte(); e != nil {
+			return e
+		} else if l == 0 || l > 2 {
+			return InvalidLengthError{}
+		} else if d.CS, e = r.ReadByte(); e != nil {
+			return e
+		} else if l == 2 {
+			if l, e = r.ReadByte(); e != nil {
+				return e
+			}
+			d.DIAG = &l
+		}
+	} else {
+		return UnexpectedMessageTypeError{
+			Expected: 0, Actual: mti}
+	}
+
+	if iei, e := r.ReadByte(); e != nil {
+		return e
+	} else if iei != 0x41 {
+		return UnexpectedInformationElementError{
+			Expected: 0x41, Actual: iei}
+	}
+	if l, e := r.ReadByte(); e == nil {
+		b = make([]byte, int(l))
+	} else {
+		return e
+	}
+	if n, e := r.Read(b); e != nil {
+		return e
+	} else if n != len(b) {
+		return io.EOF
+	}
+	if r.Len() != 0 {
+		return InvalidLengthError{}
+	}
+	return d.UnmarshalTP(b)
+}
+
+// UnmarshalCP get data of this CPDU
+func (d *DeliverReport) UnmarshalCP(b []byte) (e error) {
+	d.TI, b, e = unmarshalCpDataWith(b)
+	if e == nil {
+		e = d.UnmarshalRP(b)
+	}
+	return
+}
+
 // UnmarshalJSON provide custom marshaller
 func (d *DeliverReport) UnmarshalJSON(b []byte) error {
 	if string(b) == "null" {

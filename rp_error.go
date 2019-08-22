@@ -60,49 +60,53 @@ func rpCauseStat(c byte) string {
 	return fmt.Sprintf("Reserved(%d)", c)
 }
 
-// RpError is RP-ERROR RPDU
-type RpError struct {
+// ErrorMO is MO RP-ERROR RPDU
+type ErrorMO struct {
+	TI byte `json:"ti"` // M / Transaction identifier
+
 	MR   byte  `json:"mr"`             // M / Message Reference
 	CS   byte  `json:"cs"`             // M / Cause
-	Diag *byte `json:"diag,omitempty"` // O / Diagnostics
-	UD   TPDU  `json:"ud,omitempty"`   // O / User Data
+	DIAG *byte `json:"diag,omitempty"` // O / Diagnostics
 }
 
-// MarshalRPMO returns binary data
-func (d RpError) MarshalRPMO() []byte {
-	return d.marshal(4)
+// ErrorMT is MT RP-ERROR RPDU
+type ErrorMT struct {
+	TI byte `json:"ti"` // M / Transaction identifier
+
+	MR   byte  `json:"mr"`             // M / Message Reference
+	CS   byte  `json:"cs"`             // M / Cause
+	DIAG *byte `json:"diag,omitempty"` // O / Diagnostics
 }
 
-// MarshalRPMT returns binary data
-func (d RpError) MarshalRPMT() []byte {
-	return d.marshal(5)
+// MarshalRP returns binary data
+func (d ErrorMO) MarshalRP() []byte {
+	return marshalRpErrorWith(4, d.MR, d.CS, d.DIAG)
 }
 
-func (d RpError) marshal(mti byte) []byte {
+// MarshalRP returns binary data
+func (d ErrorMT) MarshalRP() []byte {
+	return marshalRpErrorWith(5, d.MR, d.CS, d.DIAG)
+}
+
+func marshalRpErrorWith(mti, mr, cs byte, di *byte) []byte {
 	w := new(bytes.Buffer)
 
 	w.WriteByte(mti)
-	w.WriteByte(d.MR)
-	if d.Diag != nil {
+	w.WriteByte(mr)
+	if di != nil {
 		w.WriteByte(2)
-		w.WriteByte(d.CS)
-		w.WriteByte(*d.Diag)
+		w.WriteByte(cs)
+		w.WriteByte(*di)
 	} else {
 		w.WriteByte(1)
-		w.WriteByte(d.CS)
-	}
-	if d.UD != nil {
-		b := d.UD.MarshalTP()
-		w.WriteByte(0x41)
-		w.WriteByte(byte(len(b)))
-		w.Write(b)
+		w.WriteByte(cs)
 	}
 
 	return w.Bytes()
 }
 
 // UnmarshalErrorMO decode Error MO from bytes
-func UnmarshalErrorMO(b []byte) (a RpError, e error) {
+func UnmarshalErrorMO(b []byte) (a ErrorMO, e error) {
 	e = a.UnmarshalRPMO(b)
 	return
 }
