@@ -19,7 +19,8 @@ func UnmarshalCPMO(b []byte) (CPDU, error) {
 	}
 	switch b[1] {
 	case 0x01:
-		ti, rp, e := unmarshalCpDataWith(b)
+		var c cpData
+		rp, e := c.unmarshal(b)
 		if e != nil {
 			return nil, e
 		}
@@ -29,9 +30,9 @@ func UnmarshalCPMO(b []byte) (CPDU, error) {
 		}
 		return rpdu, nil
 	case 0x04:
-		return UnmarshalCpAck(b)
+		return UnmarshalAck(b)
 	case 0x10:
-		return UnmarshalCpError(b)
+		return UnmarshalError(b)
 	}
 	return nil, UnexpectedMessageTypeError{Actual: b[1]}
 }
@@ -43,19 +44,42 @@ func UnmarshalCPMT(b []byte) (CPDU, error) {
 	}
 	switch b[1] {
 	case 0x01:
-		return UnmarshalCpDataMT(b)
+		// return UnmarshalDataMT(b)
 	case 0x04:
-		return UnmarshalCpAck(b)
+		return UnmarshalAck(b)
 	case 0x10:
-		return UnmarshalCpError(b)
+		return UnmarshalError(b)
 	}
 	return nil, UnexpectedMessageTypeError{Actual: b[1]}
 }
 
-func marshalCpDataWith(ti byte, rp []byte) []byte {
+func unmarshalCpHeader(mti byte, b []byte) (byte, error) {
+	if len(b) < 2 {
+		return 0, InvalidLengthError{}
+	}
+
+	if b[0]&0x0f != 0x09 {
+		return 0, UnexpectedMessageTypeError{
+			Expected: 0x09, Actual: b[0] & 0x0f}
+	}
+	ti := b[0] >> 4
+	ti &= 0x0f
+
+	if b[1] != mti {
+		return 0, UnexpectedMessageTypeError{
+			Expected: mti, Actual: b[1]}
+	}
+	return ti, nil
+}
+
+type cpData struct {
+	TI byte `json:"ti"` // M / Transaction identifier
+}
+
+func (d cpData) marshal(rp []byte) []byte {
 	w := new(bytes.Buffer)
 
-	b := (ti & 0x0f) << 4
+	b := (d.TI & 0x0f) << 4
 	b |= 0x09
 	w.WriteByte(b)
 	w.WriteByte(0x01)
@@ -65,29 +89,14 @@ func marshalCpDataWith(ti byte, rp []byte) []byte {
 	return w.Bytes()
 }
 
-func unmarshalCpDataWith(b []byte) (ti byte, rp []byte, e error) {
-	r := bytes.NewReader(b)
+func (d *cpData) unmarshal(b []byte) (rp []byte, e error) {
+	d.TI, e = unmarshalCpHeader(0x01, b)
+	if e != nil {
+		return
+	}
+	r := bytes.NewReader(b[2:])
 
 	var tmp byte
-	if tmp, e = r.ReadByte(); e != nil {
-		return
-	}
-	if tmp&0x0f != 0x09 {
-		e = UnexpectedMessageTypeError{
-			Expected: 0x09, Actual: tmp & 0x0f}
-		return
-	}
-	ti = tmp >> 4
-	ti &= 0x0f
-	if tmp, e = r.ReadByte(); e != nil {
-		return
-	}
-	if tmp != 0x01 {
-		e = UnexpectedMessageTypeError{
-			Expected: 0x01, Actual: tmp}
-		return
-	}
-
 	if tmp, e = r.ReadByte(); e != nil {
 		return
 	}

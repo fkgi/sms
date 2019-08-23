@@ -10,16 +10,13 @@ import (
 
 // StatusReport is TPDU message from SC to MS
 type StatusReport struct {
-	TI byte `json:"ti"` // M / Transaction identifier
-
-	RMR byte    `json:"rmr"` // M / Message Reference for RP
-	SCA Address `json:"sca"` // M / Destination SC Address
+	rpRequest
 
 	MMS bool `json:"mms"` // M / More Messages to Send (true=more messages)
 	LP  bool `json:"lp"`  // O / Loop Prevention
 	SRQ bool `json:"srq"` // M / Status Report Qualifier (true=status report shall be returned)
 
-	MR   byte       `json:"mr"`            // M / Message Reference
+	TMR  byte       `json:"tmr"`           // M / Message Reference
 	RA   Address    `json:"ra"`            // M / Destination Address
 	SCTS time.Time  `json:"scts"`          // M / Service Centre Time Stamp
 	DT   time.Time  `json:"dt"`            // M / Discharge Time
@@ -47,7 +44,7 @@ func (d StatusReport) MarshalTP() []byte {
 		b |= 0x40
 	}
 	w.WriteByte(b)
-	w.WriteByte(d.MR)
+	w.WriteByte(d.TMR)
 	l, a := d.RA.Marshal()
 	w.WriteByte(l)
 	w.Write(a)
@@ -82,24 +79,12 @@ func (d StatusReport) MarshalTP() []byte {
 
 // MarshalRP output byte data of this RPDU
 func (d StatusReport) MarshalRP() []byte {
-	w := new(bytes.Buffer)
-
-	w.WriteByte(1) // MTI
-	w.WriteByte(d.RMR)
-	_, a := d.SCA.Marshal()
-	w.WriteByte(byte(len(a)))
-	w.Write(a)
-	w.WriteByte(0) // DA
-	b := d.MarshalTP()
-	w.WriteByte(byte(len(b)))
-	w.Write(b)
-
-	return w.Bytes()
+	return d.rpRequest.marshal(d.MarshalTP(), false)
 }
 
 // MarshalCP output byte data of this CPDU
 func (d StatusReport) MarshalCP() []byte {
-	return marshalCpDataWith(d.TI, d.MarshalRP())
+	return d.cpData.marshal(d.MarshalRP())
 }
 
 // UnmarshalStatusReport decode StatusReport from bytes
@@ -124,7 +109,7 @@ func (d *StatusReport) UnmarshalTP(b []byte) (e error) {
 
 	r := bytes.NewReader(b[1:])
 
-	if d.MR, e = r.ReadByte(); e != nil {
+	if d.TMR, e = r.ReadByte(); e != nil {
 		return
 	}
 	if d.RA, e = readTPAddr(r); e != nil {
@@ -175,43 +160,15 @@ func (d *StatusReport) UnmarshalTP(b []byte) (e error) {
 
 // UnmarshalRP get data of this TPDU
 func (d *StatusReport) UnmarshalRP(b []byte) (e error) {
-	r := bytes.NewReader(b)
-
-	if tmp, e := r.ReadByte(); e != nil {
-		return e
-	} else if tmp != 0 {
-		return UnexpectedMessageTypeError{
-			Expected: 0, Actual: tmp}
+	if b, e = d.unmarshal(false, b); e == nil {
+		e = d.UnmarshalTP(b)
 	}
-	if d.RMR, e = r.ReadByte(); e != nil {
-		return e
-	}
-	if d.SCA, e = readRPAddr(r); e != nil {
-		return e
-	}
-	if _, e = readRPAddr(r); e != nil {
-		return e
-	}
-	if l, e := r.ReadByte(); e == nil {
-		b = make([]byte, int(l))
-	} else {
-		return e
-	}
-	if n, e := r.Read(b); e != nil {
-		return e
-	} else if n != len(b) {
-		return io.EOF
-	}
-	if r.Len() != 0 {
-		return InvalidLengthError{}
-	}
-	return d.UnmarshalTP(b)
+	return
 }
 
 // UnmarshalCP get data of this CPDU
 func (d *StatusReport) UnmarshalCP(b []byte) (e error) {
-	d.TI, b, e = unmarshalCpDataWith(b)
-	if e == nil {
+	if b, e = d.cpData.unmarshal(b); e == nil {
 		e = d.UnmarshalRP(b)
 	}
 	return
@@ -267,7 +224,7 @@ func (d *StatusReport) UnmarshalJSON(b []byte) error {
 func (d StatusReport) String() string {
 	w := new(bytes.Buffer)
 
-	fmt.Fprintf(w, "SMS message stack: Status Report\n")
+	fmt.Fprintf(w, "TP-StatusReport\n")
 	fmt.Fprintf(w, "%sCP-TI:   %d\n", Indent, d.TI)
 	fmt.Fprintf(w, "%sRP-MR:   %d\n", Indent, d.RMR)
 	fmt.Fprintf(w, "%sRP-OA:   %d\n", Indent, d.SCA)
@@ -275,7 +232,7 @@ func (d StatusReport) String() string {
 	fmt.Fprintf(w, "%sTP-MMS:  %s\n", Indent, mmsStat(d.MMS))
 	fmt.Fprintf(w, "%sTP-LP:   %s\n", Indent, lpStat(d.LP))
 	fmt.Fprintf(w, "%sTP-SRQ:  %s\n", Indent, srqStat(d.SRQ))
-	fmt.Fprintf(w, "%sTP-MR:   %d\n", Indent, d.MR)
+	fmt.Fprintf(w, "%sTP-MR:   %d\n", Indent, d.TMR)
 	fmt.Fprintf(w, "%sTP-RA:   %s\n", Indent, d.RA)
 	fmt.Fprintf(w, "%sTP-SCTS: %s\n", Indent, d.SCTS)
 	fmt.Fprintf(w, "%sTP-DT:   %s\n", Indent, d.SCTS)

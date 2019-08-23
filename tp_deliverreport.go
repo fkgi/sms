@@ -9,7 +9,7 @@ import (
 
 // DeliverReport is TPDU message from MS to SC
 type DeliverReport struct {
-	TI byte `json:"ti"` // M / Transaction identifier
+	cpData
 
 	RMR  byte  `json:"rmr"`            // M / Message Reference for RP
 	CS   byte  `json:"cs"`             // M / Cause
@@ -86,7 +86,7 @@ func (d DeliverReport) MarshalRP() []byte {
 
 // MarshalCP output byte data of this CPDU
 func (d DeliverReport) MarshalCP() []byte {
-	return marshalCpDataWith(d.TI, d.MarshalRP())
+	return d.cpData.marshal(d.MarshalRP())
 }
 
 // UnmarshalDeliverReport decode DeliverReport from bytes
@@ -194,8 +194,7 @@ func (d *DeliverReport) UnmarshalRP(b []byte) (e error) {
 
 // UnmarshalCP get data of this CPDU
 func (d *DeliverReport) UnmarshalCP(b []byte) (e error) {
-	d.TI, b, e = unmarshalCpDataWith(b)
-	if e == nil {
+	if b, e = d.cpData.unmarshal(b); e == nil {
 		e = d.UnmarshalRP(b)
 	}
 	return

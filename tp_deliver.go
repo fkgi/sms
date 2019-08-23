@@ -10,10 +10,7 @@ import (
 
 // Deliver is TPDU message from SC to MS
 type Deliver struct {
-	TI byte `json:"ti"` // M / Transaction identifier
-
-	RMR byte    `json:"rmr"` // M / Message Reference for RP
-	SCA Address `json:"sca"` // M / Destination SC Address
+	rpRequest
 
 	MMS bool `json:"mms"` // M / More Messages to Send (true=more messages)
 	LP  bool `json:"lp"`  // O / Loop Prevention
@@ -65,24 +62,12 @@ func (d Deliver) MarshalTP() []byte {
 
 // MarshalRP output byte data of this RPDU
 func (d Deliver) MarshalRP() []byte {
-	w := new(bytes.Buffer)
-
-	w.WriteByte(1) // MTI
-	w.WriteByte(d.RMR)
-	_, a := d.SCA.Marshal()
-	w.WriteByte(byte(len(a)))
-	w.Write(a)
-	w.WriteByte(0) // DA
-	b := d.MarshalTP()
-	w.WriteByte(byte(len(b)))
-	w.Write(b)
-
-	return w.Bytes()
+	return d.rpRequest.marshal(d.MarshalTP(), false)
 }
 
 // MarshalCP output byte data of this CPDU
 func (d Deliver) MarshalCP() []byte {
-	return marshalCpDataWith(d.TI, d.MarshalRP())
+	return d.cpData.marshal(d.MarshalRP())
 }
 
 // UnmarshalDeliver decode Deliver from bytes
@@ -133,43 +118,15 @@ func (d *Deliver) UnmarshalTP(b []byte) (e error) {
 
 // UnmarshalRP get data of this TPDU
 func (d *Deliver) UnmarshalRP(b []byte) (e error) {
-	r := bytes.NewReader(b)
-
-	if tmp, e := r.ReadByte(); e != nil {
-		return e
-	} else if tmp != 0 {
-		return UnexpectedMessageTypeError{
-			Expected: 0, Actual: tmp}
+	if b, e = d.unmarshal(false, b); e == nil {
+		e = d.UnmarshalTP(b)
 	}
-	if d.RMR, e = r.ReadByte(); e != nil {
-		return e
-	}
-	if d.SCA, e = readRPAddr(r); e != nil {
-		return e
-	}
-	if _, e = readRPAddr(r); e != nil {
-		return e
-	}
-	if l, e := r.ReadByte(); e == nil {
-		b = make([]byte, int(l))
-	} else {
-		return e
-	}
-	if n, e := r.Read(b); e != nil {
-		return e
-	} else if n != len(b) {
-		return io.EOF
-	}
-	if r.Len() != 0 {
-		return InvalidLengthError{}
-	}
-	return d.UnmarshalTP(b)
+	return
 }
 
 // UnmarshalCP get data of this CPDU
 func (d *Deliver) UnmarshalCP(b []byte) (e error) {
-	d.TI, b, e = unmarshalCpDataWith(b)
-	if e == nil {
+	if b, e = d.cpData.unmarshal(b); e == nil {
 		e = d.UnmarshalRP(b)
 	}
 	return
@@ -220,7 +177,7 @@ func (d *Deliver) UnmarshalJSON(b []byte) error {
 func (d Deliver) String() string {
 	w := new(bytes.Buffer)
 
-	fmt.Fprintf(w, "SMS message stack: Deliver\n")
+	fmt.Fprintf(w, "TP-Deliver\n")
 	fmt.Fprintf(w, "%sCP-TI:   %d\n", Indent, d.TI)
 	fmt.Fprintf(w, "%sRP-MR:   %d\n", Indent, d.RMR)
 	fmt.Fprintf(w, "%sRP-OA:   %d\n", Indent, d.SCA)

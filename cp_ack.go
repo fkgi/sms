@@ -26,23 +26,13 @@ func UnmarshalAck(b []byte) (a Ack, e error) {
 }
 
 // UnmarshalCP reads binary data
-func (d *Ack) UnmarshalCP(b []byte) error {
+func (d *Ack) UnmarshalCP(b []byte) (e error) {
 	if len(b) != 2 {
-		return InvalidLengthError{}
+		e = InvalidLengthError{}
+	} else {
+		d.TI, e = unmarshalCpHeader(0x04, b)
 	}
-
-	if b[0]&0x0f != 0x09 {
-		return UnexpectedMessageTypeError{
-			Expected: 0x09, Actual: b[0] & 0x0f}
-	}
-	d.TI = b[0] >> 4
-	d.TI &= 0x0f
-
-	if b[1] != 0x04 {
-		return UnexpectedMessageTypeError{
-			Expected: 0x04, Actual: b[1]}
-	}
-	return nil
+	return
 }
 
 func (d Ack) String() string {

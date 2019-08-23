@@ -52,24 +52,13 @@ func UnmarshalError(b []byte) (a Error, e error) {
 }
 
 // UnmarshalCP reads binary data
-func (d *Error) UnmarshalCP(b []byte) error {
+func (d *Error) UnmarshalCP(b []byte) (e error) {
 	if len(b) != 3 {
-		return InvalidLengthError{}
+		e = InvalidLengthError{}
+	} else {
+		d.TI, e = unmarshalCpHeader(0x10, b)
+		d.CS = b[2]
 	}
-
-	if b[0]&0x0f != 0x09 {
-		return UnexpectedMessageTypeError{
-			Expected: 0x09, Actual: b[0] & 0x0f}
-	}
-	d.TI = b[0] >> 4
-	d.TI &= 0x0f
-
-	if b[1] != 0x10 {
-		return UnexpectedMessageTypeError{
-			Expected: 0x10, Actual: b[1]}
-	}
-
-	d.CS = b[2]
 	return nil
 }
 

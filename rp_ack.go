@@ -1,113 +1,77 @@
 package sms
 
-import (
-	"bytes"
-	"fmt"
-	"io"
-)
-
-// RpAck is RP-ACK RPDU
-type RpAck struct {
-	MR byte `json:"mr"`           // M / Message Reference
-	UD TPDU `json:"ud,omitempty"` // O / User Data
+// AckMO is MO RP-ACK RPDU
+type AckMO struct {
+	rpAnswer
 }
 
-// MarshalRPMO returns binary data
-func (d RpAck) MarshalRPMO() []byte {
-	return d.marshal(2)
+// AckMT is MT RP-ACK RPDU
+type AckMT struct {
+	rpAnswer
 }
 
-// MarshalRPMT returns binary data
-func (d RpAck) MarshalRPMT() []byte {
-	return d.marshal(3)
+// MarshalRP returns binary data
+func (d AckMO) MarshalRP() []byte {
+	return d.marshalAck(2)
 }
 
-func (d RpAck) marshal(mti byte) []byte {
-	w := new(bytes.Buffer)
+// MarshalRP returns binary data
+func (d AckMT) MarshalRP() []byte {
+	return d.marshalAck(3)
+}
 
-	w.WriteByte(mti)
-	w.WriteByte(d.MR)
-	if d.UD != nil {
-		b := d.UD.MarshalTP()
-		w.WriteByte(0x41)
-		w.WriteByte(byte(len(b)))
-		w.Write(b)
-	}
+// MarshalCP output byte data of this CPDU
+func (d AckMO) MarshalCP() []byte {
+	return d.cpData.marshal(d.MarshalRP())
+}
 
-	return w.Bytes()
+// MarshalCP output byte data of this CPDU
+func (d AckMT) MarshalCP() []byte {
+	return d.cpData.marshal(d.MarshalRP())
 }
 
 // UnmarshalAckMO decode Ack MO from bytes
-func UnmarshalAckMO(b []byte) (a RpAck, e error) {
-	e = a.UnmarshalRPMO(b)
+func UnmarshalAckMO(b []byte) (a AckMO, e error) {
+	e = a.UnmarshalRP(b)
 	return
 }
 
-// UnmarshalRPMO reads binary data
-func (d *RpAck) UnmarshalRPMO(b []byte) error {
-	ud, e := d.unmarshal(b, 2)
-	if e == nil && ud != nil {
-		d.UD, e = UnmarshalTPMO(ud)
-	}
-	return e
+// UnmarshalRP reads binary data
+func (d *AckMO) UnmarshalRP(b []byte) error {
+	return d.unmarshalAck(b, 2)
 }
 
 // UnmarshalAckMT decode Ack MT from bytes
-func UnmarshalAckMT(b []byte) (a RpAck, e error) {
-	e = a.UnmarshalRPMT(b)
+func UnmarshalAckMT(b []byte) (a AckMT, e error) {
+	e = a.UnmarshalRP(b)
 	return
 }
 
-// UnmarshalRPMT reads binary data
-func (d *RpAck) UnmarshalRPMT(b []byte) error {
-	ud, e := d.unmarshal(b, 3)
-	if e == nil && ud != nil {
-		d.UD, e = UnmarshalTPMT(ud)
-	}
-	return e
+// UnmarshalRP reads binary data
+func (d *AckMT) UnmarshalRP(b []byte) error {
+	return d.unmarshalAck(b, 3)
 }
 
-func (d *RpAck) unmarshal(b []byte, mti byte) ([]byte, error) {
-	r := bytes.NewReader(b)
-	var e error
-
-	if tmp, e := r.ReadByte(); e != nil {
-		return nil, e
-	} else if tmp != mti {
-		return nil, UnexpectedMessageTypeError{Expected: mti, Actual: b[0]}
+// UnmarshalCP get data of this CPDU
+func (d *AckMO) UnmarshalCP(b []byte) (e error) {
+	if b, e = d.cpData.unmarshal(b); e == nil {
+		e = d.UnmarshalRP(b)
 	}
-	if d.MR, e = r.ReadByte(); e != nil {
-		return nil, e
-	}
-	if tmp, e := r.ReadByte(); e == io.EOF {
-		return nil, nil
-	} else if tmp != 0x41 {
-		return nil, UnexpectedInformationElementError{Expected: 0x41, Actual: tmp}
-	}
-	if l, e := r.ReadByte(); e == nil {
-		b = make([]byte, int(l))
-	} else {
-		return nil, e
-	}
-	if n, e := r.Read(b); e != nil {
-		return nil, e
-	} else if n != len(b) {
-		return nil, io.EOF
-	}
-	if r.Len() != 0 {
-		return nil, InvalidLengthError{}
-	}
-	return b, nil
+	return
 }
 
-func (d RpAck) String() string {
-	w := new(bytes.Buffer)
-
-	fmt.Fprintf(w, "SMS message stack: RP-Ack\n")
-	fmt.Fprintf(w, "%sRP-MR: %d\n", Indent, d.MR)
-	if d.UD != nil {
-		fmt.Fprintf(w, "%sRP-UD: %s\n", Indent, d.UD)
+// UnmarshalCP get data of this CPDU
+func (d *AckMT) UnmarshalCP(b []byte) (e error) {
+	if b, e = d.cpData.unmarshal(b); e == nil {
+		e = d.UnmarshalRP(b)
 	}
+	return
+}
 
-	return w.String()
+func (d AckMO) String() string {
+	return d.stringAck()
+}
+
+func (d AckMT) String() string {
+	return d.stringAck()
 }

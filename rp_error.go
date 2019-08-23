@@ -1,9 +1,7 @@
 package sms
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 )
 
 func rpCauseStat(c byte) string {
@@ -62,134 +60,76 @@ func rpCauseStat(c byte) string {
 
 // ErrorMO is MO RP-ERROR RPDU
 type ErrorMO struct {
-	TI byte `json:"ti"` // M / Transaction identifier
-
-	MR   byte  `json:"mr"`             // M / Message Reference
-	CS   byte  `json:"cs"`             // M / Cause
-	DIAG *byte `json:"diag,omitempty"` // O / Diagnostics
+	rpAnswer
 }
 
 // ErrorMT is MT RP-ERROR RPDU
 type ErrorMT struct {
-	TI byte `json:"ti"` // M / Transaction identifier
-
-	MR   byte  `json:"mr"`             // M / Message Reference
-	CS   byte  `json:"cs"`             // M / Cause
-	DIAG *byte `json:"diag,omitempty"` // O / Diagnostics
+	rpAnswer
 }
 
 // MarshalRP returns binary data
 func (d ErrorMO) MarshalRP() []byte {
-	return marshalRpErrorWith(4, d.MR, d.CS, d.DIAG)
+	return d.marshalErr(4)
 }
 
 // MarshalRP returns binary data
 func (d ErrorMT) MarshalRP() []byte {
-	return marshalRpErrorWith(5, d.MR, d.CS, d.DIAG)
+	return d.marshalErr(5)
 }
 
-func marshalRpErrorWith(mti, mr, cs byte, di *byte) []byte {
-	w := new(bytes.Buffer)
+// MarshalCP output byte data of this CPDU
+func (d ErrorMO) MarshalCP() []byte {
+	return d.cpData.marshal(d.MarshalRP())
+}
 
-	w.WriteByte(mti)
-	w.WriteByte(mr)
-	if di != nil {
-		w.WriteByte(2)
-		w.WriteByte(cs)
-		w.WriteByte(*di)
-	} else {
-		w.WriteByte(1)
-		w.WriteByte(cs)
-	}
-
-	return w.Bytes()
+// MarshalCP output byte data of this CPDU
+func (d ErrorMT) MarshalCP() []byte {
+	return d.cpData.marshal(d.MarshalRP())
 }
 
 // UnmarshalErrorMO decode Error MO from bytes
 func UnmarshalErrorMO(b []byte) (a ErrorMO, e error) {
-	e = a.UnmarshalRPMO(b)
+	e = a.UnmarshalRP(b)
 	return
 }
 
-// UnmarshalRPMO reads binary data
-func (d *RpError) UnmarshalRPMO(b []byte) error {
-	ud, e := d.unmarshal(b, 4)
-	if e == nil && ud != nil {
-		d.UD, e = UnmarshalTPMO(ud)
-	}
-	return e
+// UnmarshalRP reads binary data
+func (d *ErrorMO) UnmarshalRP(b []byte) error {
+	return d.unmarshalErr(b, 4)
 }
 
 // UnmarshalErrorMT decode Error MO from bytes
-func UnmarshalErrorMT(b []byte) (a RpError, e error) {
-	e = a.UnmarshalRPMT(b)
+func UnmarshalErrorMT(b []byte) (a ErrorMT, e error) {
+	e = a.UnmarshalRP(b)
 	return
 }
 
-// UnmarshalRPMT reads binary data
-func (d *RpError) UnmarshalRPMT(b []byte) error {
-	ud, e := d.unmarshal(b, 5)
-	if e == nil && ud != nil {
-		d.UD, e = UnmarshalTPMT(ud)
-	}
-	return e
+// UnmarshalRP reads binary data
+func (d *ErrorMT) UnmarshalRP(b []byte) error {
+	return d.unmarshalErr(b, 5)
 }
 
-func (d *RpError) unmarshal(b []byte, mti byte) ([]byte, error) {
-	r := bytes.NewReader(b)
-	var e error
-	if tmp, e := r.ReadByte(); e != nil {
-		return nil, e
-	} else if tmp != mti {
-		return nil, UnexpectedMessageTypeError{Expected: mti, Actual: b[0]}
+// UnmarshalCP get data of this CPDU
+func (d *ErrorMO) UnmarshalCP(b []byte) (e error) {
+	if b, e = d.cpData.unmarshal(b); e == nil {
+		e = d.UnmarshalRP(b)
 	}
-	if d.MR, e = r.ReadByte(); e != nil {
-		return nil, e
-	}
-	if l, e := r.ReadByte(); e != nil {
-		return nil, e
-	} else if l == 0 || l > 2 {
-		return nil, InvalidLengthError{}
-	} else if d.CS, e = r.ReadByte(); e != nil {
-		return nil, e
-	} else if l == 2 {
-		if l, e = r.ReadByte(); e != nil {
-			return nil, e
-		}
-		d.Diag = &l
-	}
-
-	if tmp, e := r.ReadByte(); e == io.EOF {
-		return nil, nil
-	} else if tmp != 0x41 {
-		return nil, UnexpectedInformationElementError{Expected: 0x41, Actual: tmp}
-	}
-	if l, e := r.ReadByte(); e == nil {
-		b = make([]byte, int(l))
-	} else {
-		return nil, e
-	}
-	if n, e := r.Read(b); e != nil {
-		return nil, e
-	} else if n != len(b) {
-		return nil, io.EOF
-	}
-	if r.Len() != 0 {
-		return nil, InvalidLengthError{}
-	}
-	return b, nil
+	return
 }
 
-func (d RpError) String() string {
-	w := new(bytes.Buffer)
-
-	fmt.Fprintf(w, "SMS message stack: RP-Error\n")
-	fmt.Fprintf(w, "%sRP-MR: %d\n", Indent, d.MR)
-	fmt.Fprintf(w, "%sRP-CS: cause=%s, diagnostic=%d\n",
-		Indent, rpCauseStat(d.CS), *d.Diag)
-	if d.UD != nil {
-		fmt.Fprintf(w, "%sRP-UD: %s\n", Indent, d.UD)
+// UnmarshalCP get data of this CPDU
+func (d *ErrorMT) UnmarshalCP(b []byte) (e error) {
+	if b, e = d.cpData.unmarshal(b); e == nil {
+		e = d.UnmarshalRP(b)
 	}
+	return
+}
 
-	return w.String()
+func (d ErrorMO) String() string {
+	return d.stringErr()
+}
+
+func (d ErrorMT) String() string {
+	return d.stringErr()
 }
