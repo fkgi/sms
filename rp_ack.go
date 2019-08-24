@@ -12,12 +12,12 @@ type AckMT struct {
 
 // MarshalRP returns binary data
 func (d AckMO) MarshalRP() []byte {
-	return d.marshalAck(2)
+	return d.marshalAck(true, nil)
 }
 
 // MarshalRP returns binary data
 func (d AckMT) MarshalRP() []byte {
-	return d.marshalAck(3)
+	return d.marshalAck(false, nil)
 }
 
 // MarshalCP output byte data of this CPDU
@@ -37,8 +37,11 @@ func UnmarshalAckMO(b []byte) (a AckMO, e error) {
 }
 
 // UnmarshalRP reads binary data
-func (d *AckMO) UnmarshalRP(b []byte) error {
-	return d.unmarshalAck(b, 2)
+func (d *AckMO) UnmarshalRP(b []byte) (e error) {
+	if b, e = d.unmarshalAck(true, b); e != nil && b != nil {
+		e = InvalidLengthError{}
+	}
+	return
 }
 
 // UnmarshalAckMT decode Ack MT from bytes
@@ -48,8 +51,11 @@ func UnmarshalAckMT(b []byte) (a AckMT, e error) {
 }
 
 // UnmarshalRP reads binary data
-func (d *AckMT) UnmarshalRP(b []byte) error {
-	return d.unmarshalAck(b, 3)
+func (d *AckMT) UnmarshalRP(b []byte) (e error) {
+	if b, e = d.unmarshalAck(false, b); e != nil && b != nil {
+		e = InvalidLengthError{}
+	}
+	return
 }
 
 // UnmarshalCP get data of this CPDU

@@ -8,72 +8,114 @@ import (
 	"github.com/fkgi/sms"
 )
 
-func TestConvertMORPACK(t *testing.T) {
+func TestConvertRPRPAckMO(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
-		orig := sms.RpAck{
-			MR: randByte()}
-		if randByte() != 0 {
-			orig.UD = randDeliverreport()
-		}
+		orig := sms.AckMO{}
+		orig.RMR = randByte()
 
 		t.Logf("%s", orig)
-		b := orig.MarshalRPMO()
+		b := orig.MarshalRP()
 		t.Logf("% x", b)
 		res, e := sms.UnmarshalRPMO(b)
 		if e != nil {
 			t.Fatal(e)
 		}
-		ocom, ok := res.(sms.RpAck)
+		ocom, ok := res.(sms.AckMO)
 		if !ok {
 			t.Fatal("mti mismatch")
 		}
 		t.Logf("%s", ocom)
 
-		if orig.MR != ocom.MR {
+		if orig.RMR != ocom.RMR {
 			t.Fatal("MR mismatch")
-		}
-		if (orig.UD == nil) != (ocom.UD == nil) {
-			t.Fatal("UD mismatch")
-		}
-		if orig.UD != nil && ocom.UD != nil && orig.UD.String() != ocom.UD.String() {
-			t.Fatal("UD mismatch")
 		}
 	}
 }
 
-func TestConvertMTRPACK(t *testing.T) {
+func TestConvertCPRPAckMO(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
-		orig := sms.RpAck{
-			MR: randByte()}
-		if randByte() != 0 {
-			orig.UD = randSubmitreport()
-		}
+		orig := sms.AckMO{}
+		orig.TI = randTransactionID()
+		orig.RMR = randByte()
 
 		t.Logf("%s", orig)
-		b := orig.MarshalRPMT()
+		b := orig.MarshalCP()
+		t.Logf("% x", b)
+		res, e := sms.UnmarshalCPMO(b)
+		if e != nil {
+			t.Fatal(e)
+		}
+		ocom, ok := res.(sms.AckMO)
+		if !ok {
+			t.Fatal("mti mismatch")
+		}
+		t.Logf("%s", ocom)
+
+		if orig.TI != ocom.TI {
+			t.Fatal("TI mismatch")
+		}
+		if orig.RMR != ocom.RMR {
+			t.Fatal("MR mismatch")
+		}
+	}
+}
+
+func TestConvertRPRPAckMT(t *testing.T) {
+	rand.Seed(time.Now().Unix())
+
+	for i := 0; i < 1000; i++ {
+		orig := sms.AckMT{}
+		orig.RMR = randByte()
+
+		t.Logf("%s", orig)
+		b := orig.MarshalRP()
 		t.Logf("% x", b)
 		res, e := sms.UnmarshalRPMT(b)
 		if e != nil {
 			t.Fatal(e)
 		}
-		ocom, ok := res.(sms.RpAck)
+		ocom, ok := res.(sms.AckMT)
 		if !ok {
 			t.Fatal("mti mismatch")
 		}
 		t.Logf("%s", ocom)
 
-		if orig.MR != ocom.MR {
+		if orig.RMR != ocom.RMR {
 			t.Fatal("MR mismatch")
 		}
-		if (orig.UD == nil) != (ocom.UD == nil) {
-			t.Fatal("UD mismatch")
+	}
+}
+
+func TestConvertCPRPAckMT(t *testing.T) {
+	rand.Seed(time.Now().Unix())
+
+	for i := 0; i < 1000; i++ {
+		orig := sms.AckMT{}
+		orig.TI = randTransactionID()
+		orig.RMR = randByte()
+
+		t.Logf("%s", orig)
+		b := orig.MarshalCP()
+		t.Logf("% x", b)
+		res, e := sms.UnmarshalCPMT(b)
+		if e != nil {
+			t.Fatal(e)
 		}
-		if orig.UD != nil && ocom.UD != nil && orig.UD.String() != ocom.UD.String() {
-			t.Fatal("UD mismatch")
+		ocom, ok := res.(sms.AckMT)
+		if !ok {
+			t.Fatal("mti mismatch")
+		}
+		t.Logf("%s", ocom)
+
+		if orig.TI != ocom.TI {
+			t.Fatal("TI mismatch")
+		}
+		if orig.RMR != ocom.RMR {
+			t.Fatal("MR mismatch")
 		}
 	}
 }

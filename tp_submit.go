@@ -73,7 +73,7 @@ func (d Submit) MarshalTP() []byte {
 
 // MarshalRP output byte data of this RPDU
 func (d Submit) MarshalRP() []byte {
-	return d.rpRequest.marshal(d.MarshalTP(), true)
+	return d.rpRequest.marshal(true, d.MarshalTP())
 }
 
 // MarshalCP output byte data of this CPDU

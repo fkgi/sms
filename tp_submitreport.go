@@ -10,7 +10,7 @@ import (
 
 // SubmitReport is TPDU message from SC to MS
 type SubmitReport struct {
-	cpData
+	rpAnswer
 
 	RMR  byte  `json:"rmr"`            // M / Message Reference for RP
 	CS   byte  `json:"cs"`             // M / Cause
@@ -62,29 +62,10 @@ func (d SubmitReport) MarshalTP() []byte {
 
 // MarshalRP output byte data of this RPDU
 func (d SubmitReport) MarshalRP() []byte {
-	w := new(bytes.Buffer)
-
 	if d.FCS&0x80 == 0x80 {
-		w.WriteByte(5) // MTI
-		w.WriteByte(d.RMR)
-		if d.DIAG != nil {
-			w.WriteByte(2)
-			w.WriteByte(d.CS)
-			w.WriteByte(*d.DIAG)
-		} else {
-			w.WriteByte(1)
-			w.WriteByte(d.CS)
-		}
-	} else {
-		w.WriteByte(3) // MTI
-		w.WriteByte(d.RMR)
+		return d.marshalErr(false, d.MarshalTP())
 	}
-	b := d.MarshalTP()
-	w.WriteByte(0x41)
-	w.WriteByte(byte(len(b)))
-	w.Write(b)
-
-	return w.Bytes()
+	return d.marshalAck(false, d.MarshalTP())
 }
 
 // MarshalCP output byte data of this CPDU
@@ -272,7 +253,7 @@ func (d SubmitReport) String() string {
 		fmt.Fprintf(w, "%sRP-CS:   cause=%s",
 			Indent, rpCauseStat(d.CS))
 		if d.DIAG != nil {
-			fmt.Fprintf(w, "diagnostic=%d\n", *d.DIAG)
+			fmt.Fprintf(w, ", diagnostic=%d\n", *d.DIAG)
 		} else {
 			fmt.Fprintf(w, "\n")
 		}

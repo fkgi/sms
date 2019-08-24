@@ -80,7 +80,7 @@ func randDeliver() sms.Deliver {
 	return orig
 }
 
-func TestConvertDeliver(t *testing.T) {
+func TestConvertTPDeliver(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
@@ -99,6 +99,71 @@ func TestConvertDeliver(t *testing.T) {
 		}
 		t.Logf("%s", ocom)
 
+		if orig.MMS != ocom.MMS {
+			t.Fatal("MMS mismatch")
+		}
+		if orig.LP != ocom.LP {
+			t.Fatal("LP mismatch")
+		}
+		if orig.SRI != ocom.SRI {
+			t.Fatal("SRI mismatch")
+		}
+		if orig.RP != ocom.RP {
+			t.Fatal("RP mismatch")
+		}
+		if !orig.OA.Equal(ocom.OA) {
+			t.Fatal("OA mismatch")
+		}
+		if orig.PID != ocom.PID {
+			t.Fatal("PID mismatch")
+		}
+		if !orig.DCS.Equal(ocom.DCS) {
+			t.Fatal("DCS mismatch")
+		}
+		if !orig.SCTS.Equal(ocom.SCTS) {
+			t.Fatal("SCTS mismatch")
+		}
+		if !orig.UD.Equal(ocom.UD) {
+			t.Fatal("UD text mismatch")
+		}
+	}
+}
+
+func TestConvertRPDeliver(t *testing.T) {
+	rand.Seed(time.Now().Unix())
+
+	for i := 0; i < 1000; i++ {
+		orig := randDeliver()
+		orig.RMR = randByte()
+		orig.SCA = sms.Address{
+			TON: sms.TypeInternational,
+			NPI: sms.PlanISDNTelephone}
+		tmp := randDigit((rand.Int() % 20) + 1)
+		var e error
+		orig.SCA.Addr, e = teldata.ParseTBCD(tmp)
+		if e != nil {
+			panic(e)
+		}
+
+		t.Logf("%s", orig)
+		b := orig.MarshalRP()
+		t.Logf("% x", b)
+		res, e := sms.UnmarshalRPMT(b)
+		if e != nil {
+			t.Fatal(e)
+		}
+		ocom, ok := res.(sms.Deliver)
+		if !ok {
+			t.Fatal("mti mismatch")
+		}
+		t.Logf("%s", ocom)
+
+		if orig.RMR != ocom.RMR {
+			t.Fatal("MR mismatch")
+		}
+		if !orig.SCA.Equal(ocom.SCA) {
+			t.Fatal("SCA mismatch")
+		}
 		if orig.MMS != ocom.MMS {
 			t.Fatal("MMS mismatch")
 		}
@@ -229,7 +294,7 @@ func randDeliverreport() sms.DeliverReport {
 	return orig
 }
 
-func TestConvertDeliverreport(t *testing.T) {
+func TestConvertTPDeliverreport(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
@@ -248,6 +313,66 @@ func TestConvertDeliverreport(t *testing.T) {
 		}
 		t.Logf("%s", ocom)
 
+		if orig.FCS != ocom.FCS {
+			t.Fatal("FCS mismatch")
+		}
+		if (orig.PID == nil) != (ocom.PID == nil) {
+			t.Fatal("PID mismatch")
+		}
+		if orig.PID != nil && ocom.PID != nil && *orig.PID != *ocom.PID {
+			t.Fatal("PID mismatch")
+		}
+		if (orig.DCS == nil) != (ocom.DCS == nil) {
+			t.Fatal("DCS mismatch")
+		}
+		if orig.DCS != nil && ocom.DCS != nil && !orig.DCS.Equal(ocom.DCS) {
+			t.Fatal("DCS mismatch")
+		}
+		if !orig.UD.Equal(ocom.UD) {
+			t.Fatal("UD text mismatch")
+		}
+	}
+}
+
+func TestConvertRPDeliverreport(t *testing.T) {
+	rand.Seed(time.Now().Unix())
+
+	for i := 0; i < 1000; i++ {
+		orig := randDeliverreport()
+		orig.RMR = randByte()
+		if orig.FCS != 0 {
+			orig.CS = randByte()
+			if tmp := rand.Int31n(257); tmp != 256 {
+				bt := byte(tmp)
+				orig.DIAG = &bt
+			}
+		}
+
+		t.Logf("%s", orig)
+		b := orig.MarshalRP()
+		t.Logf("% x", b)
+		res, e := sms.UnmarshalRPMO(b)
+		if e != nil {
+			t.Fatal(e)
+		}
+		ocom, ok := res.(sms.DeliverReport)
+		if !ok {
+			t.Fatal("mti mismatch")
+		}
+		t.Logf("%s", ocom)
+
+		if orig.RMR != ocom.RMR {
+			t.Fatal("MR mismatch")
+		}
+		if orig.CS != ocom.CS {
+			t.Fatal("CS mismatch")
+		}
+		if (orig.DIAG == nil) != (ocom.DIAG == nil) {
+			t.Fatal("DIAG mismatch")
+		}
+		if orig.DIAG != nil && ocom.DIAG != nil && *orig.DIAG != *ocom.DIAG {
+			t.Fatal("DIAG mismatch")
+		}
 		if orig.FCS != ocom.FCS {
 			t.Fatal("FCS mismatch")
 		}

@@ -70,12 +70,12 @@ type ErrorMT struct {
 
 // MarshalRP returns binary data
 func (d ErrorMO) MarshalRP() []byte {
-	return d.marshalErr(4)
+	return d.marshalErr(true, nil)
 }
 
 // MarshalRP returns binary data
 func (d ErrorMT) MarshalRP() []byte {
-	return d.marshalErr(5)
+	return d.marshalErr(false, nil)
 }
 
 // MarshalCP output byte data of this CPDU
@@ -95,8 +95,11 @@ func UnmarshalErrorMO(b []byte) (a ErrorMO, e error) {
 }
 
 // UnmarshalRP reads binary data
-func (d *ErrorMO) UnmarshalRP(b []byte) error {
-	return d.unmarshalErr(b, 4)
+func (d *ErrorMO) UnmarshalRP(b []byte) (e error) {
+	if b, e = d.unmarshalErr(true, b); e != nil && b != nil {
+		e = InvalidLengthError{}
+	}
+	return
 }
 
 // UnmarshalErrorMT decode Error MO from bytes
@@ -106,8 +109,11 @@ func UnmarshalErrorMT(b []byte) (a ErrorMT, e error) {
 }
 
 // UnmarshalRP reads binary data
-func (d *ErrorMT) UnmarshalRP(b []byte) error {
-	return d.unmarshalErr(b, 5)
+func (d *ErrorMT) UnmarshalRP(b []byte) (e error) {
+	if b, e = d.unmarshalErr(false, b); e != nil && b != nil {
+		e = InvalidLengthError{}
+	}
+	return
 }
 
 // UnmarshalCP get data of this CPDU

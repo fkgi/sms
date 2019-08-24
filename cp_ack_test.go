@@ -8,21 +8,25 @@ import (
 	"github.com/fkgi/sms"
 )
 
-func TestConvertMOCPACK(t *testing.T) {
+func randTransactionID() byte {
+	return byte(rand.Int31n(16))
+}
+
+func TestConvertCPAckMO(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
-		orig := sms.CpAck{
-			TI: byte(rand.Int31n(16))}
+		orig := sms.Ack{
+			TI: randTransactionID()}
 
 		t.Logf("%s", orig)
-		b := orig.MarshalCPMO()
+		b := orig.MarshalCP()
 		t.Logf("% x", b)
 		res, e := sms.UnmarshalCPMO(b)
 		if e != nil {
 			t.Fatal(e)
 		}
-		ocom, ok := res.(sms.CpAck)
+		ocom, ok := res.(sms.Ack)
 		if !ok {
 			t.Fatal("mti mismatch")
 		}
@@ -34,21 +38,21 @@ func TestConvertMOCPACK(t *testing.T) {
 	}
 }
 
-func TestConvertMTCPACK(t *testing.T) {
+func TestConvertCPAckMT(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
-		orig := sms.CpAck{
-			TI: byte(rand.Int31n(16))}
+		orig := sms.Ack{
+			TI: randTransactionID()}
 
 		t.Logf("%s", orig)
-		b := orig.MarshalCPMT()
+		b := orig.MarshalCP()
 		t.Logf("% x", b)
 		res, e := sms.UnmarshalCPMT(b)
 		if e != nil {
 			t.Fatal(e)
 		}
-		ocom, ok := res.(sms.CpAck)
+		ocom, ok := res.(sms.Ack)
 		if !ok {
 			t.Fatal("mti mismatch")
 		}

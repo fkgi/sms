@@ -2,8 +2,6 @@ package sms
 
 import (
 	"bytes"
-	"encoding/json"
-	"fmt"
 	"io"
 	"time"
 )
@@ -28,10 +26,8 @@ func NextMsgReference() byte {
 
 // TPDU represents a SMS TP PDU
 type TPDU interface {
+	RPDU
 	MarshalTP() []byte
-	json.Marshaler
-	// json.Unmarshaler
-	fmt.Stringer
 }
 
 // UnmarshalerTP is the interface implemented by types

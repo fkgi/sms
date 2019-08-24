@@ -12,6 +12,12 @@ type CPDU interface {
 	fmt.Stringer
 }
 
+// UnmarshalerCP is the interface implemented by types
+// that can unmarshal a CPDU
+type UnmarshalerCP interface {
+	UnmarshalCP([]byte) error
+}
+
 // UnmarshalCPMO parse byte data to CPDU.
 func UnmarshalCPMO(b []byte) (CPDU, error) {
 	if len(b) < 2 {
@@ -20,15 +26,12 @@ func UnmarshalCPMO(b []byte) (CPDU, error) {
 	switch b[1] {
 	case 0x01:
 		var c cpData
-		rp, e := c.unmarshal(b)
+		var e error
+		b, e = c.unmarshal(b)
 		if e != nil {
 			return nil, e
 		}
-		rpdu, e := UnmarshalRPMO(rp)
-		if e != nil {
-			return nil, e
-		}
-		return rpdu, nil
+		return unmarshalRPMO(b, c)
 	case 0x04:
 		return UnmarshalAck(b)
 	case 0x10:
@@ -44,32 +47,19 @@ func UnmarshalCPMT(b []byte) (CPDU, error) {
 	}
 	switch b[1] {
 	case 0x01:
-		// return UnmarshalDataMT(b)
+		var c cpData
+		var e error
+		b, e = c.unmarshal(b)
+		if e != nil {
+			return nil, e
+		}
+		return unmarshalRPMT(b, c)
 	case 0x04:
 		return UnmarshalAck(b)
 	case 0x10:
 		return UnmarshalError(b)
 	}
 	return nil, UnexpectedMessageTypeError{Actual: b[1]}
-}
-
-func unmarshalCpHeader(mti byte, b []byte) (byte, error) {
-	if len(b) < 2 {
-		return 0, InvalidLengthError{}
-	}
-
-	if b[0]&0x0f != 0x09 {
-		return 0, UnexpectedMessageTypeError{
-			Expected: 0x09, Actual: b[0] & 0x0f}
-	}
-	ti := b[0] >> 4
-	ti &= 0x0f
-
-	if b[1] != mti {
-		return 0, UnexpectedMessageTypeError{
-			Expected: mti, Actual: b[1]}
-	}
-	return ti, nil
 }
 
 type cpData struct {
@@ -115,4 +105,23 @@ func (d *cpData) unmarshal(b []byte) (rp []byte, e error) {
 		return
 	}
 	return
+}
+
+func unmarshalCpHeader(mti byte, b []byte) (byte, error) {
+	if len(b) < 2 {
+		return 0, InvalidLengthError{}
+	}
+
+	if b[0]&0x0f != 0x09 {
+		return 0, UnexpectedMessageTypeError{
+			Expected: 0x09, Actual: b[0] & 0x0f}
+	}
+	ti := b[0] >> 4
+	ti &= 0x0f
+
+	if b[1] != mti {
+		return 0, UnexpectedMessageTypeError{
+			Expected: mti, Actual: b[1]}
+	}
+	return ti, nil
 }

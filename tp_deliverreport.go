@@ -9,7 +9,7 @@ import (
 
 // DeliverReport is TPDU message from MS to SC
 type DeliverReport struct {
-	cpData
+	rpAnswer
 
 	RMR  byte  `json:"rmr"`            // M / Message Reference for RP
 	CS   byte  `json:"cs"`             // M / Cause
@@ -59,29 +59,10 @@ func (d DeliverReport) MarshalTP() []byte {
 
 // MarshalRP output byte data of this RPDU
 func (d DeliverReport) MarshalRP() []byte {
-	w := new(bytes.Buffer)
-
 	if d.FCS&0x80 == 0x80 {
-		w.WriteByte(4) // MTI
-		w.WriteByte(d.RMR)
-		if d.DIAG != nil {
-			w.WriteByte(2)
-			w.WriteByte(d.CS)
-			w.WriteByte(*d.DIAG)
-		} else {
-			w.WriteByte(1)
-			w.WriteByte(d.CS)
-		}
-	} else {
-		w.WriteByte(2) // MTI
-		w.WriteByte(d.RMR)
+		return d.rpAnswer.marshalErr(true, d.MarshalTP())
 	}
-	b := d.MarshalTP()
-	w.WriteByte(0x41)
-	w.WriteByte(byte(len(b)))
-	w.Write(b)
-
-	return w.Bytes()
+	return d.rpAnswer.marshalAck(true, d.MarshalTP())
 }
 
 // MarshalCP output byte data of this CPDU
@@ -141,55 +122,15 @@ func (d *DeliverReport) UnmarshalTP(b []byte) (e error) {
 
 // UnmarshalRP get data of this TPDU
 func (d *DeliverReport) UnmarshalRP(b []byte) (e error) {
-	r := bytes.NewReader(b)
-
-	if mti, e := r.ReadByte(); e != nil {
-		return e
-	} else if mti == 4 {
-		if d.RMR, e = r.ReadByte(); e != nil {
-			return e
-		}
-	} else if mti == 6 {
-		if d.RMR, e = r.ReadByte(); e != nil {
-			return e
-		}
-		if l, e := r.ReadByte(); e != nil {
-			return e
-		} else if l == 0 || l > 2 {
-			return InvalidLengthError{}
-		} else if d.CS, e = r.ReadByte(); e != nil {
-			return e
-		} else if l == 2 {
-			if l, e = r.ReadByte(); e != nil {
-				return e
-			}
-			d.DIAG = &l
-		}
+	if b, e = d.unmarshalAck(true, b); e != nil {
+		return
+	}
+	if b == nil {
+		e = io.EOF
 	} else {
-		return UnexpectedMessageTypeError{
-			Expected: 0, Actual: mti}
+		e = d.UnmarshalTP(b)
 	}
-
-	if iei, e := r.ReadByte(); e != nil {
-		return e
-	} else if iei != 0x41 {
-		return UnexpectedInformationElementError{
-			Expected: 0x41, Actual: iei}
-	}
-	if l, e := r.ReadByte(); e == nil {
-		b = make([]byte, int(l))
-	} else {
-		return e
-	}
-	if n, e := r.Read(b); e != nil {
-		return e
-	} else if n != len(b) {
-		return io.EOF
-	}
-	if r.Len() != 0 {
-		return InvalidLengthError{}
-	}
-	return d.UnmarshalTP(b)
+	return
 }
 
 // UnmarshalCP get data of this CPDU
@@ -261,7 +202,7 @@ func (d DeliverReport) String() string {
 		fmt.Fprintf(w, "%sRP-CS:   cause=%s",
 			Indent, rpCauseStat(d.CS))
 		if d.DIAG != nil {
-			fmt.Fprintf(w, "diagnostic=%d\n", *d.DIAG)
+			fmt.Fprintf(w, ", diagnostic=%d\n", *d.DIAG)
 		} else {
 			fmt.Fprintf(w, "\n")
 		}

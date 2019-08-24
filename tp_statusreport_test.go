@@ -28,7 +28,7 @@ func TestDecodeStatusReport(t *testing.T) {
 		MMS: false,
 		LP:  false,
 		SRQ: false,
-		MR:  0x00,
+		TMR: 0x00,
 		RA:  sms.Address{TON: 0, NPI: 0},
 		SCTS: time.Date(
 			2011, time.March, 22, 14, 25, 40, 0,
@@ -48,7 +48,7 @@ func TestMarshalJSON_statusreport(t *testing.T) {
 		MMS: false,
 		LP:  false,
 		SRQ: false,
-		MR:  0x00,
+		TMR: 0x00,
 		RA:  sms.Address{TON: 0, NPI: 0},
 		SCTS: time.Date(
 			2011, time.March, 22, 14, 25, 40, 0,
@@ -78,7 +78,7 @@ func randStatusreport() sms.StatusReport {
 		MMS:  randBool(),
 		LP:   randBool(),
 		SRQ:  randBool(),
-		MR:   randByte(),
+		TMR:  randByte(),
 		RA:   randAddress(),
 		SCTS: randDate(),
 		DT:   randDate(),
@@ -122,7 +122,7 @@ func TestConvertStatusreport(t *testing.T) {
 		if orig.SRQ != ocom.SRQ {
 			t.Fatal("SRQ mismatch")
 		}
-		if orig.MR != ocom.MR {
+		if orig.TMR != ocom.TMR {
 			t.Fatal("MR mismatch")
 		}
 		if !orig.RA.Equal(ocom.RA) {
