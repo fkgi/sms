@@ -1,6 +1,7 @@
 package sms_test
 
 import (
+	"errors"
 	"math/rand"
 	"testing"
 	"time"
@@ -8,17 +9,46 @@ import (
 	"github.com/fkgi/sms"
 )
 
+func randRPErrorMO() sms.ErrorMO {
+	orig := sms.ErrorMO{}
+	orig.TI = randTransactionID()
+	orig.RMR = randByte()
+	orig.CS = randByte()
+	if tmp := rand.Int31n(257); tmp != 256 {
+		bt := byte(tmp)
+		orig.DIAG = &bt
+	}
+	return orig
+}
+
+func compareRPRPErrorMO(orig, ocom sms.ErrorMO) error {
+	if orig.RMR != ocom.RMR {
+		return errors.New("MR mismatch")
+	}
+	if orig.CS != ocom.CS {
+		return errors.New("CS mismatch")
+	}
+	if (orig.DIAG == nil) != (ocom.DIAG == nil) {
+		return errors.New("DIAG mismatch")
+	}
+	if orig.DIAG != nil && ocom.DIAG != nil && *orig.DIAG != *ocom.DIAG {
+		return errors.New("DIAG mismatch")
+	}
+	return nil
+}
+
+func compareCPRPErrorMO(orig, ocom sms.ErrorMO) error {
+	if orig.TI != ocom.TI {
+		return errors.New("TI mismatch")
+	}
+	return compareRPRPErrorMO(orig, ocom)
+}
+
 func TestConvertRPRPErrorMO(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
-		orig := sms.ErrorMO{}
-		orig.RMR = randByte()
-		orig.CS = randByte()
-		if tmp := rand.Int31n(257); tmp != 256 {
-			bt := byte(tmp)
-			orig.DIAG = &bt
-		}
+		orig := randRPErrorMO()
 
 		t.Logf("%s", orig)
 		b := orig.MarshalRP()
@@ -33,17 +63,21 @@ func TestConvertRPRPErrorMO(t *testing.T) {
 		}
 		t.Logf("%s", ocom)
 
-		if orig.RMR != ocom.RMR {
-			t.Fatal("MR mismatch")
+		e = compareRPRPErrorMO(orig, ocom)
+		if e != nil {
+			t.Fatal(e)
 		}
-		if orig.CS != ocom.CS {
-			t.Fatal("CS mismatch")
+
+		ocom = sms.ErrorMO{}
+		e = ocom.UnmarshalRP(b)
+		if e != nil {
+			t.Fatal(e)
 		}
-		if (orig.DIAG == nil) != (ocom.DIAG == nil) {
-			t.Fatal("DIAG mismatch")
-		}
-		if orig.DIAG != nil && ocom.DIAG != nil && *orig.DIAG != *ocom.DIAG {
-			t.Fatal("DIAG mismatch")
+		t.Logf("%s", ocom)
+
+		e = compareRPRPErrorMO(orig, ocom)
+		if e != nil {
+			t.Fatal(e)
 		}
 	}
 }
@@ -52,14 +86,7 @@ func TestConvertCPRPErrorMO(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
-		orig := sms.ErrorMO{}
-		orig.TI = randTransactionID()
-		orig.RMR = randByte()
-		orig.CS = randByte()
-		if tmp := rand.Int31n(257); tmp != 256 {
-			bt := byte(tmp)
-			orig.DIAG = &bt
-		}
+		orig := randRPErrorMO()
 
 		t.Logf("%s", orig)
 		b := orig.MarshalCP()
@@ -74,35 +101,65 @@ func TestConvertCPRPErrorMO(t *testing.T) {
 		}
 		t.Logf("%s", ocom)
 
-		if orig.TI != ocom.TI {
-			t.Fatal("TI mismatch")
+		e = compareCPRPErrorMO(orig, ocom)
+		if e != nil {
+			t.Fatal(e)
 		}
-		if orig.RMR != ocom.RMR {
-			t.Fatal("MR mismatch")
+
+		ocom = sms.ErrorMO{}
+		e = ocom.UnmarshalCP(b)
+		if e != nil {
+			t.Fatal(e)
 		}
-		if orig.CS != ocom.CS {
-			t.Fatal("CS mismatch")
-		}
-		if (orig.DIAG == nil) != (ocom.DIAG == nil) {
-			t.Fatal("DIAG mismatch")
-		}
-		if orig.DIAG != nil && ocom.DIAG != nil && *orig.DIAG != *ocom.DIAG {
-			t.Fatal("DIAG mismatch")
+		t.Logf("%s", ocom)
+
+		e = compareCPRPErrorMO(orig, ocom)
+		if e != nil {
+			t.Fatal(e)
 		}
 	}
+}
+
+func randRPErrorMT() sms.ErrorMT {
+	orig := sms.ErrorMT{}
+	orig.TI = randTransactionID()
+	orig.RMR = randByte()
+	orig.CS = randByte()
+	if tmp := rand.Int31n(257); tmp != 256 {
+		bt := byte(tmp)
+		orig.DIAG = &bt
+	}
+	return orig
+}
+
+func compareRPRPErrorMT(orig, ocom sms.ErrorMT) error {
+	if orig.RMR != ocom.RMR {
+		return errors.New("MR mismatch")
+	}
+	if orig.CS != ocom.CS {
+		return errors.New("CS mismatch")
+	}
+	if (orig.DIAG == nil) != (ocom.DIAG == nil) {
+		return errors.New("DIAG mismatch")
+	}
+	if orig.DIAG != nil && ocom.DIAG != nil && *orig.DIAG != *ocom.DIAG {
+		return errors.New("DIAG mismatch")
+	}
+	return nil
+}
+
+func compareCPRPErrorMT(orig, ocom sms.ErrorMT) error {
+	if orig.TI != ocom.TI {
+		return errors.New("TI mismatch")
+	}
+	return compareRPRPErrorMT(orig, ocom)
 }
 
 func TestConvertRPRPErrorMT(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
-		orig := sms.ErrorMT{}
-		orig.RMR = randByte()
-		orig.CS = randByte()
-		if tmp := rand.Int31n(257); tmp != 256 {
-			bt := byte(tmp)
-			orig.DIAG = &bt
-		}
+		orig := randRPErrorMT()
 
 		t.Logf("%s", orig)
 		b := orig.MarshalRP()
@@ -117,17 +174,21 @@ func TestConvertRPRPErrorMT(t *testing.T) {
 		}
 		t.Logf("%s", ocom)
 
-		if orig.RMR != ocom.RMR {
-			t.Fatal("MR mismatch")
+		e = compareRPRPErrorMT(orig, ocom)
+		if e != nil {
+			t.Fatal(e)
 		}
-		if orig.CS != ocom.CS {
-			t.Fatal("CS mismatch")
+
+		ocom = sms.ErrorMT{}
+		e = ocom.UnmarshalRP(b)
+		if e != nil {
+			t.Fatal(e)
 		}
-		if (orig.DIAG == nil) != (ocom.DIAG == nil) {
-			t.Fatal("DIAG mismatch")
-		}
-		if orig.DIAG != nil && ocom.DIAG != nil && *orig.DIAG != *ocom.DIAG {
-			t.Fatal("DIAG mismatch")
+		t.Logf("%s", ocom)
+
+		e = compareRPRPErrorMT(orig, ocom)
+		if e != nil {
+			t.Fatal(e)
 		}
 	}
 }
@@ -136,14 +197,7 @@ func TestConvertCPRPErrorMR(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
-		orig := sms.ErrorMT{}
-		orig.TI = randTransactionID()
-		orig.RMR = randByte()
-		orig.CS = randByte()
-		if tmp := rand.Int31n(257); tmp != 256 {
-			bt := byte(tmp)
-			orig.DIAG = &bt
-		}
+		orig := randRPErrorMT()
 
 		t.Logf("%s", orig)
 		b := orig.MarshalCP()
@@ -158,20 +212,21 @@ func TestConvertCPRPErrorMR(t *testing.T) {
 		}
 		t.Logf("%s", ocom)
 
-		if orig.TI != ocom.TI {
-			t.Fatal("TI mismatch")
+		e = compareCPRPErrorMT(orig, ocom)
+		if e != nil {
+			t.Fatal(e)
 		}
-		if orig.RMR != ocom.RMR {
-			t.Fatal("MR mismatch")
+
+		ocom = sms.ErrorMT{}
+		e = ocom.UnmarshalCP(b)
+		if e != nil {
+			t.Fatal(e)
 		}
-		if orig.CS != ocom.CS {
-			t.Fatal("CS mismatch")
-		}
-		if (orig.DIAG == nil) != (ocom.DIAG == nil) {
-			t.Fatal("DIAG mismatch")
-		}
-		if orig.DIAG != nil && ocom.DIAG != nil && *orig.DIAG != *ocom.DIAG {
-			t.Fatal("DIAG mismatch")
+		t.Logf("%s", ocom)
+
+		e = compareCPRPErrorMT(orig, ocom)
+		if e != nil {
+			t.Fatal(e)
 		}
 	}
 }

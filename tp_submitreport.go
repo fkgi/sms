@@ -12,10 +12,6 @@ import (
 type SubmitReport struct {
 	rpAnswer
 
-	RMR  byte  `json:"rmr"`            // M / Message Reference for RP
-	CS   byte  `json:"cs"`             // M / Cause
-	DIAG *byte `json:"diag,omitempty"` // O / Diagnostics
-
 	FCS  byte       `json:"fcs,omitempty"` // C / Failure Cause
 	SCTS time.Time  `json:"scts"`          // M / Service Centre Time Stamp
 	PID  *byte      `json:"pid,omitempty"` // O / Protocol Identifier
@@ -130,55 +126,21 @@ func (d *SubmitReport) UnmarshalTP(b []byte) (e error) {
 
 // UnmarshalRP get data of this TPDU
 func (d *SubmitReport) UnmarshalRP(b []byte) (e error) {
-	r := bytes.NewReader(b)
-
-	if mti, e := r.ReadByte(); e != nil {
-		return e
-	} else if mti == 3 {
-		if d.RMR, e = r.ReadByte(); e != nil {
-			return e
-		}
-	} else if mti == 5 {
-		if d.RMR, e = r.ReadByte(); e != nil {
-			return e
-		}
-		if l, e := r.ReadByte(); e != nil {
-			return e
-		} else if l == 0 || l > 2 {
-			return InvalidLengthError{}
-		} else if d.CS, e = r.ReadByte(); e != nil {
-			return e
-		} else if l == 2 {
-			if l, e = r.ReadByte(); e != nil {
-				return e
-			}
-			d.DIAG = &l
-		}
-	} else {
-		return UnexpectedMessageTypeError{
-			Expected: 0, Actual: mti}
-	}
-
-	if iei, e := r.ReadByte(); e != nil {
-		return e
-	} else if iei != 0x41 {
-		return UnexpectedInformationElementError{
-			Expected: 0x41, Actual: iei}
-	}
-	if l, e := r.ReadByte(); e == nil {
-		b = make([]byte, int(l))
-	} else {
-		return e
-	}
-	if n, e := r.Read(b); e != nil {
-		return e
-	} else if n != len(b) {
+	if len(b) == 0 {
 		return io.EOF
 	}
-	if r.Len() != 0 {
-		return InvalidLengthError{}
+	switch b[0] & 0x07 {
+	case 0x03:
+		b, e = d.unmarshalAck(false, b)
+	case 0x05:
+		b, e = d.unmarshalErr(false, b)
 	}
-	return d.UnmarshalTP(b)
+	if b == nil {
+		e = io.EOF
+	} else {
+		e = d.UnmarshalTP(b)
+	}
+	return
 }
 
 // UnmarshalCP get data of this CPDU

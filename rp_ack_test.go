@@ -1,6 +1,7 @@
 package sms_test
 
 import (
+	"errors"
 	"math/rand"
 	"testing"
 	"time"
@@ -8,12 +9,32 @@ import (
 	"github.com/fkgi/sms"
 )
 
+func randRPAckMO() sms.AckMO {
+	orig := sms.AckMO{}
+	orig.TI = randTransactionID()
+	orig.RMR = randByte()
+	return orig
+}
+
+func compareRPRPAckMO(orig, ocom sms.AckMO) error {
+	if orig.RMR != ocom.RMR {
+		return errors.New("MR mismatch")
+	}
+	return nil
+}
+
+func compareCPRPAckMO(orig, ocom sms.AckMO) error {
+	if orig.TI != ocom.TI {
+		return errors.New("TI mismatch")
+	}
+	return compareRPRPAckMO(orig, ocom)
+}
+
 func TestConvertRPRPAckMO(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
-		orig := sms.AckMO{}
-		orig.RMR = randByte()
+		orig := randRPAckMO()
 
 		t.Logf("%s", orig)
 		b := orig.MarshalRP()
@@ -28,8 +49,21 @@ func TestConvertRPRPAckMO(t *testing.T) {
 		}
 		t.Logf("%s", ocom)
 
-		if orig.RMR != ocom.RMR {
-			t.Fatal("MR mismatch")
+		e = compareRPRPAckMO(orig, ocom)
+		if e != nil {
+			t.Fatal(e)
+		}
+
+		ocom = sms.AckMO{}
+		e = ocom.UnmarshalRP(b)
+		if e != nil {
+			t.Fatal(e)
+		}
+		t.Logf("%s", ocom)
+
+		e = compareRPRPAckMO(orig, ocom)
+		if e != nil {
+			t.Fatal(e)
 		}
 	}
 }
@@ -38,9 +72,7 @@ func TestConvertCPRPAckMO(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
-		orig := sms.AckMO{}
-		orig.TI = randTransactionID()
-		orig.RMR = randByte()
+		orig := randRPAckMO()
 
 		t.Logf("%s", orig)
 		b := orig.MarshalCP()
@@ -55,21 +87,51 @@ func TestConvertCPRPAckMO(t *testing.T) {
 		}
 		t.Logf("%s", ocom)
 
-		if orig.TI != ocom.TI {
-			t.Fatal("TI mismatch")
+		e = compareCPRPAckMO(orig, ocom)
+		if e != nil {
+			t.Fatal(e)
 		}
-		if orig.RMR != ocom.RMR {
-			t.Fatal("MR mismatch")
+
+		ocom = sms.AckMO{}
+		e = ocom.UnmarshalCP(b)
+		if e != nil {
+			t.Fatal(e)
+		}
+		t.Logf("%s", ocom)
+
+		e = compareCPRPAckMO(orig, ocom)
+		if e != nil {
+			t.Fatal(e)
 		}
 	}
+}
+
+func randRPAckMT() sms.AckMT {
+	orig := sms.AckMT{}
+	orig.TI = randTransactionID()
+	orig.RMR = randByte()
+	return orig
+}
+
+func compareRPRPAckMT(orig, ocom sms.AckMT) error {
+	if orig.RMR != ocom.RMR {
+		return errors.New("MR mismatch")
+	}
+	return nil
+}
+
+func compareCPRPAckMT(orig, ocom sms.AckMT) error {
+	if orig.TI != ocom.TI {
+		return errors.New("TI mismatch")
+	}
+	return compareRPRPAckMT(orig, ocom)
 }
 
 func TestConvertRPRPAckMT(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
-		orig := sms.AckMT{}
-		orig.RMR = randByte()
+		orig := randRPAckMT()
 
 		t.Logf("%s", orig)
 		b := orig.MarshalRP()
@@ -84,8 +146,21 @@ func TestConvertRPRPAckMT(t *testing.T) {
 		}
 		t.Logf("%s", ocom)
 
-		if orig.RMR != ocom.RMR {
-			t.Fatal("MR mismatch")
+		e = compareRPRPAckMT(orig, ocom)
+		if e != nil {
+			t.Fatal(e)
+		}
+
+		ocom = sms.AckMT{}
+		e = ocom.UnmarshalRP(b)
+		if e != nil {
+			t.Fatal(e)
+		}
+		t.Logf("%s", ocom)
+
+		e = compareRPRPAckMT(orig, ocom)
+		if e != nil {
+			t.Fatal(e)
 		}
 	}
 }
@@ -94,9 +169,7 @@ func TestConvertCPRPAckMT(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
-		orig := sms.AckMT{}
-		orig.TI = randTransactionID()
-		orig.RMR = randByte()
+		orig := randRPAckMT()
 
 		t.Logf("%s", orig)
 		b := orig.MarshalCP()
@@ -111,11 +184,21 @@ func TestConvertCPRPAckMT(t *testing.T) {
 		}
 		t.Logf("%s", ocom)
 
-		if orig.TI != ocom.TI {
-			t.Fatal("TI mismatch")
+		e = compareCPRPAckMT(orig, ocom)
+		if e != nil {
+			t.Fatal(e)
 		}
-		if orig.RMR != ocom.RMR {
-			t.Fatal("MR mismatch")
+
+		ocom = sms.AckMT{}
+		e = ocom.UnmarshalCP(b)
+		if e != nil {
+			t.Fatal(e)
+		}
+		t.Logf("%s", ocom)
+
+		e = compareCPRPAckMT(orig, ocom)
+		if e != nil {
+			t.Fatal(e)
 		}
 	}
 }

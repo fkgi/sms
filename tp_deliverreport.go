@@ -11,10 +11,6 @@ import (
 type DeliverReport struct {
 	rpAnswer
 
-	RMR  byte  `json:"rmr"`            // M / Message Reference for RP
-	CS   byte  `json:"cs"`             // M / Cause
-	DIAG *byte `json:"diag,omitempty"` // O / Diagnostics
-
 	FCS byte       `json:"fcs,omitempty"` // C / Failure Cause
 	PID *byte      `json:"pid,omitempty"` // O / Protocol Identifier
 	DCS DataCoding `json:"dcs,omitempty"` // O / Data Coding Scheme
@@ -122,8 +118,14 @@ func (d *DeliverReport) UnmarshalTP(b []byte) (e error) {
 
 // UnmarshalRP get data of this TPDU
 func (d *DeliverReport) UnmarshalRP(b []byte) (e error) {
-	if b, e = d.unmarshalAck(true, b); e != nil {
-		return
+	if len(b) == 0 {
+		return io.EOF
+	}
+	switch b[0] & 0x07 {
+	case 0x02:
+		b, e = d.unmarshalAck(true, b)
+	case 0x04:
+		b, e = d.unmarshalErr(true, b)
 	}
 	if b == nil {
 		e = io.EOF

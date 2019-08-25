@@ -142,7 +142,7 @@ func unmarshalRPMT(b []byte, c cpData) (RPDU, error) {
 		if b == nil {
 			return ErrorMT{rp}, nil
 		}
-		var tp DeliverReport
+		var tp SubmitReport
 		e = tp.UnmarshalTP(b)
 		tp.rpAnswer = rp
 		return tp, e
@@ -373,10 +373,11 @@ func (d *rpAnswer) unmarshalErr(mo bool, b []byte) (tp []byte, e error) {
 	} else if d.CS, e = r.ReadByte(); e != nil {
 		return
 	} else if tmp == 2 {
-		if tmp, e = r.ReadByte(); e != nil {
+		var diag byte
+		if diag, e = r.ReadByte(); e != nil {
 			return
 		}
-		d.DIAG = &tmp
+		d.DIAG = &diag
 	}
 
 	if r.Len() == 0 {

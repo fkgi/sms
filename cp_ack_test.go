@@ -8,10 +8,6 @@ import (
 	"github.com/fkgi/sms"
 )
 
-func randTransactionID() byte {
-	return byte(rand.Int31n(16))
-}
-
 func TestConvertCPAckMO(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 

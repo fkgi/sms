@@ -1,6 +1,7 @@
 package sms_test
 
 import (
+	"errors"
 	"math/rand"
 	"testing"
 	"time"
@@ -8,12 +9,32 @@ import (
 	"github.com/fkgi/sms"
 )
 
+func randMemoryAvailable() sms.MemoryAvailable {
+	orig := sms.MemoryAvailable{}
+	orig.TI = randTransactionID()
+	orig.RMR = randByte()
+	return orig
+}
+
+func compareRPMemoryAvailable(orig, ocom sms.MemoryAvailable) error {
+	if orig.RMR != ocom.RMR {
+		return errors.New("MR mismatch")
+	}
+	return nil
+}
+
+func compareCPMemoryAvailable(orig, ocom sms.MemoryAvailable) error {
+	if orig.TI != ocom.TI {
+		return errors.New("TI mismatch")
+	}
+	return compareRPMemoryAvailable(orig, ocom)
+}
+
 func TestConvertRPMemoryAvailable(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
-		orig := sms.MemoryAvailable{}
-		orig.RMR = randByte()
+		orig := randMemoryAvailable()
 
 		t.Logf("%s", orig)
 		b := orig.MarshalRP()
@@ -28,8 +49,21 @@ func TestConvertRPMemoryAvailable(t *testing.T) {
 		}
 		t.Logf("%s", ocom)
 
-		if orig.RMR != ocom.RMR {
-			t.Fatal("MR mismatch")
+		e = compareRPMemoryAvailable(orig, ocom)
+		if e != nil {
+			t.Fatal(e)
+		}
+
+		ocom = sms.MemoryAvailable{}
+		e = ocom.UnmarshalRP(b)
+		if e != nil {
+			t.Fatal(e)
+		}
+		t.Logf("%s", ocom)
+
+		e = compareRPMemoryAvailable(orig, ocom)
+		if e != nil {
+			t.Fatal(e)
 		}
 	}
 }
@@ -38,9 +72,7 @@ func TestConvertCPMemoryAvailable(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
-		orig := sms.MemoryAvailable{}
-		orig.TI = randTransactionID()
-		orig.RMR = randByte()
+		orig := randMemoryAvailable()
 
 		t.Logf("%s", orig)
 		b := orig.MarshalCP()
@@ -55,11 +87,21 @@ func TestConvertCPMemoryAvailable(t *testing.T) {
 		}
 		t.Logf("%s", ocom)
 
-		if orig.TI != ocom.TI {
-			t.Fatal("TI mismatch")
+		e = compareCPMemoryAvailable(orig, ocom)
+		if e != nil {
+			t.Fatal(e)
 		}
-		if orig.RMR != ocom.RMR {
-			t.Fatal("MR mismatch")
+
+		ocom = sms.MemoryAvailable{}
+		e = ocom.UnmarshalCP(b)
+		if e != nil {
+			t.Fatal(e)
+		}
+		t.Logf("%s", ocom)
+
+		e = compareCPMemoryAvailable(orig, ocom)
+		if e != nil {
+			t.Fatal(e)
 		}
 	}
 }

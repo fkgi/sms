@@ -2,6 +2,7 @@ package sms_test
 
 import (
 	"encoding/json"
+	"errors"
 	"math/rand"
 	"testing"
 	"time"
@@ -91,10 +92,78 @@ func randStatusreport() sms.StatusReport {
 	if orig.DCS != nil {
 		orig.UD = randUD(orig.DCS)
 	}
+	orig.TI = randTransactionID()
+	orig.RMR = randByte()
+	orig.SCA = sms.Address{
+		TON: sms.TypeInternational,
+		NPI: sms.PlanISDNTelephone}
+	tmp := randDigit((rand.Int() % 20) + 1)
+	var e error
+	orig.SCA.Addr, e = teldata.ParseTBCD(tmp)
+	if e != nil {
+		panic(e)
+	}
 	return orig
 }
 
-func TestConvertStatusreport(t *testing.T) {
+func compareTPStatusreport(orig, ocom sms.StatusReport) error {
+	if orig.MMS != ocom.MMS {
+		return errors.New("MMS mismatch")
+	}
+	if orig.LP != ocom.LP {
+		return errors.New("LP mismatch")
+	}
+	if orig.SRQ != ocom.SRQ {
+		return errors.New("SRQ mismatch")
+	}
+	if orig.TMR != ocom.TMR {
+		return errors.New("MR mismatch")
+	}
+	if !orig.RA.Equal(ocom.RA) {
+		return errors.New("RA mismatch")
+	}
+	if !orig.SCTS.Equal(ocom.SCTS) {
+		return errors.New("SCTS mismatch")
+	}
+	if !orig.DT.Equal(ocom.DT) {
+		return errors.New("DT mismatch")
+	}
+	if (orig.PID == nil) != (ocom.PID == nil) {
+		return errors.New("PID mismatch")
+	}
+	if orig.PID != nil && ocom.PID != nil && *orig.PID != *ocom.PID {
+		return errors.New("PID mismatch")
+	}
+	if (orig.DCS == nil) != (ocom.DCS == nil) {
+		return errors.New("DCS mismatch")
+	}
+	if orig.DCS != nil && ocom.DCS != nil && !orig.DCS.Equal(ocom.DCS) {
+		return errors.New("DCS mismatch")
+	}
+	if !orig.UD.Equal(ocom.UD) {
+		return errors.New("UD text mismatch")
+	}
+	return nil
+}
+
+func compareRPStatusreport(orig, ocom sms.StatusReport) error {
+	if orig.RMR != ocom.RMR {
+		return errors.New("MR mismatch")
+	}
+	if !orig.SCA.Equal(ocom.SCA) {
+		return errors.New("SCA mismatch")
+	}
+	return compareTPStatusreport(orig, ocom)
+}
+
+func compareCPStatusreport(orig, ocom sms.StatusReport) error {
+	if orig.TI != ocom.TI {
+		return errors.New("TI mismatch")
+	}
+	return compareRPStatusreport(orig, ocom)
+}
+
+func TestConvertTPStatusreport(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
@@ -113,41 +182,97 @@ func TestConvertStatusreport(t *testing.T) {
 		}
 		t.Logf("%s", ocom)
 
-		if orig.MMS != ocom.MMS {
-			t.Fatal("MMS mismatch")
+		e = compareTPStatusreport(orig, ocom)
+		if e != nil {
+			t.Fatal(e)
 		}
-		if orig.LP != ocom.LP {
-			t.Fatal("LP mismatch")
+
+		ocom = sms.StatusReport{}
+		e = ocom.UnmarshalTP(b)
+		if e != nil {
+			t.Fatal(e)
 		}
-		if orig.SRQ != ocom.SRQ {
-			t.Fatal("SRQ mismatch")
+		t.Logf("%s", ocom)
+
+		e = compareTPStatusreport(orig, ocom)
+		if e != nil {
+			t.Fatal(e)
 		}
-		if orig.TMR != ocom.TMR {
-			t.Fatal("MR mismatch")
+	}
+}
+
+func TestConvertRPStatusreport(t *testing.T) {
+	rand.Seed(time.Now().Unix())
+
+	for i := 0; i < 1000; i++ {
+		orig := randStatusreport()
+
+		t.Logf("%s", orig)
+		b := orig.MarshalRP()
+		t.Logf("% x", b)
+		res, e := sms.UnmarshalRPMT(b)
+		if e != nil {
+			t.Fatal(e)
 		}
-		if !orig.RA.Equal(ocom.RA) {
-			t.Fatal("RA mismatch")
+		ocom, ok := res.(sms.StatusReport)
+		if !ok {
+			t.Fatal("mti mismatch")
 		}
-		if !orig.SCTS.Equal(ocom.SCTS) {
-			t.Fatal("SCTS mismatch")
+		t.Logf("%s", ocom)
+
+		e = compareRPStatusreport(orig, ocom)
+		if e != nil {
+			t.Fatal(e)
 		}
-		if !orig.DT.Equal(ocom.DT) {
-			t.Fatal("DT mismatch")
+
+		ocom = sms.StatusReport{}
+		e = ocom.UnmarshalRP(b)
+		if e != nil {
+			t.Fatal(e)
 		}
-		if (orig.PID == nil) != (ocom.PID == nil) {
-			t.Fatal("PID mismatch")
+		t.Logf("%s", ocom)
+
+		e = compareRPStatusreport(orig, ocom)
+		if e != nil {
+			t.Fatal(e)
 		}
-		if orig.PID != nil && ocom.PID != nil && *orig.PID != *ocom.PID {
-			t.Fatal("PID mismatch")
+	}
+}
+
+func TestConvertCPStatusreport(t *testing.T) {
+	rand.Seed(time.Now().Unix())
+
+	for i := 0; i < 1000; i++ {
+		orig := randStatusreport()
+
+		t.Logf("%s", orig)
+		b := orig.MarshalCP()
+		t.Logf("% x", b)
+		res, e := sms.UnmarshalCPMT(b)
+		if e != nil {
+			t.Fatal(e)
 		}
-		if (orig.DCS == nil) != (ocom.DCS == nil) {
-			t.Fatal("DCS mismatch")
+		ocom, ok := res.(sms.StatusReport)
+		if !ok {
+			t.Fatal("mti mismatch")
 		}
-		if orig.DCS != nil && ocom.DCS != nil && !orig.DCS.Equal(ocom.DCS) {
-			t.Fatal("DCS mismatch")
+		t.Logf("%s", ocom)
+
+		e = compareCPStatusreport(orig, ocom)
+		if e != nil {
+			t.Fatal(e)
 		}
-		if !orig.UD.Equal(ocom.UD) {
-			t.Fatal("UD text mismatch")
+
+		ocom = sms.StatusReport{}
+		e = ocom.UnmarshalCP(b)
+		if e != nil {
+			t.Fatal(e)
+		}
+		t.Logf("%s", ocom)
+
+		e = compareCPStatusreport(orig, ocom)
+		if e != nil {
+			t.Fatal(e)
 		}
 	}
 }
