@@ -31,11 +31,11 @@ func unmarshalRPMO(b []byte, c cpData) (RPDU, error) {
 	case 0x00:
 		var rp rpRequest
 		var e error
-		b, e = rp.unmarshal(true, b)
-		rp.cpData = c
-		if e != nil {
+		if b, e = rp.unmarshal(true, b); e != nil {
 			return nil, e
 		}
+		rp.cpData = c
+
 		switch b[0] & 0x03 {
 		case 0x01:
 			var tp Submit
@@ -51,14 +51,14 @@ func unmarshalRPMO(b []byte, c cpData) (RPDU, error) {
 	case 0x02:
 		var rp rpAnswer
 		var e error
-		b, e = rp.unmarshalAck(true, b)
-		rp.cpData = c
-		if e != nil {
+		if b, e = rp.unmarshalAck(true, b); e != nil {
 			return nil, e
 		}
+		rp.cpData = c
 		if b == nil {
 			return AckMO{rp}, nil
 		}
+
 		var tp DeliverReport
 		e = tp.UnmarshalTP(b)
 		tp.rpAnswer = rp
@@ -66,14 +66,14 @@ func unmarshalRPMO(b []byte, c cpData) (RPDU, error) {
 	case 0x04:
 		var rp rpAnswer
 		var e error
-		b, e = rp.unmarshalErr(true, b)
-		rp.cpData = c
-		if e != nil {
+		if b, e = rp.unmarshalErr(true, b); e != nil {
 			return nil, e
 		}
+		rp.cpData = c
 		if b == nil {
 			return ErrorMO{rp}, nil
 		}
+
 		var tp DeliverReport
 		e = tp.UnmarshalTP(b)
 		tp.rpAnswer = rp
@@ -99,11 +99,11 @@ func unmarshalRPMT(b []byte, c cpData) (RPDU, error) {
 	case 0x01:
 		var rp rpRequest
 		var e error
-		b, e = rp.unmarshal(false, b)
-		rp.cpData = c
-		if e != nil {
+		if b, e = rp.unmarshal(false, b); e != nil {
 			return nil, e
 		}
+		rp.cpData = c
+
 		switch b[0] & 0x03 {
 		case 0x00:
 			var tp Deliver
@@ -119,14 +119,14 @@ func unmarshalRPMT(b []byte, c cpData) (RPDU, error) {
 	case 0x03:
 		var rp rpAnswer
 		var e error
-		b, e = rp.unmarshalAck(false, b)
-		rp.cpData = c
-		if e != nil {
+		if b, e = rp.unmarshalAck(false, b); e != nil {
 			return nil, e
 		}
+		rp.cpData = c
 		if b == nil {
 			return AckMT{rp}, nil
 		}
+
 		var tp SubmitReport
 		e = tp.UnmarshalTP(b)
 		tp.rpAnswer = rp
@@ -134,20 +134,32 @@ func unmarshalRPMT(b []byte, c cpData) (RPDU, error) {
 	case 0x05:
 		var rp rpAnswer
 		var e error
-		b, e = rp.unmarshalErr(false, b)
-		rp.cpData = c
-		if e != nil {
+		if b, e = rp.unmarshalErr(false, b); e != nil {
 			return nil, e
 		}
+		rp.cpData = c
 		if b == nil {
 			return ErrorMT{rp}, nil
 		}
+
 		var tp SubmitReport
 		e = tp.UnmarshalTP(b)
 		tp.rpAnswer = rp
 		return tp, e
 	}
 	return nil, UnexpectedMessageTypeError{Actual: b[0]}
+}
+
+func unmarshalRpHeader(mti byte, b []byte) (byte, error) {
+	if len(b) < 2 {
+		return 0, io.EOF
+	}
+
+	if b[0] != mti {
+		return 0, UnexpectedMessageTypeError{
+			Expected: mti, Actual: b[0]}
+	}
+	return b[1], nil
 }
 
 type rpRequest struct {
@@ -182,43 +194,29 @@ func (d rpRequest) marshal(mo bool, tp []byte) []byte {
 }
 
 func (d *rpRequest) unmarshal(mo bool, b []byte) (tp []byte, e error) {
-	r := bytes.NewReader(b)
-	var tmp byte
+	if mo {
+		d.RMR, e = unmarshalRpHeader(0, b)
+	} else {
+		d.RMR, e = unmarshalRpHeader(1, b)
+	}
+	if e != nil {
+		return
+	}
 
+	r := bytes.NewReader(b[2:])
+	var tmp byte
 	if mo {
 		if tmp, e = r.ReadByte(); e != nil {
 			return
 		} else if tmp != 0 {
-			e = UnexpectedMessageTypeError{
-				Expected: 0, Actual: tmp}
-			return
-		}
-		if d.RMR, e = r.ReadByte(); e != nil {
-			return
-		}
-		if tmp, e = r.ReadByte(); e != nil {
-			return
-		} else if tmp != 0 {
 			e = InvalidLengthError{}
 			return
 		}
-		if d.SCA, e = readRPAddr(r); e != nil {
-			return
-		}
-	} else {
-		if tmp, e = r.ReadByte(); e != nil {
-			return
-		} else if tmp != 1 {
-			e = UnexpectedMessageTypeError{
-				Expected: 1, Actual: tmp}
-			return
-		}
-		if d.RMR, e = r.ReadByte(); e != nil {
-			return
-		}
-		if d.SCA, e = readRPAddr(r); e != nil {
-			return
-		}
+	}
+	if d.SCA, e = readRPAddr(r); e != nil {
+		return
+	}
+	if !mo {
 		if tmp, e = r.ReadByte(); e != nil {
 			return
 		} else if tmp != 0 {
@@ -227,19 +225,17 @@ func (d *rpRequest) unmarshal(mo bool, b []byte) (tp []byte, e error) {
 		}
 	}
 
-	if tmp, e = r.ReadByte(); e == nil {
-		tp = make([]byte, int(tmp))
-	} else {
+	if tmp, e = r.ReadByte(); e != nil {
 		return
 	}
+	tp = make([]byte, int(tmp))
 	var n int
 	if n, e = r.Read(tp); e != nil {
 		return
-	} else if n != len(tp) {
-		e = io.EOF
-		return
 	}
-	if r.Len() != 0 {
+	if n != len(tp) {
+		e = io.EOF
+	} else if r.Len() != 0 {
 		e = InvalidLengthError{}
 	}
 	return
@@ -281,6 +277,7 @@ func (d rpAnswer) marshalErr(mo bool, tp []byte) []byte {
 		w.WriteByte(5)
 	}
 	w.WriteByte(d.RMR)
+
 	if d.DIAG != nil {
 		w.WriteByte(2)
 		w.WriteByte(d.CS)
@@ -300,79 +297,64 @@ func (d rpAnswer) marshalErr(mo bool, tp []byte) []byte {
 }
 
 func (d *rpAnswer) unmarshalAck(mo bool, b []byte) (tp []byte, e error) {
-	r := bytes.NewReader(b)
-
-	var tmp byte
-	var mti byte = 3
 	if mo {
-		mti = 2
+		d.RMR, e = unmarshalRpHeader(2, b)
+	} else {
+		d.RMR, e = unmarshalRpHeader(3, b)
 	}
-	if tmp, e = r.ReadByte(); e != nil {
-		return
-	} else if tmp != mti {
-		e = UnexpectedMessageTypeError{
-			Expected: mti, Actual: b[0]}
-		return
-	}
-	if d.RMR, e = r.ReadByte(); e != nil {
+	if e != nil || len(b) == 2 {
 		return
 	}
 
-	if r.Len() == 0 {
-		return
-	}
-
+	r := bytes.NewReader(b[2:])
+	var tmp byte
 	if tmp, e = r.ReadByte(); e != nil {
 		return
-	} else if tmp != 0x41 {
+	}
+	if tmp != 0x41 {
 		e = UnexpectedInformationElementError{
 			Expected: 0x41, Actual: tmp}
 		return
 	}
-	if tmp, e = r.ReadByte(); e == nil {
-		tp = make([]byte, int(tmp))
-	} else {
+	if tmp, e = r.ReadByte(); e != nil {
 		return
 	}
+	tp = make([]byte, int(tmp))
 	var n int
 	if n, e = r.Read(tp); e != nil {
 		return
-	} else if n != len(tp) {
-		e = io.EOF
-		return
 	}
-	if r.Len() != 0 {
+	if n != len(tp) {
+		e = io.EOF
+	} else if r.Len() != 0 {
 		e = InvalidLengthError{}
 	}
 	return
 }
 
 func (d *rpAnswer) unmarshalErr(mo bool, b []byte) (tp []byte, e error) {
-	r := bytes.NewReader(b)
-
-	var tmp byte
-	var mti byte = 5
 	if mo {
-		mti = 4
+		d.RMR, e = unmarshalRpHeader(4, b)
+	} else {
+		d.RMR, e = unmarshalRpHeader(5, b)
 	}
+	if e != nil {
+		return
+	}
+
+	r := bytes.NewReader(b[2:])
+	var tmp byte
 	if tmp, e = r.ReadByte(); e != nil {
 		return
-	} else if tmp != mti {
-		e = UnexpectedMessageTypeError{
-			Expected: mti, Actual: b[0]}
-		return
 	}
-	if d.RMR, e = r.ReadByte(); e != nil {
-		return
-	}
-	if tmp, e = r.ReadByte(); e != nil {
-		return
-	} else if tmp == 0 || tmp > 2 {
+	if tmp == 0 || tmp > 2 {
 		e = InvalidLengthError{}
 		return
-	} else if d.CS, e = r.ReadByte(); e != nil {
+	}
+	if d.CS, e = r.ReadByte(); e != nil {
 		return
-	} else if tmp == 2 {
+	}
+	if tmp == 2 {
 		var diag byte
 		if diag, e = r.ReadByte(); e != nil {
 			return
@@ -386,24 +368,23 @@ func (d *rpAnswer) unmarshalErr(mo bool, b []byte) (tp []byte, e error) {
 
 	if tmp, e = r.ReadByte(); e != nil {
 		return
-	} else if tmp != 0x41 {
+	}
+	if tmp != 0x41 {
 		e = UnexpectedInformationElementError{
 			Expected: 0x41, Actual: tmp}
 		return
 	}
-	if tmp, e = r.ReadByte(); e == nil {
-		tp = make([]byte, int(tmp))
-	} else {
+	if tmp, e = r.ReadByte(); e != nil {
 		return
 	}
+	tp = make([]byte, int(tmp))
 	var n int
 	if n, e = r.Read(tp); e != nil {
 		return
-	} else if n != len(tp) {
-		e = io.EOF
-		return
 	}
-	if r.Len() != 0 {
+	if n != len(tp) {
+		e = io.EOF
+	} else if r.Len() != 0 {
 		e = InvalidLengthError{}
 	}
 	return

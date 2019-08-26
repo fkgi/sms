@@ -32,6 +32,7 @@ func TestGetGSM7bitString(t *testing.T) {
 	}
 }
 
+/*
 func TestGSM7bitStringLength(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 	for i := 0; i < 500; i++ {
@@ -51,6 +52,7 @@ func TestGSM7bitStringLength(t *testing.T) {
 		}
 	}
 }
+*/
 
 func TestGSM7bitStringByteConv(t *testing.T) {
 	rand.Seed(time.Now().Unix())

@@ -59,7 +59,7 @@ func (d *Error) UnmarshalCP(b []byte) (e error) {
 		d.TI, e = unmarshalCpHeader(0x10, b)
 		d.CS = b[2]
 	}
-	return nil
+	return
 }
 
 func (d Error) String() string {

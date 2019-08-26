@@ -31,29 +31,26 @@ func UnmarshalMemoryAvailable(b []byte) (a MemoryAvailable, e error) {
 // UnmarshalRP reads binary data
 func (d *MemoryAvailable) UnmarshalRP(b []byte) (e error) {
 	r := bytes.NewReader(b)
-
 	var tmp byte
+
 	if tmp, e = r.ReadByte(); e != nil {
 		return
-	} else if tmp != 6 {
+	}
+	if tmp != 6 {
 		e = UnexpectedMessageTypeError{
 			Expected: 6, Actual: b[0]}
 		return
 	}
-	if d.RMR, e = r.ReadByte(); e != nil {
-		return
-	}
-	if r.Len() != 0 {
+	if d.RMR, e = r.ReadByte(); e == nil && r.Len() != 0 {
 		e = InvalidLengthError{}
 	}
+
 	return
 }
 
 // UnmarshalCP get data of this CPDU
 func (d *MemoryAvailable) UnmarshalCP(b []byte) (e error) {
-	var c cpData
-	if b, e = c.unmarshal(b); e == nil {
-		d.cpData = c
+	if b, e = d.cpData.unmarshal(b); e == nil {
 		e = d.UnmarshalRP(b)
 	}
 	return

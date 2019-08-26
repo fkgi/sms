@@ -27,8 +27,7 @@ func UnmarshalCPMO(b []byte) (CPDU, error) {
 	case 0x01:
 		var c cpData
 		var e error
-		b, e = c.unmarshal(b)
-		if e != nil {
+		if b, e = c.unmarshal(b); e != nil {
 			return nil, e
 		}
 		return unmarshalRPMO(b, c)
@@ -49,8 +48,7 @@ func UnmarshalCPMT(b []byte) (CPDU, error) {
 	case 0x01:
 		var c cpData
 		var e error
-		b, e = c.unmarshal(b)
-		if e != nil {
+		if b, e = c.unmarshal(b); e != nil {
 			return nil, e
 		}
 		return unmarshalRPMT(b, c)
@@ -80,8 +78,7 @@ func (d cpData) marshal(rp []byte) []byte {
 }
 
 func (d *cpData) unmarshal(b []byte) (rp []byte, e error) {
-	d.TI, e = unmarshalCpHeader(0x01, b)
-	if e != nil {
+	if d.TI, e = unmarshalCpHeader(0x01, b); e != nil {
 		return
 	}
 	r := bytes.NewReader(b[2:])
@@ -98,18 +95,15 @@ func (d *cpData) unmarshal(b []byte) (rp []byte, e error) {
 	}
 	if l != len(rp) {
 		e = io.EOF
-		return
-	}
-	if r.Len() != 0 {
+	} else if r.Len() != 0 {
 		e = InvalidLengthError{}
-		return
 	}
 	return
 }
 
 func unmarshalCpHeader(mti byte, b []byte) (byte, error) {
 	if len(b) < 2 {
-		return 0, InvalidLengthError{}
+		return 0, io.EOF
 	}
 
 	if b[0]&0x0f != 0x09 {
