@@ -180,7 +180,7 @@ func (d Deliver) String() string {
 	fmt.Fprintf(w, "TP-Deliver\n")
 	fmt.Fprintf(w, "%sCP-TI:   %d\n", Indent, d.TI)
 	fmt.Fprintf(w, "%sRP-MR:   %d\n", Indent, d.RMR)
-	fmt.Fprintf(w, "%sRP-OA:   %d\n", Indent, d.SCA)
+	fmt.Fprintf(w, "%sRP-OA:   %s\n", Indent, d.SCA)
 	fmt.Fprintf(w, "%sRP-DA:   <nil>\n", Indent)
 	fmt.Fprintf(w, "%sTP-MMS:  %s\n", Indent, mmsStat(d.MMS))
 	fmt.Fprintf(w, "%sTP-LP:   %s\n", Indent, lpStat(d.LP))

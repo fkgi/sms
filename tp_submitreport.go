@@ -207,7 +207,7 @@ func (d *SubmitReport) UnmarshalJSON(b []byte) error {
 func (d SubmitReport) String() string {
 	w := new(bytes.Buffer)
 
-	fmt.Fprintf(w, "SMS message stack: Submit Report")
+	fmt.Fprintf(w, "TP-SubmitReport")
 	if d.FCS&0x80 == 0x80 {
 		fmt.Fprintf(w, " for RP-ERROR\n")
 		fmt.Fprintf(w, "%sCP-TI:   %d\n", Indent, d.TI)

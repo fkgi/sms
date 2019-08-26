@@ -83,6 +83,7 @@ func randStatusreport() sms.StatusReport {
 		RA:   randAddress(),
 		SCTS: randDate(),
 		DT:   randDate(),
+		ST:   randByte(),
 		DCS:  sms.UnmarshalDataCoding(randByte()),
 	}
 	if tmp := rand.Int31n(257); tmp != 256 {
@@ -99,8 +100,7 @@ func randStatusreport() sms.StatusReport {
 		NPI: sms.PlanISDNTelephone}
 	tmp := randDigit((rand.Int() % 20) + 1)
 	var e error
-	orig.SCA.Addr, e = teldata.ParseTBCD(tmp)
-	if e != nil {
+	if orig.SCA.Addr, e = teldata.ParseTBCD(tmp); e != nil {
 		panic(e)
 	}
 	return orig

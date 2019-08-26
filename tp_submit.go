@@ -224,7 +224,7 @@ func (d Submit) String() string {
 	fmt.Fprintf(w, "%sCP-TI:   %d\n", Indent, d.TI)
 	fmt.Fprintf(w, "%sRP-MR:   %d\n", Indent, d.RMR)
 	fmt.Fprintf(w, "%sRP-OA:   <nil>\n", Indent)
-	fmt.Fprintf(w, "%sRP-DA:   %d\n", Indent, d.SCA)
+	fmt.Fprintf(w, "%sRP-DA:   %s\n", Indent, d.SCA)
 	fmt.Fprintf(w, "%sTP-RD:   %s\n", Indent, rdStat(d.RD))
 	fmt.Fprintf(w, "%sTP-SRR:  %s\n", Indent, srrStat(d.SRR))
 	fmt.Fprintf(w, "%sTP-RP:   %s\n", Indent, rpStat(d.RP))

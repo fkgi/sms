@@ -196,7 +196,7 @@ func (d DeliverReport) MarshalJSON() ([]byte, error) {
 func (d DeliverReport) String() string {
 	w := new(bytes.Buffer)
 
-	fmt.Fprintf(w, "SMS message stack: Deliver Report")
+	fmt.Fprintf(w, "TP-DeliverReport")
 	if d.FCS&0x80 == 0x80 {
 		fmt.Fprintf(w, " for RP-ERROR\n")
 		fmt.Fprintf(w, "%sCP-TI:   %d\n", Indent, d.TI)

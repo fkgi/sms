@@ -1,5 +1,11 @@
 package sms
 
+import (
+	"bytes"
+	"fmt"
+	"io"
+)
+
 // AckMO is MO RP-ACK RPDU
 type AckMO struct {
 	rpAnswer
@@ -18,6 +24,25 @@ func (d AckMO) MarshalRP() []byte {
 // MarshalRP returns binary data
 func (d AckMT) MarshalRP() []byte {
 	return d.marshalAck(false, nil)
+}
+
+func (d rpAnswer) marshalAck(mo bool, tp []byte) []byte {
+	w := new(bytes.Buffer)
+
+	if mo {
+		w.WriteByte(2)
+	} else {
+		w.WriteByte(3)
+	}
+	w.WriteByte(d.RMR)
+
+	if tp != nil {
+		w.WriteByte(0x41)
+		w.WriteByte(byte(len(tp)))
+		w.Write(tp)
+	}
+
+	return w.Bytes()
 }
 
 // MarshalCP output byte data of this CPDU
@@ -58,6 +83,42 @@ func (d *AckMT) UnmarshalRP(b []byte) (e error) {
 	return
 }
 
+func (d *rpAnswer) unmarshalAck(mo bool, b []byte) (tp []byte, e error) {
+	if mo {
+		d.RMR, e = unmarshalRpHeader(2, b)
+	} else {
+		d.RMR, e = unmarshalRpHeader(3, b)
+	}
+	if e != nil || len(b) == 2 {
+		return
+	}
+
+	r := bytes.NewReader(b[2:])
+	var tmp byte
+	if tmp, e = r.ReadByte(); e != nil {
+		return
+	}
+	if tmp != 0x41 {
+		e = UnexpectedInformationElementError{
+			Expected: 0x41, Actual: tmp}
+		return
+	}
+	if tmp, e = r.ReadByte(); e != nil {
+		return
+	}
+	tp = make([]byte, int(tmp))
+	var n int
+	if n, e = r.Read(tp); e != nil {
+		return
+	}
+	if n != len(tp) {
+		e = io.EOF
+	} else if r.Len() != 0 {
+		e = InvalidLengthError{}
+	}
+	return
+}
+
 // UnmarshalCP get data of this CPDU
 func (d *AckMO) UnmarshalCP(b []byte) (e error) {
 	if b, e = d.cpData.unmarshal(b); e == nil {
@@ -80,4 +141,14 @@ func (d AckMO) String() string {
 
 func (d AckMT) String() string {
 	return d.stringAck()
+}
+
+func (d rpAnswer) stringAck() string {
+	w := new(bytes.Buffer)
+
+	fmt.Fprintf(w, "RP-Ack\n")
+	fmt.Fprintf(w, "%sCP-TI: %d\n", Indent, d.TI)
+	fmt.Fprintf(w, "%sRP-MR: %d\n", Indent, d.RMR)
+
+	return w.String()
 }
