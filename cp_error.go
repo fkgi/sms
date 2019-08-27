@@ -35,7 +35,7 @@ type Error struct {
 	CS byte `json:"cs"` // M / Cause
 }
 
-// MarshalCP returns binary data
+// MarshalCP output byte data of this CPDU
 func (d Error) MarshalCP() []byte {
 	b := make([]byte, 3)
 	b[0] = (d.TI & 0x0f) << 4
@@ -51,7 +51,7 @@ func UnmarshalError(b []byte) (a Error, e error) {
 	return
 }
 
-// UnmarshalCP reads binary data
+// UnmarshalCP get data of this CPDU
 func (d *Error) UnmarshalCP(b []byte) (e error) {
 	if len(b) != 3 {
 		e = InvalidLengthError{}

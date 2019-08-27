@@ -70,12 +70,12 @@ type ErrorMT struct {
 	rpAnswer
 }
 
-// MarshalRP returns binary data
+// MarshalRP output byte data of this RPDU
 func (d ErrorMO) MarshalRP() []byte {
 	return d.marshalErr(true, nil)
 }
 
-// MarshalRP returns binary data
+// MarshalRP output byte data of this RPDU
 func (d ErrorMT) MarshalRP() []byte {
 	return d.marshalErr(false, nil)
 }
@@ -124,7 +124,7 @@ func UnmarshalErrorMO(b []byte) (a ErrorMO, e error) {
 	return
 }
 
-// UnmarshalRP reads binary data
+// UnmarshalRP get data of this RPDU
 func (d *ErrorMO) UnmarshalRP(b []byte) (e error) {
 	if b, e = d.unmarshalErr(true, b); e != nil && b != nil {
 		e = InvalidLengthError{}
@@ -138,7 +138,7 @@ func UnmarshalErrorMT(b []byte) (a ErrorMT, e error) {
 	return
 }
 
-// UnmarshalRP reads binary data
+// UnmarshalRP get data of this RPDU
 func (d *ErrorMT) UnmarshalRP(b []byte) (e error) {
 	if b, e = d.unmarshalErr(false, b); e != nil && b != nil {
 		e = InvalidLengthError{}

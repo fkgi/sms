@@ -1,5 +1,7 @@
 package sms
 
+import "fmt"
+
 // AbsentDiag indicate Absent-User-Diagnostic-SM
 type AbsentDiag int
 
@@ -69,7 +71,7 @@ func (a AbsentDiag) String() string {
 	case TempUnavailable:
 		return "the MS is temporarily unavailable"
 	}
-	return ""
+	return fmt.Sprintf("unknown(0x%x)", byte(a-1))
 }
 
 // Byte make byte digit value
@@ -104,7 +106,7 @@ func (a AbsentDiag) Byte() byte {
 	case TempUnavailable:
 		return 13
 	}
-	return 255
+	return byte(a - 1)
 }
 
 // B2AbsDiag make AbsentDiag data from byte value
@@ -139,5 +141,5 @@ func B2AbsDiag(b byte) AbsentDiag {
 	case 13:
 		return TempUnavailable
 	}
-	return NoAbsentDiag
+	return AbsentDiag(b + 1)
 }

@@ -54,8 +54,7 @@ func TestConvertRPMemoryAvailable(t *testing.T) {
 			t.Fatal(e)
 		}
 
-		ocom = sms.MemoryAvailable{}
-		e = ocom.UnmarshalRP(b)
+		ocom, e = sms.UnmarshalMemoryAvailable(b)
 		if e != nil {
 			t.Fatal(e)
 		}

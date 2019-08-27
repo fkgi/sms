@@ -68,8 +68,7 @@ func TestConvertRPRPErrorMO(t *testing.T) {
 			t.Fatal(e)
 		}
 
-		ocom = sms.ErrorMO{}
-		e = ocom.UnmarshalRP(b)
+		ocom, e = sms.UnmarshalErrorMO(b)
 		if e != nil {
 			t.Fatal(e)
 		}
@@ -179,8 +178,7 @@ func TestConvertRPRPErrorMT(t *testing.T) {
 			t.Fatal(e)
 		}
 
-		ocom = sms.ErrorMT{}
-		e = ocom.UnmarshalRP(b)
+		ocom, e = sms.UnmarshalErrorMT(b)
 		if e != nil {
 			t.Fatal(e)
 		}

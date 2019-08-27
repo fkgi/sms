@@ -1,7 +1,6 @@
 package sms_test
 
 import (
-	"bytes"
 	"math/rand"
 	"strconv"
 	"testing"
@@ -94,23 +93,3 @@ var code = [128 + 16]rune{
 	'x', 'y', 'z', 'ä', 'ö', 'ñ', 'ü', 'à',
 	'|', '\x00', '\x00', '\x00', '^', '€', '\x00', '\x00',
 	'{', '}', '\f', '\x00', '[', '~', ']', '\\'}
-
-func randText(len int) string {
-	var b bytes.Buffer
-	for i := 0; i < len; i++ {
-		c := 0x1b
-		for code[c] == '\x00' || code[c] == '\x1b' {
-			c = rand.Int() % (128 + 16)
-		}
-		b.WriteRune(code[c])
-	}
-	return b.String()
-}
-
-func randDigit(len int) string {
-	var b bytes.Buffer
-	for i := 0; i < len; i++ {
-		b.WriteString(strconv.Itoa(rand.Int() % 10))
-	}
-	return b.String()
-}

@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"reflect"
 	"regexp"
 
 	"github.com/fkgi/teldata"
@@ -70,13 +69,29 @@ func (a Address) String() string {
 
 // Equal reports a and b are same
 func (a Address) Equal(b Address) bool {
-	if a.TON != b.TON {
+	if a.TON != b.TON || a.NPI != b.NPI {
 		return false
 	}
-	if a.NPI != b.NPI {
+	if a.Addr == nil && b.Addr == nil {
+		return true
+	}
+	if (a.Addr == nil) != (b.Addr == nil) {
 		return false
 	}
-	if reflect.TypeOf(a.Addr) != reflect.TypeOf(b.Addr) {
+	var at, bt bool
+	switch a.Addr.(type) {
+	case GSM7bitString:
+		at = true
+	default:
+		at = false
+	}
+	switch b.Addr.(type) {
+	case GSM7bitString:
+		bt = true
+	default:
+		bt = false
+	}
+	if at != bt {
 		return false
 	}
 	return a.Addr.String() == b.Addr.String()

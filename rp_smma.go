@@ -12,7 +12,7 @@ type MemoryAvailable struct {
 	RMR byte `json:"rmr"` // M / Message Reference
 }
 
-// MarshalRP returns binary data
+// MarshalRP output byte data of this RPDU
 func (d MemoryAvailable) MarshalRP() []byte {
 	return []byte{6, d.RMR}
 }
@@ -28,7 +28,7 @@ func UnmarshalMemoryAvailable(b []byte) (a MemoryAvailable, e error) {
 	return
 }
 
-// UnmarshalRP reads binary data
+// UnmarshalRP get data of this RPDU
 func (d *MemoryAvailable) UnmarshalRP(b []byte) (e error) {
 	r := bytes.NewReader(b)
 	var tmp byte

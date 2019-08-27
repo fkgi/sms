@@ -124,7 +124,7 @@ func (d *SubmitReport) UnmarshalTP(b []byte) (e error) {
 	return
 }
 
-// UnmarshalRP get data of this TPDU
+// UnmarshalRP get data of this RPDU
 func (d *SubmitReport) UnmarshalRP(b []byte) (e error) {
 	if len(b) == 0 {
 		return io.EOF

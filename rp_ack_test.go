@@ -54,8 +54,7 @@ func TestConvertRPRPAckMO(t *testing.T) {
 			t.Fatal(e)
 		}
 
-		ocom = sms.AckMO{}
-		e = ocom.UnmarshalRP(b)
+		ocom, e = sms.UnmarshalAckMO(b)
 		if e != nil {
 			t.Fatal(e)
 		}
@@ -151,8 +150,7 @@ func TestConvertRPRPAckMT(t *testing.T) {
 			t.Fatal(e)
 		}
 
-		ocom = sms.AckMT{}
-		e = ocom.UnmarshalRP(b)
+		ocom, e = sms.UnmarshalAckMT(b)
 		if e != nil {
 			t.Fatal(e)
 		}

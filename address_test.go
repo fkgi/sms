@@ -66,3 +66,11 @@ func randAddress() (a sms.Address) {
 	}
 	return
 }
+
+func TestNilAddr(t *testing.T) {
+	for i := 0; i < 100; i++ {
+		orig := randAddress()
+		orig.Addr = nil
+		t.Logf("%s", orig)
+	}
+}

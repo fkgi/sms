@@ -1,7 +1,9 @@
 package sms_test
 
 import (
+	"bytes"
 	"math/rand"
+	"strconv"
 	"time"
 
 	"github.com/fkgi/sms"
@@ -64,4 +66,24 @@ func int2SemiOctet(i int) (b byte) {
 	b = byte(i % 10)
 	b = (b << 4) | byte((i/10)%10)
 	return
+}
+
+func randText(len int) string {
+	var b bytes.Buffer
+	for i := 0; i < len; i++ {
+		c := 0x1b
+		for code[c] == '\x00' || code[c] == '\x1b' {
+			c = rand.Int() % (128 + 16)
+		}
+		b.WriteRune(code[c])
+	}
+	return b.String()
+}
+
+func randDigit(len int) string {
+	var b bytes.Buffer
+	for i := 0; i < len; i++ {
+		b.WriteString(strconv.Itoa(rand.Int() % 10))
+	}
+	return b.String()
 }

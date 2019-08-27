@@ -10,7 +10,7 @@ type Ack struct {
 	TI byte `json:"ti"` // M / Transaction identifier
 }
 
-// MarshalCP returns binary data
+// MarshalCP output byte data of this CPDU
 func (d Ack) MarshalCP() []byte {
 	b := make([]byte, 2)
 	b[0] = (d.TI & 0x0f) << 4
@@ -25,7 +25,7 @@ func UnmarshalAck(b []byte) (a Ack, e error) {
 	return
 }
 
-// UnmarshalCP reads binary data
+// UnmarshalCP get data of this CPDU
 func (d *Ack) UnmarshalCP(b []byte) (e error) {
 	if len(b) != 2 {
 		e = InvalidLengthError{}

@@ -149,7 +149,7 @@ func (d *Submit) UnmarshalTP(b []byte) (e error) {
 	return
 }
 
-// UnmarshalRP get data of this TPDU
+// UnmarshalRP get data of this RPDU
 func (d *Submit) UnmarshalRP(b []byte) (e error) {
 	if b, e = d.unmarshal(true, b); e == nil {
 		e = d.UnmarshalTP(b)

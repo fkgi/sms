@@ -16,12 +16,12 @@ type AckMT struct {
 	rpAnswer
 }
 
-// MarshalRP returns binary data
+// MarshalRP output byte data of this RPDU
 func (d AckMO) MarshalRP() []byte {
 	return d.marshalAck(true, nil)
 }
 
-// MarshalRP returns binary data
+// MarshalRP output byte data of this RPDU
 func (d AckMT) MarshalRP() []byte {
 	return d.marshalAck(false, nil)
 }
@@ -61,7 +61,7 @@ func UnmarshalAckMO(b []byte) (a AckMO, e error) {
 	return
 }
 
-// UnmarshalRP reads binary data
+// UnmarshalRP get data of this RPDU
 func (d *AckMO) UnmarshalRP(b []byte) (e error) {
 	if b, e = d.unmarshalAck(true, b); e != nil && b != nil {
 		e = InvalidLengthError{}
@@ -75,7 +75,7 @@ func UnmarshalAckMT(b []byte) (a AckMT, e error) {
 	return
 }
 
-// UnmarshalRP reads binary data
+// UnmarshalRP get data of this RPDU
 func (d *AckMT) UnmarshalRP(b []byte) (e error) {
 	if b, e = d.unmarshalAck(false, b); e != nil && b != nil {
 		e = InvalidLengthError{}
