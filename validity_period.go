@@ -46,8 +46,8 @@ func ValidityPeriodOf(t time.Duration, s bool) ValidityPeriod {
 		} else if t <= time.Hour*99+time.Minute*59+time.Second*59 {
 			vp[0] = 0x03
 			vp[1] = int2SemiOctet(int(t / time.Hour))
-			vp[2] = int2SemiOctet(int(t / time.Minute))
-			vp[3] = int2SemiOctet(int(t / time.Hour))
+			vp[2] = int2SemiOctet(int((t % time.Hour) / time.Minute))
+			vp[3] = int2SemiOctet(int((t % time.Minute) / time.Second))
 		} else if t <= time.Hour*24*30 {
 			vp[0] |= 0x01
 			vp[1] = byte(t/(time.Hour*24)) + 166
@@ -73,8 +73,8 @@ func ValidityPeriodOf(t time.Duration, s bool) ValidityPeriod {
 		vp := VPEnhanced{}
 		vp[0] = 0x03
 		vp[1] = int2SemiOctet(int(t / time.Hour))
-		vp[2] = int2SemiOctet(int(t / time.Minute))
-		vp[3] = int2SemiOctet(int(t / time.Hour))
+		vp[2] = int2SemiOctet(int((t % time.Hour) / time.Minute))
+		vp[3] = int2SemiOctet(int((t % time.Minute) / time.Second))
 		return vp
 	}
 	vp := marshalSCTimeStamp(time.Now().Add(t))

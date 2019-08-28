@@ -58,7 +58,7 @@ func subfuncMarshalJSON(u sms.UserData, t *testing.T) {
 func TestConvertUDH(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
-	origs := make([]sms.UserDataHdr, rand.Int()%500)
+	origs := make([]sms.UserDataHdr, rand.Int()%10)
 	for i := range origs {
 		origs[i] = randUDH()
 	}
