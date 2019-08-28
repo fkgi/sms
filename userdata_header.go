@@ -52,7 +52,11 @@ func MarshalUDHs(h []UserDataHdr) []byte {
 	var b bytes.Buffer
 	b.WriteByte(0x00)
 	for _, u := range h {
-		b.Write(u.Marshal())
+		d := u.Marshal()
+		if b.Len()+len(d) > 140 {
+			break
+		}
+		b.Write(d)
 	}
 	r := b.Bytes()
 	r[0] = byte(len(r) - 1)

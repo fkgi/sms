@@ -118,6 +118,10 @@ func (u *UserData) read(r *bytes.Reader, d DataCoding, h bool) error {
 			l = l / 8
 		}
 	}
+	if l > 140 {
+		return InvalidLengthError{}
+	}
+
 	ud := make([]byte, l)
 	if r.Len() < len(ud) {
 		return io.EOF
@@ -166,6 +170,7 @@ func (u UserData) write(w *bytes.Buffer, d DataCoding) {
 	udh := MarshalUDHs(u.UDH)
 	var ud []byte
 	l := len(udh)
+	max := 140 - l
 
 	switch c {
 	case CharsetGSM7bit:
@@ -177,6 +182,7 @@ func (u UserData) write(w *bytes.Buffer, d DataCoding) {
 			l++
 		}
 		s, _ := StringToGSM7bit(u.Text)
+		s = s.trim(max * 8 / 7)
 		ud = s.Marshal(o)
 		l += s.Length()
 	case Charset8bitData:
@@ -185,9 +191,15 @@ func (u UserData) write(w *bytes.Buffer, d DataCoding) {
 		if e != nil {
 			ud = []byte{}
 		}
+		if len(ud) > max {
+			ud = ud[:max]
+		}
 		l += len(ud)
 	case CharsetUCS2:
 		u := utf16.Encode([]rune(u.Text))
+		if len(u)*2 > max {
+			u = u[:max/2]
+		}
 		ud = make([]byte, len(u)*2)
 		for i, c := range u {
 			ud[i*2] = byte((c >> 8) & 0xff)

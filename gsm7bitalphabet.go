@@ -197,3 +197,19 @@ func (s GSM7bitString) Marshal(o int) []byte {
 	}
 	return b
 }
+
+func (s GSM7bitString) trim(l int) GSM7bitString {
+	r := make([]rune, 0, len(s))
+	i := 0
+	for _, c := range s {
+		i++
+		if esc, _ := getCode(c); esc {
+			i++
+		}
+		if i > l {
+			break
+		}
+		r = append(r, c)
+	}
+	return GSM7bitString(r)
+}

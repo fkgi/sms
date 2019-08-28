@@ -75,6 +75,28 @@ func randText(len int) string {
 		for code[c] == '\x00' || code[c] == '\x1b' {
 			c = rand.Int() % (128 + 16)
 		}
+		switch c {
+		case 0x80:
+			i++
+		case 0x84:
+			i++
+		case 0x85:
+			i++
+		case 0x88:
+			i++
+		case 0x89:
+			i++
+		case 0x8a:
+			i++
+		case 0x8c:
+			i++
+		case 0x8d:
+			i++
+		case 0x8e:
+			i++
+		case 0x8f:
+			i++
+		}
 		b.WriteRune(code[c])
 	}
 	return b.String()

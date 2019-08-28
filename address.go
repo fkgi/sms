@@ -64,6 +64,16 @@ func (a Address) String() string {
 	if a.Addr == nil {
 		return fmt.Sprintf("TON/NPI=%d/%d addr=<empty>", a.TON, a.NPI)
 	}
+	switch v := a.Addr.(type) {
+	case teldata.TBCD:
+		if a.Addr.Length() > 20 {
+			a.Addr = teldata.TBCD(v[:10])
+		}
+	case GSM7bitString:
+		if a.Addr.Length() > 11 {
+			a.Addr = v.trim(11)
+		}
+	}
 	return fmt.Sprintf("TON/NPI=%d/%d addr=%s", a.TON, a.NPI, a.Addr)
 }
 
@@ -143,13 +153,19 @@ func (a Address) RegexpMatch(re *regexp.Regexp) bool {
 
 // Marshal generate binary data and semi-octet length of this Address
 func (a Address) Marshal() (l byte, b []byte) {
-	switch a.Addr.(type) {
+	switch v := a.Addr.(type) {
 	case teldata.TBCD:
+		if a.Addr.Length() > 20 {
+			a.Addr = teldata.TBCD(v[:10])
+		}
 		l = byte(a.Addr.Length())
 		if a.TON == TypeAlphanumeric {
 			a.TON = TypeUnknown
 		}
 	case GSM7bitString:
+		if a.Addr.Length() > 11 {
+			a.Addr = v.trim(11)
+		}
 		l = byte(a.Addr.Length() * 7 / 4)
 		if a.Addr.Length()*7%4 != 0 {
 			l++
@@ -193,6 +209,10 @@ func readTPAddr(r *bytes.Reader) (a Address, e error) {
 	if l, e = r.ReadByte(); e != nil {
 		return
 	}
+	if l > 20 {
+		e = InvalidLengthError{}
+		return
+	}
 
 	b := make([]byte, l/2+l%2+1)
 	var i int
@@ -212,6 +232,10 @@ func readRPAddr(r *bytes.Reader) (a Address, e error) {
 		return
 	}
 	if l == 0 {
+		return
+	}
+	if l == 1 || l > 11 {
+		e = InvalidLengthError{}
 		return
 	}
 
