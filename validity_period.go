@@ -22,7 +22,9 @@ type jvp struct {
 
 // ValidityPeriodOf returns VP from deadend time and single-attempt flag
 func ValidityPeriodOf(t time.Duration, s bool) ValidityPeriod {
-	t = t.Truncate(time.Second)
+	if t%time.Second != 0 {
+		t = t.Truncate(time.Second)
+	}
 
 	if s {
 		vp := VPEnhanced{}
@@ -54,6 +56,7 @@ func ValidityPeriodOf(t time.Duration, s bool) ValidityPeriod {
 		}
 		return vp
 	}
+
 	if t == 0 {
 		return VPEnhanced{}
 	} else if t%(time.Hour*24*7) == 0 && t <= time.Hour*24*7*63 {
@@ -77,6 +80,7 @@ func ValidityPeriodOf(t time.Duration, s bool) ValidityPeriod {
 		vp[3] = int2SemiOctet(int((t % time.Minute) / time.Second))
 		return vp
 	}
+
 	vp := marshalSCTimeStamp(time.Now().Add(t))
 	return VPAbsolute{vp[0], vp[1], vp[2], vp[3], vp[4], vp[5], vp[6]}
 }

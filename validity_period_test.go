@@ -8,17 +8,37 @@ import (
 	"github.com/fkgi/sms"
 )
 
-func TestVP(t *testing.T) {
+func randDuration() (time.Duration, bool) {
+	// return time.Duration(rand.Int63n(3122064000)) * time.Second
+	vp := randVP()
+	for vp == nil {
+		vp = randVP()
+	}
+	return vp.Duration(), vp.SingleAttempt()
+}
+
+func TestMakeVPfmDuration(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 	for i := 0; i < 1000; i++ {
-		orig := time.Duration(rand.Int63n(100000)) * time.Second
-		vp := sms.ValidityPeriodOf(orig, randBool())
+		orig, sa := randDuration()
+		vp := sms.ValidityPeriodOf(orig, sa)
 		t.Log(vp)
 		ocom := vp.Duration()
-		if orig != ocom {
-			t.Fatalf("duration missmatch, orig=%ds, ocom=%ds",
-				orig/time.Second, ocom/time.Second)
+		if orig+time.Second*2 > ocom && orig-time.Second*2 < ocom {
+			continue
 		}
+
+		t.Fatalf("duration missmatch, orig=%ds, ocom=%ds",
+			orig/time.Second, ocom/time.Second)
+	}
+}
+
+func TestDurationValue(t *testing.T) {
+	rand.Seed(time.Now().Unix())
+	for i := 0; i < 1000; i++ {
+		orig, sa := randDuration()
+		vp := sms.ValidityPeriodOf(orig, sa)
+		t.Log(vp)
 
 		now := time.Now()
 		exp1 := now.Add(orig)
@@ -26,6 +46,20 @@ func TestVP(t *testing.T) {
 		if !exp1.Equal(exp2) {
 			t.Fatalf("expire missmatch, exp1=%s, exp2=%s",
 				exp1, exp2)
+		}
+	}
+}
+
+func TestSingleShotFlag(t *testing.T) {
+	rand.Seed(time.Now().Unix())
+	for i := 0; i < 1000; i++ {
+		orig, sa := randDuration()
+		vp := sms.ValidityPeriodOf(orig, sa)
+		t.Log(vp)
+
+		if sa != vp.SingleAttempt() {
+			t.Fatalf("single attempt missmatch, orig=%t, conv=%t",
+				sa, vp.SingleAttempt())
 		}
 	}
 }

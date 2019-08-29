@@ -34,7 +34,10 @@ func randVP() sms.ValidityPeriod {
 	case 1:
 		return sms.VPRelative(randByte())
 	case 2:
-		t := randDate()
+		t := time.Now()
+		mx := time.Date(
+			2099, time.December, 31, 23, 59, 59, 0, t.Location())
+		t.Add(time.Duration(rand.Int63n(int64(mx.Sub(t)))))
 		var r [7]byte
 		r[0] = int2SemiOctet(t.Year())
 		r[1] = int2SemiOctet(int(t.Month()))
