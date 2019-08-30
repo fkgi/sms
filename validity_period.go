@@ -30,10 +30,10 @@ func ValidityPeriodOf(t time.Duration, s bool) ValidityPeriod {
 		vp := VPEnhanced{}
 		vp[0] = 0x40
 		if t == 0 {
-		} else if t%(time.Hour*24*7) == 0 && t <= time.Hour*24*7*63 {
+		} else if t%(time.Hour*24*7) == 0 && t >= time.Hour*24*7*5 && t <= time.Hour*24*7*63 {
 			vp[0] |= 0x01
 			vp[1] = byte(t/(time.Hour*24*7)) + 192
-		} else if t%(time.Hour*24) == 0 && t <= time.Hour*24*30 {
+		} else if t%(time.Hour*24) == 0 && t >= time.Hour*24*2 && t <= time.Hour*24*30 {
 			vp[0] |= 0x01
 			vp[1] = byte(t/(time.Hour*24)) + 166
 		} else if t%(time.Minute*30) == 0 && t <= time.Hour*24 && t >= time.Hour*12+time.Minute*30 {
@@ -43,25 +43,25 @@ func ValidityPeriodOf(t time.Duration, s bool) ValidityPeriod {
 			vp[0] |= 0x01
 			vp[1] = byte(t/(time.Minute*5)) - 1
 		} else if t <= time.Second*255 {
-			vp[0] = 0x02
+			vp[0] |= 0x02
 			vp[1] = byte(t / time.Second)
 		} else if t <= time.Hour*99+time.Minute*59+time.Second*59 {
-			vp[0] = 0x03
+			vp[0] |= 0x03
 			vp[1] = int2SemiOctet(int(t / time.Hour))
 			vp[2] = int2SemiOctet(int((t % time.Hour) / time.Minute))
 			vp[3] = int2SemiOctet(int((t % time.Minute) / time.Second))
-		} else if t <= time.Hour*24*30 {
-			vp[0] |= 0x01
-			vp[1] = byte(t/(time.Hour*24)) + 166
+			//} else if t <= time.Hour*24*30 {
+			//	vp[0] |= 0x01
+			//	vp[1] = byte(t/(time.Hour*24)) + 166
 		}
 		return vp
 	}
 
 	if t == 0 {
 		return VPEnhanced{}
-	} else if t%(time.Hour*24*7) == 0 && t <= time.Hour*24*7*63 {
+	} else if t%(time.Hour*24*7) == 0 && t >= time.Hour*24*7*5 && t <= time.Hour*24*7*63 {
 		return VPRelative(byte(t/(time.Hour*24*7)) + 192)
-	} else if t%(time.Hour*24) == 0 && t <= time.Hour*24*30 {
+	} else if t%(time.Hour*24) == 0 && t >= time.Hour*24*2 && t <= time.Hour*24*30 {
 		return VPRelative(byte(t/(time.Hour*24)) + 166)
 	} else if t%(time.Minute*30) == 0 && t <= time.Hour*24 && t >= time.Hour*12+time.Minute*30 {
 		return VPRelative(byte((t-time.Hour*12)/(time.Minute*30)) + 143)
@@ -91,14 +91,15 @@ type VPRelative byte
 func (f VPRelative) String() string {
 	return "ralative, " + relativeFormatString(byte(f))
 }
+
 func relativeFormatString(b byte) string {
 	if b < 144 {
 		i := int(b+1) * 5
-		return fmt.Sprintf("%d:%d", (i-i%60)/60, i%60)
+		return fmt.Sprintf("%d:%02d:00", (i-i%60)/60, i%60)
 	}
 	if b < 168 {
 		i := int(b-143) * 30
-		return fmt.Sprintf("%d:%d", (i-i%60)/60+12, i%60)
+		return fmt.Sprintf("%d:%02d:00", (i-i%60)/60+12, i%60)
 	}
 	if b < 197 {
 		return fmt.Sprintf("%d days", b-166)
@@ -121,7 +122,7 @@ func relativeFormatDuration(b byte) time.Duration {
 		return time.Duration(b+1) * 5 * time.Minute
 	}
 	if b < 168 {
-		return time.Duration(b-143) * 30 * time.Minute
+		return time.Duration(b-143)*30*time.Minute + time.Hour*12
 	}
 	if b < 197 {
 		return time.Duration(b-166) * time.Hour * 24
@@ -197,10 +198,10 @@ func (f VPEnhanced) String() string {
 	case 0x02:
 		s.WriteString(fmt.Sprintf(", %d sec", f[1]))
 	case 0x03:
-		s.WriteString(fmt.Sprintf(", %d:%d:%d",
+		s.WriteString(fmt.Sprintf(", %d:%02d:%02d",
 			semiOctet2Int(f[1]),
-			semiOctet2Int(f[2]),
-			semiOctet2Int(f[3])))
+			semiOctet2Int(f[2])%60,
+			semiOctet2Int(f[3])%60))
 	default:
 		s.WriteString(", invalid format")
 	}
@@ -218,8 +219,8 @@ func (f VPEnhanced) ExpireTime(t time.Time) time.Time {
 		return t.Add(time.Duration(f[1]) * time.Second)
 	case 0x03:
 		i := time.Duration(semiOctet2Int(f[1])) * time.Hour
-		i += time.Duration(semiOctet2Int(f[2])) * time.Minute
-		i += time.Duration(semiOctet2Int(f[3])) * time.Second
+		i += time.Duration(semiOctet2Int(f[2])%60) * time.Minute
+		i += time.Duration(semiOctet2Int(f[3])%60) * time.Second
 		return t.Add(i)
 	}
 	return time.Time{}
@@ -236,8 +237,8 @@ func (f VPEnhanced) Duration() time.Duration {
 		return time.Duration(f[1]) * time.Second
 	case 0x03:
 		i := time.Duration(semiOctet2Int(f[1])) * time.Hour
-		i += time.Duration(semiOctet2Int(f[2])) * time.Minute
-		i += time.Duration(semiOctet2Int(f[3])) * time.Second
+		i += time.Duration(semiOctet2Int(f[2])%60) * time.Minute
+		i += time.Duration(semiOctet2Int(f[3])%60) * time.Second
 		return i
 	}
 	return time.Duration(0)

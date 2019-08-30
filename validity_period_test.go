@@ -1,6 +1,7 @@
 package sms_test
 
 import (
+	"log"
 	"math/rand"
 	"testing"
 	"time"
@@ -14,6 +15,7 @@ func randDuration() (time.Duration, bool) {
 	for vp == nil {
 		vp = randVP()
 	}
+	log.Println(vp)
 	return vp.Duration(), vp.SingleAttempt()
 }
 
@@ -23,13 +25,15 @@ func TestMakeVPfmDuration(t *testing.T) {
 		orig, sa := randDuration()
 		vp := sms.ValidityPeriodOf(orig, sa)
 		t.Log(vp)
-		ocom := vp.Duration()
-		if orig+time.Second*2 > ocom && orig-time.Second*2 < ocom {
-			continue
-		}
 
-		t.Fatalf("duration missmatch, orig=%ds, ocom=%ds",
-			orig/time.Second, ocom/time.Second)
+		ocom := vp.Duration()
+		if orig+time.Second*2 < ocom || orig-time.Second*2 > ocom {
+			t.Fatalf("duration missmatch, orig=%s, ocom=%s", orig, ocom)
+		}
+		if sa != vp.SingleAttempt() {
+			t.Fatalf("single attempt missmatch, orig=%t, conv=%t",
+				sa, vp.SingleAttempt())
+		}
 	}
 }
 
@@ -37,29 +41,18 @@ func TestDurationValue(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 	for i := 0; i < 1000; i++ {
 		orig, sa := randDuration()
+		if orig == 0 {
+			continue
+		}
 		vp := sms.ValidityPeriodOf(orig, sa)
 		t.Log(vp)
 
 		now := time.Now()
 		exp1 := now.Add(orig)
 		exp2 := vp.ExpireTime(now)
-		if !exp1.Equal(exp2) {
-			t.Fatalf("expire missmatch, exp1=%s, exp2=%s",
-				exp1, exp2)
-		}
-	}
-}
-
-func TestSingleShotFlag(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-	for i := 0; i < 1000; i++ {
-		orig, sa := randDuration()
-		vp := sms.ValidityPeriodOf(orig, sa)
-		t.Log(vp)
-
-		if sa != vp.SingleAttempt() {
-			t.Fatalf("single attempt missmatch, orig=%t, conv=%t",
-				sa, vp.SingleAttempt())
+		if exp1.Add(-time.Second*2).After(exp2) ||
+			exp1.Add(time.Second*2).Before(exp2) {
+			t.Fatalf("expire missmatch, exp1=%s, exp2=%s", exp1, exp2)
 		}
 	}
 }

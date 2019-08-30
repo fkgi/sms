@@ -87,6 +87,13 @@ func int2SemiOctet(i int) (b byte) {
 
 func semiOctet2Int(b byte) (i int) {
 	i = int(b & 0x0f)
-	i = (i * 10) + int((b&0xf0)>>4)
+	if i > 0x09 {
+		i = 0
+	}
+	j := int((b & 0xf0) >> 4)
+	if j > 0x09 {
+		j = 0
+	}
+	i = (i * 10) + j
 	return
 }
