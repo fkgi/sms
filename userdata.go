@@ -218,49 +218,51 @@ func (u UserData) isEmpty() bool {
 }
 
 // MakeSeparatedText generate splited data
-func MakeSeparatedText(s string, c msgClass, id byte) (
-	ud []UserData, dcs GeneralDataCoding) {
+func MakeSeparatedText(s string, id byte) (ud []UserData, cs Charset) {
 	ud = []UserData{}
-	dcs = GeneralDataCoding{
-		AutoDelete: false,
-		Compressed: false,
-		MsgClass:   c}
+	g7s, e := StringToGSM7bit(s)
 
-	dcs.MsgCharset = CharsetGSM7bit
-	for _, r := range s {
-		_, code := getCode(r)
-		if code == 0xff {
-			dcs.MsgCharset = CharsetUCS2
-			break
-		}
-	}
-
-	if dcs.MsgCharset == CharsetGSM7bit {
-		r := []rune(s)
-		maxlen := 160
-
-		for len(r) > maxlen {
-			ud = append(ud, UserData{Text: string(r[:153])})
-			r = r[153:]
-			maxlen = 153
-		}
-		ud = append(ud, UserData{Text: string(r)})
-	} else {
-		rs := make([]rune, 0, 70)
-		maxlen := 140
-
-		for _, r := range s {
-			tmp := append(rs, r)
-			if len(string(tmp)) > maxlen {
-				ud = append(ud, UserData{Text: string(rs)})
-				rs = rs[:1]
-				rs[0] = r
-				maxlen = 134
-			} else {
-				rs = tmp
+	if e == nil {
+		cs = CharsetGSM7bit
+		if g7s.Length() <= 160 {
+			ud = append(ud, UserData{Text: string(s)})
+		} else {
+			rs := make([]rune, 0, 153)
+			i := 0
+			for _, r := range s {
+				l := 1
+				if ext, _ := getCode(r); ext {
+					l++
+				}
+				i += l
+				if i <= 153 {
+					rs = append(rs, r)
+				} else {
+					ud = append(ud, UserData{Text: string(rs)})
+					rs = rs[:1]
+					rs[0] = r
+					i = l
+				}
 			}
+			ud = append(ud, UserData{Text: string(rs)})
 		}
-		ud = append(ud, UserData{Text: string(rs)})
+	} else {
+		cs = CharsetUCS2
+		if len(s) <= 70 {
+			ud = append(ud, UserData{Text: string(s)})
+		} else {
+			rs := make([]rune, 0, 67)
+			for _, r := range s {
+				if len(rs)+1 <= 67 {
+					rs = append(rs, r)
+				} else {
+					ud = append(ud, UserData{Text: string(rs)})
+					rs = rs[:1]
+					rs[0] = r
+				}
+			}
+			ud = append(ud, UserData{Text: string(rs)})
+		}
 	}
 
 	if len(ud) > 1 {

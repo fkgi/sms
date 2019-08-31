@@ -6,6 +6,11 @@ import (
 	"time"
 )
 
+const (
+	day  = time.Hour * 24
+	week = day * 7
+)
+
 // ValidityPeriod is type of validity period
 type ValidityPeriod interface {
 	fmt.Stringer
@@ -30,13 +35,13 @@ func ValidityPeriodOf(t time.Duration, s bool) ValidityPeriod {
 		vp := VPEnhanced{}
 		vp[0] = 0x40
 		if t == 0 {
-		} else if t%(time.Hour*24*7) == 0 && t >= time.Hour*24*7*5 && t <= time.Hour*24*7*63 {
+		} else if t%week == 0 && t >= week*5 && t <= week*63 {
 			vp[0] |= 0x01
-			vp[1] = byte(t/(time.Hour*24*7)) + 192
-		} else if t%(time.Hour*24) == 0 && t >= time.Hour*24*2 && t <= time.Hour*24*30 {
+			vp[1] = byte(t/week) + 192
+		} else if t%day == 0 && t >= day*2 && t <= day*30 {
 			vp[0] |= 0x01
-			vp[1] = byte(t/(time.Hour*24)) + 166
-		} else if t%(time.Minute*30) == 0 && t <= time.Hour*24 && t >= time.Hour*12+time.Minute*30 {
+			vp[1] = byte(t/day) + 166
+		} else if t%(time.Minute*30) == 0 && t <= day && t >= time.Hour*12+time.Minute*30 {
 			vp[0] |= 0x01
 			vp[1] = byte((t-time.Hour*12)/(time.Minute*30)) + 143
 		} else if t%(time.Minute*5) == 0 && t <= time.Hour*12 && t >= time.Minute*5 {
@@ -50,20 +55,17 @@ func ValidityPeriodOf(t time.Duration, s bool) ValidityPeriod {
 			vp[1] = int2SemiOctet(int(t / time.Hour))
 			vp[2] = int2SemiOctet(int((t % time.Hour) / time.Minute))
 			vp[3] = int2SemiOctet(int((t % time.Minute) / time.Second))
-			//} else if t <= time.Hour*24*30 {
-			//	vp[0] |= 0x01
-			//	vp[1] = byte(t/(time.Hour*24)) + 166
 		}
 		return vp
 	}
 
 	if t == 0 {
 		return VPEnhanced{}
-	} else if t%(time.Hour*24*7) == 0 && t >= time.Hour*24*7*5 && t <= time.Hour*24*7*63 {
-		return VPRelative(byte(t/(time.Hour*24*7)) + 192)
-	} else if t%(time.Hour*24) == 0 && t >= time.Hour*24*2 && t <= time.Hour*24*30 {
-		return VPRelative(byte(t/(time.Hour*24)) + 166)
-	} else if t%(time.Minute*30) == 0 && t <= time.Hour*24 && t >= time.Hour*12+time.Minute*30 {
+	} else if t%week == 0 && t >= week*5 && t <= week*63 {
+		return VPRelative(byte(t/week) + 192)
+	} else if t%day == 0 && t >= day*2 && t <= day*30 {
+		return VPRelative(byte(t/day) + 166)
+	} else if t%(time.Minute*30) == 0 && t <= day && t >= time.Hour*12+time.Minute*30 {
 		return VPRelative(byte((t-time.Hour*12)/(time.Minute*30)) + 143)
 	} else if t%(time.Minute*5) == 0 && t <= time.Hour*12 && t >= time.Minute*5 {
 		return VPRelative(byte(t/(time.Minute*5)) - 1)
@@ -125,9 +127,9 @@ func relativeFormatDuration(b byte) time.Duration {
 		return time.Duration(b-143)*30*time.Minute + time.Hour*12
 	}
 	if b < 197 {
-		return time.Duration(b-166) * time.Hour * 24
+		return time.Duration(b-166) * day
 	}
-	return time.Duration(b-192) * time.Hour * 24 * 7
+	return time.Duration(b-192) * week
 }
 
 // SingleAttempt return single attempt is required or not

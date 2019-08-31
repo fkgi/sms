@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 	"unicode"
+	"unicode/utf8"
 
 	"github.com/fkgi/sms"
 )
@@ -152,4 +153,62 @@ func randUD(d sms.DataCoding) sms.UserData {
 		u.Text = string(tmp)
 	}
 	return u
+}
+
+func TestMakeSeparatedText(t *testing.T) {
+	rand.Seed(time.Now().Unix())
+
+	for j := 0; j < 100; j++ {
+		var txt string
+		if randBool() {
+			txt = randText(int(rand.Int31n(500)))
+		} else {
+			tmp := make([]rune, int(rand.Int31n(500)))
+			for i := range tmp {
+				for !unicode.IsPrint(tmp[i]) {
+					tmp[i] = int32(rand.Int() % 2147483648)
+				}
+			}
+			txt = string(tmp)
+		}
+		ud, cs := sms.MakeSeparatedText(txt, randByte())
+
+		t.Log("orig=", txt)
+		switch cs {
+		case sms.CharsetGSM7bit:
+			t.Log("char=GSM-7bit")
+		case sms.CharsetUCS2:
+			t.Log("char=UCS2")
+		}
+		ocom := ""
+		for i, u := range ud {
+			t.Log("txt[", i, "]=", u)
+			ocom += u.Text
+
+			if cs == sms.CharsetGSM7bit {
+				g7s, e := sms.StringToGSM7bit(u.Text)
+				if e != nil {
+					t.Fatal(e)
+				}
+				if len(ud) == 1 && g7s.Length() > 160 {
+					t.Fatal("too long text", g7s.Length())
+				}
+				if len(ud) > 1 && g7s.Length() > 153 {
+					t.Fatal("too long text", g7s.Length())
+				}
+			} else {
+				if len(ud) == 1 && utf8.RuneCountInString(u.Text) > 70 {
+					t.Fatal("too long text", len(u.Text))
+				}
+				if len(ud) > 1 && utf8.RuneCountInString(u.Text) > 67 {
+					t.Fatal("too long text", len(u.Text))
+				}
+
+			}
+		}
+
+		if ocom != txt {
+			t.Fatal("text missmatch")
+		}
+	}
 }
