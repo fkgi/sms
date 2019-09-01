@@ -3,6 +3,7 @@ package sms
 import (
 	"bytes"
 	"fmt"
+	"io"
 )
 
 func cpCauseStat(c byte) string {
@@ -53,7 +54,9 @@ func UnmarshalError(b []byte) (a Error, e error) {
 
 // UnmarshalCP get data of this CPDU
 func (d *Error) UnmarshalCP(b []byte) (e error) {
-	if len(b) != 3 {
+	if len(b) < 3 {
+		e = io.EOF
+	} else if len(b) > 3 {
 		e = InvalidLengthError{}
 	} else {
 		d.TI, e = unmarshalCpHeader(0x10, b)

@@ -11,7 +11,7 @@ func (e UnknownDataCodingError) Error() string {
 	return fmt.Sprintf("unknown DCS % x", e.DCS)
 }
 
-// UnknownGSM7bitRuneError show invalid DCS
+// UnknownGSM7bitRuneError show invalid rune for GSM 7bit string
 type UnknownGSM7bitRuneError struct {
 	R rune
 }
@@ -26,10 +26,20 @@ type UnexpectedMessageTypeError struct {
 }
 
 func (e UnexpectedMessageTypeError) Error() string {
-	return fmt.Sprintf("unexpected message type %x is not %x", e.Actual, e.Expected)
+	return fmt.Sprintf("unexpected message type %x is not %x",
+		e.Actual, e.Expected)
 }
 
-// InvalidLengthError show invalid length for SMS TPDU
+// UnknownMessageTypeError show invalid SMS PDU type
+type UnknownMessageTypeError struct {
+	Actual byte
+}
+
+func (e UnknownMessageTypeError) Error() string {
+	return fmt.Sprintf("unknown message type %x", e.Actual)
+}
+
+// InvalidLengthError show invalid length for SMS PDU
 type InvalidLengthError struct {
 }
 
@@ -37,7 +47,15 @@ func (e InvalidLengthError) Error() string {
 	return fmt.Sprintf("invalid data length")
 }
 
-// UnexpectedInformationElementError show invalid SMS PDU type
+// ExtraDataError show invalid length for SMS PDU
+type ExtraDataError struct {
+}
+
+func (e ExtraDataError) Error() string {
+	return fmt.Sprintf("extra data")
+}
+
+// UnexpectedInformationElementError show invalid SMS IE
 type UnexpectedInformationElementError struct {
 	Expected, Actual byte
 }

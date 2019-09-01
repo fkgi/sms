@@ -42,7 +42,7 @@ func (d *MemoryAvailable) UnmarshalRP(b []byte) (e error) {
 		return
 	}
 	if d.RMR, e = r.ReadByte(); e == nil && r.Len() != 0 {
-		e = InvalidLengthError{}
+		e = ExtraDataError{}
 	}
 
 	return

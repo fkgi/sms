@@ -111,7 +111,7 @@ func (d *DeliverReport) UnmarshalTP(b []byte) (e error) {
 		}
 	}
 	if r.Len() != 0 {
-		e = InvalidLengthError{}
+		e = ExtraDataError{}
 	}
 	return
 }

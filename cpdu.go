@@ -36,7 +36,7 @@ func UnmarshalCPMO(b []byte) (CPDU, error) {
 	case 0x10:
 		return UnmarshalError(b)
 	}
-	return nil, UnexpectedMessageTypeError{Actual: b[1]}
+	return nil, UnknownMessageTypeError{Actual: b[1]}
 }
 
 // UnmarshalCPMT parse byte data to CPDU.
@@ -57,7 +57,7 @@ func UnmarshalCPMT(b []byte) (CPDU, error) {
 	case 0x10:
 		return UnmarshalError(b)
 	}
-	return nil, UnexpectedMessageTypeError{Actual: b[1]}
+	return nil, UnknownMessageTypeError{Actual: b[1]}
 }
 
 type cpData struct {
@@ -96,7 +96,7 @@ func (d *cpData) unmarshal(b []byte) (rp []byte, e error) {
 	if l != len(rp) {
 		e = io.EOF
 	} else if r.Len() != 0 {
-		e = InvalidLengthError{}
+		e = ExtraDataError{}
 	}
 	return
 }

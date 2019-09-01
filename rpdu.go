@@ -82,7 +82,7 @@ func unmarshalRPMO(b []byte, c cpData) (RPDU, error) {
 		rp.cpData = c
 		return rp, e
 	}
-	return nil, UnexpectedMessageTypeError{Actual: b[0]}
+	return nil, UnknownMessageTypeError{Actual: b[0]}
 }
 
 // UnmarshalRPMT parse byte data to TPDU as MS.
@@ -146,7 +146,7 @@ func unmarshalRPMT(b []byte, c cpData) (RPDU, error) {
 		tp.rpAnswer = rp
 		return tp, e
 	}
-	return nil, UnexpectedMessageTypeError{Actual: b[0]}
+	return nil, UnknownMessageTypeError{Actual: b[0]}
 }
 
 func unmarshalRpHeader(mti byte, b []byte) (byte, error) {
@@ -235,7 +235,7 @@ func (d *rpRequest) unmarshal(mo bool, b []byte) (tp []byte, e error) {
 	if n != len(tp) {
 		e = io.EOF
 	} else if r.Len() != 0 {
-		e = InvalidLengthError{}
+		e = ExtraDataError{}
 	}
 	return
 }

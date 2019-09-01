@@ -64,7 +64,7 @@ func UnmarshalAckMO(b []byte) (a AckMO, e error) {
 // UnmarshalRP get data of this RPDU
 func (d *AckMO) UnmarshalRP(b []byte) (e error) {
 	if b, e = d.unmarshalAck(true, b); e != nil && b != nil {
-		e = InvalidLengthError{}
+		e = ExtraDataError{}
 	}
 	return
 }
@@ -78,7 +78,7 @@ func UnmarshalAckMT(b []byte) (a AckMT, e error) {
 // UnmarshalRP get data of this RPDU
 func (d *AckMT) UnmarshalRP(b []byte) (e error) {
 	if b, e = d.unmarshalAck(false, b); e != nil && b != nil {
-		e = InvalidLengthError{}
+		e = ExtraDataError{}
 	}
 	return
 }
@@ -114,7 +114,7 @@ func (d *rpAnswer) unmarshalAck(mo bool, b []byte) (tp []byte, e error) {
 	if n != len(tp) {
 		e = io.EOF
 	} else if r.Len() != 0 {
-		e = InvalidLengthError{}
+		e = ExtraDataError{}
 	}
 	return
 }

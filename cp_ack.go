@@ -3,6 +3,7 @@ package sms
 import (
 	"bytes"
 	"fmt"
+	"io"
 )
 
 // Ack is CP-ACK CPDU
@@ -27,7 +28,9 @@ func UnmarshalAck(b []byte) (a Ack, e error) {
 
 // UnmarshalCP get data of this CPDU
 func (d *Ack) UnmarshalCP(b []byte) (e error) {
-	if len(b) != 2 {
+	if len(b) < 2 {
+		e = io.EOF
+	} else if len(b) > 2 {
 		e = InvalidLengthError{}
 	} else {
 		d.TI, e = unmarshalCpHeader(0x04, b)

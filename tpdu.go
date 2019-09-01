@@ -48,9 +48,9 @@ func UnmarshalTPMO(b []byte) (TPDU, error) {
 		return UnmarshalSubmit(b)
 	case 0x02:
 		// return UnmarshalCommand(b)
-		return nil, UnexpectedMessageTypeError{Actual: b[0] & 0x03}
+		return nil, UnknownMessageTypeError{Actual: b[0] & 0x03}
 	}
-	return nil, UnexpectedMessageTypeError{Actual: b[0] & 0x03}
+	return nil, UnknownMessageTypeError{Actual: b[0] & 0x03}
 }
 
 // UnmarshalTPMT parse byte data to TPDU as MS.
@@ -66,7 +66,7 @@ func UnmarshalTPMT(b []byte) (t TPDU, e error) {
 	case 0x02:
 		return UnmarshalStatusReport(b)
 	}
-	return nil, UnexpectedMessageTypeError{Actual: b[0] & 0x03}
+	return nil, UnknownMessageTypeError{Actual: b[0] & 0x03}
 }
 
 func read7Bytes(r *bytes.Reader) ([7]byte, error) {

@@ -144,7 +144,7 @@ func (d *Submit) UnmarshalTP(b []byte) (e error) {
 		return
 	}
 	if r.Len() != 0 {
-		e = InvalidLengthError{}
+		e = ExtraDataError{}
 	}
 	return
 }
