@@ -111,7 +111,7 @@ func (d *Deliver) UnmarshalTP(b []byte) (e error) {
 		return
 	}
 	if r.Len() != 0 {
-		e = ExtraDataError{}
+		e = ErrExtraData
 	}
 	return
 }

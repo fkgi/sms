@@ -119,7 +119,7 @@ func (d *SubmitReport) UnmarshalTP(b []byte) (e error) {
 		}
 	}
 	if r.Len() != 0 {
-		e = ExtraDataError{}
+		e = ErrExtraData
 	}
 	return
 }

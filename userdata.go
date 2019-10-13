@@ -119,7 +119,7 @@ func (u *UserData) read(r *bytes.Reader, d DataCoding, h bool) error {
 		}
 	}
 	if l > 140 {
-		return InvalidLengthError{}
+		return ErrInvalidLength
 	}
 
 	ud := make([]byte, l)

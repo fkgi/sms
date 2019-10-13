@@ -57,7 +57,7 @@ func (d *Error) UnmarshalCP(b []byte) (e error) {
 	if len(b) < 3 {
 		e = io.EOF
 	} else if len(b) > 3 {
-		e = InvalidLengthError{}
+		e = ErrInvalidLength
 	} else {
 		d.TI, e = unmarshalCpHeader(0x10, b)
 		d.CS = b[2]

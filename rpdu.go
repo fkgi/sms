@@ -208,7 +208,7 @@ func (d *rpRequest) unmarshal(mo bool, b []byte) (tp []byte, e error) {
 		if tmp, e = r.ReadByte(); e != nil {
 			return
 		} else if tmp != 0 {
-			e = InvalidLengthError{}
+			e = ErrInvalidLength
 			return
 		}
 	}
@@ -219,7 +219,7 @@ func (d *rpRequest) unmarshal(mo bool, b []byte) (tp []byte, e error) {
 		if tmp, e = r.ReadByte(); e != nil {
 			return
 		} else if tmp != 0 {
-			e = InvalidLengthError{}
+			e = ErrInvalidLength
 			return
 		}
 	}
@@ -235,7 +235,7 @@ func (d *rpRequest) unmarshal(mo bool, b []byte) (tp []byte, e error) {
 	if n != len(tp) {
 		e = io.EOF
 	} else if r.Len() != 0 {
-		e = ExtraDataError{}
+		e = ErrExtraData
 	}
 	return
 }

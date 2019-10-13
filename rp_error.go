@@ -127,7 +127,7 @@ func UnmarshalErrorMO(b []byte) (a ErrorMO, e error) {
 // UnmarshalRP get data of this RPDU
 func (d *ErrorMO) UnmarshalRP(b []byte) (e error) {
 	if b, e = d.unmarshalErr(true, b); e != nil && b != nil {
-		e = ExtraDataError{}
+		e = ErrExtraData
 	}
 	return
 }
@@ -141,7 +141,7 @@ func UnmarshalErrorMT(b []byte) (a ErrorMT, e error) {
 // UnmarshalRP get data of this RPDU
 func (d *ErrorMT) UnmarshalRP(b []byte) (e error) {
 	if b, e = d.unmarshalErr(false, b); e != nil && b != nil {
-		e = ExtraDataError{}
+		e = ErrExtraData
 	}
 	return
 }
@@ -166,7 +166,7 @@ func (d *rpAnswer) unmarshalErr(mo bool, b []byte) (tp []byte, e error) {
 		return
 	}
 	if tmp > 2 {
-		e = ExtraDataError{}
+		e = ErrExtraData
 		return
 	}
 	if d.CS, e = r.ReadByte(); e != nil {
@@ -203,7 +203,7 @@ func (d *rpAnswer) unmarshalErr(mo bool, b []byte) (tp []byte, e error) {
 	if n != len(tp) {
 		e = io.EOF
 	} else if r.Len() != 0 {
-		e = ExtraDataError{}
+		e = ErrExtraData
 	}
 	return
 }

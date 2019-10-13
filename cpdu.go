@@ -96,7 +96,7 @@ func (d *cpData) unmarshal(b []byte) (rp []byte, e error) {
 	if l != len(rp) {
 		e = io.EOF
 	} else if r.Len() != 0 {
-		e = ExtraDataError{}
+		e = ErrExtraData
 	}
 	return
 }

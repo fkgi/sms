@@ -31,7 +31,7 @@ func (d *Ack) UnmarshalCP(b []byte) (e error) {
 	if len(b) < 2 {
 		e = io.EOF
 	} else if len(b) > 2 {
-		e = InvalidLengthError{}
+		e = ErrInvalidLength
 	} else {
 		d.TI, e = unmarshalCpHeader(0x04, b)
 	}

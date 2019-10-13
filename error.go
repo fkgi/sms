@@ -1,6 +1,9 @@
 package sms
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 // UnknownDataCodingError show invalid DCS
 type UnknownDataCodingError struct {
@@ -39,22 +42,6 @@ func (e UnknownMessageTypeError) Error() string {
 	return fmt.Sprintf("unknown message type %x", e.Actual)
 }
 
-// InvalidLengthError show invalid length for SMS PDU
-type InvalidLengthError struct {
-}
-
-func (e InvalidLengthError) Error() string {
-	return fmt.Sprintf("invalid data length")
-}
-
-// ExtraDataError show invalid length for SMS PDU
-type ExtraDataError struct {
-}
-
-func (e ExtraDataError) Error() string {
-	return fmt.Sprintf("extra data")
-}
-
 // UnexpectedInformationElementError show invalid SMS IE
 type UnexpectedInformationElementError struct {
 	Expected, Actual byte
@@ -63,3 +50,11 @@ type UnexpectedInformationElementError struct {
 func (e UnexpectedInformationElementError) Error() string {
 	return fmt.Sprintf("unexpected IE %x is not %x", e.Actual, e.Expected)
 }
+
+var (
+	// ErrInvalidLength show invalid length for SMS PDU data
+	ErrInvalidLength = errors.New("invalid data length")
+
+	// ErrExtraData show extra data for SMS PDU
+	ErrExtraData = errors.New("extra data")
+)

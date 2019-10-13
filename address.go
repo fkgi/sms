@@ -210,7 +210,7 @@ func readTPAddr(r *bytes.Reader) (a Address, e error) {
 		return
 	}
 	if l > 20 {
-		e = InvalidLengthError{}
+		e = ErrInvalidLength
 		return
 	}
 
@@ -235,7 +235,7 @@ func readRPAddr(r *bytes.Reader) (a Address, e error) {
 		return
 	}
 	if l == 1 || l > 11 {
-		e = InvalidLengthError{}
+		e = ErrInvalidLength
 		return
 	}
 
