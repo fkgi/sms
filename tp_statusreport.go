@@ -244,6 +244,7 @@ func (d StatusReport) String() string {
 		fmt.Fprintf(w, "%sTP-DCS:  %s\n", Indent, d.DCS)
 	}
 	if !d.UD.isEmpty() {
+		fmt.Fprintf(w, "%sTP-UD:\n", Indent)
 		fmt.Fprintf(w, "%s", d.UD.String())
 	}
 

@@ -17,13 +17,11 @@ type UserData struct {
 
 func (u UserData) String() string {
 	w := new(bytes.Buffer)
-	fmt.Fprintf(w, "%sTP-UD:", Indent)
-
 	for _, h := range u.UDH {
-		fmt.Fprintf(w, "\n%s%s%s", Indent, Indent, h)
+		fmt.Fprintf(w, "%s%s%s\n", Indent, Indent, h)
 	}
 	if len(u.Text) != 0 {
-		fmt.Fprintf(w, "\n%s%s%s", Indent, Indent, u.Text)
+		fmt.Fprintf(w, "%s%s%s\n", Indent, Indent, u.Text)
 	}
 	return w.String()
 }

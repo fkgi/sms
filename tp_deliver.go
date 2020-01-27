@@ -195,6 +195,7 @@ func (d Deliver) String() string {
 	}
 	fmt.Fprintf(w, "%sTP-SCTS: %s\n", Indent, d.SCTS)
 	if !d.UD.isEmpty() {
+		fmt.Fprintf(w, "%sTP-UD:\n", Indent)
 		fmt.Fprintf(w, "%s", d.UD.String())
 	}
 

@@ -236,6 +236,7 @@ func (d Submit) String() string {
 		fmt.Fprintf(w, "%sTP-VP:   %s\n", Indent, d.VP)
 	}
 	if !d.UD.isEmpty() {
+		fmt.Fprintf(w, "%sTP-UD:\n", Indent)
 		fmt.Fprintf(w, "%s", d.UD.String())
 	}
 
