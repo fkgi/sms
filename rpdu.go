@@ -42,10 +42,10 @@ func unmarshalRPMO(b []byte, c cpData) (RPDU, error) {
 			tp.rpRequest = rp
 			return tp, e
 		case 0x02:
-			// var tp Command
-			// e = tp.UnmarshalTP(b)
-			// tp.rpRequest = rp
-			// return tp, e
+			var tp Command
+			e = tp.UnmarshalTP(b)
+			tp.rpRequest = rp
+			return tp, e
 		}
 	case 0x02:
 		var rp rpAnswer

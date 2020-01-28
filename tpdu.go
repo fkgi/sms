@@ -47,8 +47,7 @@ func UnmarshalTPMO(b []byte) (TPDU, error) {
 	case 0x01:
 		return UnmarshalSubmit(b)
 	case 0x02:
-		// return UnmarshalCommand(b)
-		return nil, UnknownMessageTypeError{Actual: b[0] & 0x03}
+		return UnmarshalCommand(b)
 	}
 	return nil, UnknownMessageTypeError{Actual: b[0] & 0x03}
 }
