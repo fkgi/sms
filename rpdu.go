@@ -165,7 +165,7 @@ type rpRequest struct {
 	cpData
 
 	RMR byte    `json:"rmr"` // M / Message Reference for RP
-	SCA Address `json:"sca"` // M / Destination SC Address
+	SCA Address `json:"sca"` // M / SC Address
 }
 
 func (d rpRequest) marshal(mo bool, tp []byte) []byte {
