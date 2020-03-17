@@ -4,7 +4,24 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"time"
 )
+
+var (
+	ti chan byte
+)
+
+func init() {
+	ti = make(chan byte, 1)
+	ti <- byte(time.Now().Nanosecond()) & 0x0f
+}
+
+// NextTranssactionID make Message Transaction ID
+func NextTranssactionID() byte {
+	ret := <-ti
+	ti <- (ret + 1) & 0x0f
+	return ret
+}
 
 // CPDU represents a SMS CP PDU
 type CPDU interface {
