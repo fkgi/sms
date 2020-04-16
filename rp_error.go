@@ -236,7 +236,7 @@ func (d rpAnswer) stringErr() string {
 	w := new(bytes.Buffer)
 
 	fmt.Fprintf(w, "RP-Error\n")
-	fmt.Fprintf(w, "%sCP-TI: %d\n", Indent, d.TI)
+	fmt.Fprintf(w, "%sCP-TI: %s\n", Indent, cpTIStat(d.TI))
 	fmt.Fprintf(w, "%sRP-MR: %d\n", Indent, d.RMR)
 	fmt.Fprintf(w, "%sRP-CS: cause=%s", Indent, rpCauseStat(d.CS))
 	if d.DIAG != nil {

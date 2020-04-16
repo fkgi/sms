@@ -147,7 +147,7 @@ func (d rpAnswer) stringAck() string {
 	w := new(bytes.Buffer)
 
 	fmt.Fprintf(w, "RP-Ack\n")
-	fmt.Fprintf(w, "%sCP-TI: %d\n", Indent, d.TI)
+	fmt.Fprintf(w, "%sCP-TI: %s\n", Indent, cpTIStat(d.TI))
 	fmt.Fprintf(w, "%sRP-MR: %d\n", Indent, d.RMR)
 
 	return w.String()

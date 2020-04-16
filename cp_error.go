@@ -69,8 +69,8 @@ func (d Error) String() string {
 	w := new(bytes.Buffer)
 
 	fmt.Fprintf(w, "CP-Error\n")
-	fmt.Fprintf(w, "%sCP-TI:   %d\n", Indent, d.TI)
-	fmt.Fprintf(w, "%sCP-CS:   %s\n", Indent, cpCauseStat(d.CS))
+	fmt.Fprintf(w, "%sCP-TI: %s\n", Indent, cpTIStat(d.TI))
+	fmt.Fprintf(w, "%sCP-CS: %s\n", Indent, cpCauseStat(d.CS))
 
 	return w.String()
 }

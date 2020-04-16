@@ -210,7 +210,7 @@ func (d SubmitReport) String() string {
 	fmt.Fprintf(w, "TP-SubmitReport")
 	if d.FCS&0x80 == 0x80 {
 		fmt.Fprintf(w, " for RP-ERROR\n")
-		fmt.Fprintf(w, "%sCP-TI:   %d\n", Indent, d.TI)
+		fmt.Fprintf(w, "%sCP-TI:   %s\n", Indent, cpTIStat(d.TI))
 		fmt.Fprintf(w, "%sRP-MR:   %d\n", Indent, d.RMR)
 		fmt.Fprintf(w, "%sRP-CS:   cause=%s",
 			Indent, rpCauseStat(d.CS))
@@ -222,7 +222,7 @@ func (d SubmitReport) String() string {
 		fmt.Fprintf(w, "%sTP-FCS:  %s\n", Indent, fcsStat(d.FCS))
 	} else {
 		fmt.Fprintf(w, " for RP-ACK\n")
-		fmt.Fprintf(w, "%sCP-TI:   %d\n", Indent, d.TI)
+		fmt.Fprintf(w, "%sCP-TI:   %s\n", Indent, cpTIStat(d.TI))
 		fmt.Fprintf(w, "%sRP-MR:   %d\n", Indent, d.RMR)
 	}
 

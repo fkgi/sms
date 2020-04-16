@@ -13,14 +13,21 @@ var (
 
 func init() {
 	ti = make(chan byte, 1)
-	ti <- byte(time.Now().Nanosecond()) & 0x0f
+	ti <- byte(time.Now().Nanosecond()%7) & 0x0f
 }
 
 // NextTranssactionID make Message Transaction ID
 func NextTranssactionID() byte {
 	ret := <-ti
-	ti <- (ret + 1) & 0x0f
+	ti <- ((ret + 1) % 7) & 0x0f
 	return ret
+}
+
+func cpTIStat(ti byte) string {
+	if ti&0x08 == 0x08 {
+		return fmt.Sprintf("%d (allocated by receiver)", ti&0x07)
+	}
+	return fmt.Sprintf("%d (allocated by sender)", ti&0x07)
 }
 
 // CPDU represents a SMS CP PDU
@@ -88,6 +95,7 @@ func (d cpData) marshal(rp []byte) []byte {
 	b |= 0x09
 	w.WriteByte(b)
 	w.WriteByte(0x01)
+	//	w.WriteByte(0x01)
 	w.WriteByte(byte(len(rp)))
 	w.Write(rp)
 
