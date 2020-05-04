@@ -9,7 +9,7 @@ import (
 
 // Command is TPDU message from MS to SC
 type Command struct {
-	rpRequest
+	rpData
 
 	SRR bool `json:"srr"` // O / Status Report Request
 
@@ -49,7 +49,7 @@ func (d Command) MarshalTP() []byte {
 
 // MarshalRP output byte data of this RPDU
 func (d Command) MarshalRP() []byte {
-	return d.rpRequest.marshal(true, d.MarshalTP())
+	return d.rpData.marshal(true, d.MarshalTP())
 }
 
 // MarshalCP output byte data of this CPDU

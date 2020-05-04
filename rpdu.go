@@ -28,7 +28,7 @@ func unmarshalRPMO(b []byte, c cpData) (RPDU, error) {
 	}
 	switch b[0] & 0x07 {
 	case 0x00:
-		var rp rpRequest
+		var rp rpData
 		var e error
 		if b, e = rp.unmarshal(true, b); e != nil {
 			return nil, e
@@ -39,43 +39,47 @@ func unmarshalRPMO(b []byte, c cpData) (RPDU, error) {
 		case 0x01:
 			var tp Submit
 			e = tp.UnmarshalTP(b)
-			tp.rpRequest = rp
+			tp.rpData = rp
 			return tp, e
 		case 0x02:
 			var tp Command
 			e = tp.UnmarshalTP(b)
-			tp.rpRequest = rp
+			tp.rpData = rp
 			return tp, e
 		}
 	case 0x02:
-		var rp rpAnswer
+		var rp RpAck
 		var e error
-		if b, e = rp.unmarshalAck(true, b); e != nil {
+		if b, e = rp.unmarshalRP(true, b); e != nil {
 			return nil, e
 		}
 		rp.cpData = c
 		if b == nil {
-			return AckMO{rp}, nil
+			return RpAckMO(rp), nil
 		}
 
 		var tp DeliverReport
 		e = tp.UnmarshalTP(b)
-		tp.rpAnswer = rp
+		tp.cpData = rp.cpData
+		tp.RMR = rp.RMR
 		return tp, e
 	case 0x04:
-		var rp rpAnswer
+		var rp RpError
 		var e error
-		if b, e = rp.unmarshalErr(true, b); e != nil {
+		if b, e = rp.unmarshalRP(true, b); e != nil {
 			return nil, e
 		}
 		rp.cpData = c
 		if b == nil {
-			return ErrorMO{rp}, nil
+			return RpErrorMO(rp), nil
 		}
 
 		var tp DeliverReport
 		e = tp.UnmarshalTP(b)
-		tp.rpAnswer = rp
+		tp.cpData = rp.cpData
+		tp.RMR = rp.RMR
+		tp.CS = rp.CS
+		tp.DIAG = rp.DIAG
 		return tp, e
 	case 0x06:
 		rp, e := UnmarshalMemoryAvailable(b)
@@ -96,7 +100,7 @@ func unmarshalRPMT(b []byte, c cpData) (RPDU, error) {
 	}
 	switch b[0] & 0x07 {
 	case 0x01:
-		var rp rpRequest
+		var rp rpData
 		var e error
 		if b, e = rp.unmarshal(false, b); e != nil {
 			return nil, e
@@ -107,43 +111,47 @@ func unmarshalRPMT(b []byte, c cpData) (RPDU, error) {
 		case 0x00:
 			var tp Deliver
 			e = tp.UnmarshalTP(b)
-			tp.rpRequest = rp
+			tp.rpData = rp
 			return tp, e
 		case 0x02:
 			var tp StatusReport
 			e = tp.UnmarshalTP(b)
-			tp.rpRequest = rp
+			tp.rpData = rp
 			return tp, e
 		}
 	case 0x03:
-		var rp rpAnswer
+		var rp RpAck
 		var e error
-		if b, e = rp.unmarshalAck(false, b); e != nil {
+		if b, e = rp.unmarshalRP(false, b); e != nil {
 			return nil, e
 		}
 		rp.cpData = c
 		if b == nil {
-			return AckMT{rp}, nil
+			return RpAckMT(rp), nil
 		}
 
 		var tp SubmitReport
 		e = tp.UnmarshalTP(b)
-		tp.rpAnswer = rp
+		tp.cpData = rp.cpData
+		tp.RMR = rp.RMR
 		return tp, e
 	case 0x05:
-		var rp rpAnswer
+		var rp RpError
 		var e error
-		if b, e = rp.unmarshalErr(false, b); e != nil {
+		if b, e = rp.unmarshalRP(false, b); e != nil {
 			return nil, e
 		}
 		rp.cpData = c
 		if b == nil {
-			return ErrorMT{rp}, nil
+			return RpErrorMT(rp), nil
 		}
 
 		var tp SubmitReport
 		e = tp.UnmarshalTP(b)
-		tp.rpAnswer = rp
+		tp.cpData = rp.cpData
+		tp.RMR = rp.RMR
+		tp.CS = rp.CS
+		tp.DIAG = rp.DIAG
 		return tp, e
 	}
 	return nil, UnknownMessageTypeError{Actual: b[0]}
@@ -161,14 +169,14 @@ func unmarshalRpHeader(mti byte, b []byte) (byte, error) {
 	return b[1], nil
 }
 
-type rpRequest struct {
+type rpData struct {
 	cpData
 
 	RMR byte    `json:"rmr"` // M / Message Reference for RP
 	SCA Address `json:"sca"` // M / SC Address
 }
 
-func (d rpRequest) marshal(mo bool, tp []byte) []byte {
+func (d rpData) marshal(mo bool, tp []byte) []byte {
 	w := new(bytes.Buffer)
 
 	if mo {
@@ -192,7 +200,7 @@ func (d rpRequest) marshal(mo bool, tp []byte) []byte {
 	return w.Bytes()
 }
 
-func (d *rpRequest) unmarshal(mo bool, b []byte) (tp []byte, e error) {
+func (d *rpData) unmarshal(mo bool, b []byte) (tp []byte, e error) {
 	if mo {
 		d.RMR, e = unmarshalRpHeader(0, b)
 	} else {
@@ -240,6 +248,12 @@ func (d *rpRequest) unmarshal(mo bool, b []byte) (tp []byte, e error) {
 	return
 }
 
+/*
+type rpAResult interface {
+	marshalRP(bool, []byte) []byte
+}
+
+/*
 type rpAnswer struct {
 	cpData
 
@@ -247,3 +261,4 @@ type rpAnswer struct {
 	CS   byte  `json:"cs"`             // M / Cause
 	DIAG *byte `json:"diag,omitempty"` // O / Diagnostics
 }
+*/

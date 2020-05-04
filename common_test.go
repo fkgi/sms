@@ -23,10 +23,14 @@ func randByte() byte {
 
 func randDate() time.Time {
 	z := int(rand.Int31n(105) - 48)
-	return time.Date(
+	d := time.Date(
 		2000+rand.Int()%100, time.Month(rand.Int()%12+1),
 		rand.Int()%32, rand.Int()%24, rand.Int()%60, rand.Int()%60, 0,
 		time.FixedZone("", z*15*60))
+	if d.Year() < 2000 {
+		d = d.AddDate(1, 0, 0)
+	}
+	return d
 }
 
 func randVP() sms.ValidityPeriod {

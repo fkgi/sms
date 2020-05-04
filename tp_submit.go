@@ -9,7 +9,7 @@ import (
 
 // Submit is TPDU message from MS to SC
 type Submit struct {
-	rpRequest
+	rpData
 
 	RD  bool `json:"rd"`  // M / Reject Duplicates
 	SRR bool `json:"srr"` // O / Status Report Request
@@ -73,7 +73,7 @@ func (d Submit) MarshalTP() []byte {
 
 // MarshalRP output byte data of this RPDU
 func (d Submit) MarshalRP() []byte {
-	return d.rpRequest.marshal(true, d.MarshalTP())
+	return d.rpData.marshal(true, d.MarshalTP())
 }
 
 // MarshalCP output byte data of this CPDU

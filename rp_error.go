@@ -60,27 +60,33 @@ func rpCauseStat(c byte) string {
 	return fmt.Sprintf("Reserved(%d)", c)
 }
 
-// ErrorMO is MO RP-ERROR RPDU
-type ErrorMO struct {
-	rpAnswer
+// RpError is RP-ERROR RPDU
+type RpError struct {
+	cpData
+
+	RMR  byte  `json:"rmr"`            // M / Message Reference
+	CS   byte  `json:"cs"`             // M / Cause
+	DIAG *byte `json:"diag,omitempty"` // O / Diagnostics
 }
 
-// ErrorMT is MT RP-ERROR RPDU
-type ErrorMT struct {
-	rpAnswer
+// RpErrorMO is MO RP-ERROR RPDU
+type RpErrorMO RpError
+
+// RpErrorMT is MT RP-ERROR RPDU
+type RpErrorMT RpError
+
+// MarshalRP output byte data of this RPDU
+func (d RpErrorMO) MarshalRP() []byte {
+	return RpError(d).marshalRP(true, nil)
 }
 
 // MarshalRP output byte data of this RPDU
-func (d ErrorMO) MarshalRP() []byte {
-	return d.marshalErr(true, nil)
+func (d RpErrorMT) MarshalRP() []byte {
+	return RpError(d).marshalRP(false, nil)
 }
 
-// MarshalRP output byte data of this RPDU
-func (d ErrorMT) MarshalRP() []byte {
-	return d.marshalErr(false, nil)
-}
-
-func (d rpAnswer) marshalErr(mo bool, tp []byte) []byte {
+func (d RpError) marshalRP(mo bool, tp []byte) []byte {
+	// func (d rpAnswer) marshalErr(mo bool, tp []byte) []byte {
 	w := new(bytes.Buffer)
 
 	if mo {
@@ -109,44 +115,45 @@ func (d rpAnswer) marshalErr(mo bool, tp []byte) []byte {
 }
 
 // MarshalCP output byte data of this CPDU
-func (d ErrorMO) MarshalCP() []byte {
+func (d RpErrorMO) MarshalCP() []byte {
 	return d.cpData.marshal(d.MarshalRP())
 }
 
 // MarshalCP output byte data of this CPDU
-func (d ErrorMT) MarshalCP() []byte {
+func (d RpErrorMT) MarshalCP() []byte {
 	return d.cpData.marshal(d.MarshalRP())
 }
 
-// UnmarshalErrorMO decode Error MO from bytes
-func UnmarshalErrorMO(b []byte) (a ErrorMO, e error) {
+// UnmarshalRpErrorMO decode Error MO from bytes
+func UnmarshalRpErrorMO(b []byte) (a RpErrorMO, e error) {
 	e = a.UnmarshalRP(b)
 	return
 }
 
 // UnmarshalRP get data of this RPDU
-func (d *ErrorMO) UnmarshalRP(b []byte) (e error) {
-	if b, e = d.unmarshalErr(true, b); e != nil && b != nil {
+func (d *RpErrorMO) UnmarshalRP(b []byte) (e error) {
+	if b, e = (*RpError)(d).unmarshalRP(true, b); e != nil && b != nil {
 		e = ErrExtraData
 	}
 	return
 }
 
-// UnmarshalErrorMT decode Error MO from bytes
-func UnmarshalErrorMT(b []byte) (a ErrorMT, e error) {
+// UnmarshalRpErrorMT decode Error MO from bytes
+func UnmarshalRpErrorMT(b []byte) (a RpErrorMT, e error) {
 	e = a.UnmarshalRP(b)
 	return
 }
 
 // UnmarshalRP get data of this RPDU
-func (d *ErrorMT) UnmarshalRP(b []byte) (e error) {
-	if b, e = d.unmarshalErr(false, b); e != nil && b != nil {
+func (d *RpErrorMT) UnmarshalRP(b []byte) (e error) {
+	if b, e = (*RpError)(d).unmarshalRP(false, b); e != nil && b != nil {
 		e = ErrExtraData
 	}
 	return
 }
 
-func (d *rpAnswer) unmarshalErr(mo bool, b []byte) (tp []byte, e error) {
+func (d *RpError) unmarshalRP(mo bool, b []byte) (tp []byte, e error) {
+	// func (d *rpAnswer) unmarshalErr(mo bool, b []byte) (tp []byte, e error) {
 	if mo {
 		d.RMR, e = unmarshalRpHeader(4, b)
 	} else {
@@ -209,7 +216,7 @@ func (d *rpAnswer) unmarshalErr(mo bool, b []byte) (tp []byte, e error) {
 }
 
 // UnmarshalCP get data of this CPDU
-func (d *ErrorMO) UnmarshalCP(b []byte) (e error) {
+func (d *RpErrorMO) UnmarshalCP(b []byte) (e error) {
 	if b, e = d.cpData.unmarshal(b); e == nil {
 		e = d.UnmarshalRP(b)
 	}
@@ -217,22 +224,23 @@ func (d *ErrorMO) UnmarshalCP(b []byte) (e error) {
 }
 
 // UnmarshalCP get data of this CPDU
-func (d *ErrorMT) UnmarshalCP(b []byte) (e error) {
+func (d *RpErrorMT) UnmarshalCP(b []byte) (e error) {
 	if b, e = d.cpData.unmarshal(b); e == nil {
 		e = d.UnmarshalRP(b)
 	}
 	return
 }
 
-func (d ErrorMO) String() string {
-	return d.stringErr()
+func (d RpErrorMO) String() string {
+	return RpError(d).String()
 }
 
-func (d ErrorMT) String() string {
-	return d.stringErr()
+func (d RpErrorMT) String() string {
+	return RpError(d).String()
 }
 
-func (d rpAnswer) stringErr() string {
+func (d RpError) String() string {
+	// func (d rpAnswer) stringErr() string {
 	w := new(bytes.Buffer)
 
 	fmt.Fprintf(w, "RP-Error\n")
@@ -244,5 +252,14 @@ func (d rpAnswer) stringErr() string {
 	}
 	fmt.Fprintf(w, "\n")
 
+	return w.String()
+}
+
+func (d RpError) Error() string {
+	w := new(bytes.Buffer)
+	fmt.Fprintf(w, "RP-Error, cause=%s", rpCauseStat(d.CS))
+	if d.DIAG != nil {
+		fmt.Fprintf(w, ", diagnostic=%d", *d.DIAG)
+	}
 	return w.String()
 }

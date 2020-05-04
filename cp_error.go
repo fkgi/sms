@@ -30,14 +30,14 @@ func cpCauseStat(c byte) string {
 	return fmt.Sprintf("Unspecified(%d)", c)
 }
 
-// Error is CP-ERROR CPDU
-type Error struct {
+// CpError is CP-ERROR CPDU
+type CpError struct {
 	TI byte `json:"ti"` // M / Transaction identifier
 	CS byte `json:"cs"` // M / Cause
 }
 
 // MarshalCP output byte data of this CPDU
-func (d Error) MarshalCP() []byte {
+func (d CpError) MarshalCP() []byte {
 	b := make([]byte, 3)
 	b[0] = (d.TI & 0x0f) << 4
 	b[0] |= 0x09
@@ -47,13 +47,13 @@ func (d Error) MarshalCP() []byte {
 }
 
 // UnmarshalError decode Ack MT from bytes
-func UnmarshalError(b []byte) (a Error, e error) {
+func UnmarshalError(b []byte) (a CpError, e error) {
 	e = a.UnmarshalCP(b)
 	return
 }
 
 // UnmarshalCP get data of this CPDU
-func (d *Error) UnmarshalCP(b []byte) (e error) {
+func (d *CpError) UnmarshalCP(b []byte) (e error) {
 	if len(b) < 3 {
 		e = io.EOF
 	} else if len(b) > 3 {
@@ -65,7 +65,7 @@ func (d *Error) UnmarshalCP(b []byte) (e error) {
 	return
 }
 
-func (d Error) String() string {
+func (d CpError) String() string {
 	w := new(bytes.Buffer)
 
 	fmt.Fprintf(w, "CP-Error\n")
@@ -73,4 +73,8 @@ func (d Error) String() string {
 	fmt.Fprintf(w, "%sCP-CS: %s\n", Indent, cpCauseStat(d.CS))
 
 	return w.String()
+}
+
+func (d CpError) Error() string {
+	return "CP error, cause: " + cpCauseStat(d.CS)
 }

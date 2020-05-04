@@ -44,7 +44,7 @@ func TestMarshalJSON_empty(t *testing.T) {
 
 func subfuncMarshalJSON(u sms.UserData, t *testing.T) {
 	var e error
-	bytedata, e = json.Marshal(u)
+	bytedata, e := json.Marshal(u)
 	if e != nil {
 		t.Fatalf("unmarshal failed: %s", e)
 	}

@@ -12,7 +12,7 @@ func TestConvertCPErrorMO(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
-		orig := sms.Error{
+		orig := sms.CpError{
 			TI: randTransactionID(),
 			CS: randByte()}
 
@@ -23,7 +23,7 @@ func TestConvertCPErrorMO(t *testing.T) {
 		if e != nil {
 			t.Fatal(e)
 		}
-		ocom, ok := res.(sms.Error)
+		ocom, ok := res.(sms.CpError)
 		if !ok {
 			t.Fatal("mti mismatch")
 		}
@@ -42,7 +42,7 @@ func TestConvertCPErrorMT(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
-		orig := sms.Error{
+		orig := sms.CpError{
 			TI: randTransactionID(),
 			CS: randByte()}
 
@@ -53,7 +53,7 @@ func TestConvertCPErrorMT(t *testing.T) {
 		if e != nil {
 			t.Fatal(e)
 		}
-		ocom, ok := res.(sms.Error)
+		ocom, ok := res.(sms.CpError)
 		if !ok {
 			t.Fatal("mti mismatch")
 		}

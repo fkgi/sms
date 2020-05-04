@@ -57,7 +57,7 @@ func TestMarshalJSON_command(t *testing.T) {
 	t.Log(p.String())
 
 	var e error
-	bytedata, e = json.Marshal(p)
+	bytedata, e := json.Marshal(p)
 	if e != nil {
 		t.Fatalf("unmarshal failed: %s", e)
 	}

@@ -9,21 +9,21 @@ import (
 	"github.com/fkgi/sms"
 )
 
-func randRPAckMO() sms.AckMO {
-	orig := sms.AckMO{}
+func randRPAckMO() sms.RpAckMO {
+	orig := sms.RpAckMO{}
 	orig.TI = randTransactionID()
 	orig.RMR = randByte()
 	return orig
 }
 
-func compareRPRPAckMO(orig, ocom sms.AckMO) error {
+func compareRPRPAckMO(orig, ocom sms.RpAckMO) error {
 	if orig.RMR != ocom.RMR {
 		return errors.New("MR mismatch")
 	}
 	return nil
 }
 
-func compareCPRPAckMO(orig, ocom sms.AckMO) error {
+func compareCPRPAckMO(orig, ocom sms.RpAckMO) error {
 	if orig.TI != ocom.TI {
 		return errors.New("TI mismatch")
 	}
@@ -43,7 +43,7 @@ func TestConvertRPRPAckMO(t *testing.T) {
 		if e != nil {
 			t.Fatal(e)
 		}
-		ocom, ok := res.(sms.AckMO)
+		ocom, ok := res.(sms.RpAckMO)
 		if !ok {
 			t.Fatal("mti mismatch")
 		}
@@ -54,7 +54,7 @@ func TestConvertRPRPAckMO(t *testing.T) {
 			t.Fatal(e)
 		}
 
-		ocom, e = sms.UnmarshalAckMO(b)
+		ocom, e = sms.UnmarshalRpAckMO(b)
 		if e != nil {
 			t.Fatal(e)
 		}
@@ -80,7 +80,7 @@ func TestConvertCPRPAckMO(t *testing.T) {
 		if e != nil {
 			t.Fatal(e)
 		}
-		ocom, ok := res.(sms.AckMO)
+		ocom, ok := res.(sms.RpAckMO)
 		if !ok {
 			t.Fatal("mti mismatch")
 		}
@@ -91,7 +91,7 @@ func TestConvertCPRPAckMO(t *testing.T) {
 			t.Fatal(e)
 		}
 
-		ocom = sms.AckMO{}
+		ocom = sms.RpAckMO{}
 		e = ocom.UnmarshalCP(b)
 		if e != nil {
 			t.Fatal(e)
@@ -105,21 +105,21 @@ func TestConvertCPRPAckMO(t *testing.T) {
 	}
 }
 
-func randRPAckMT() sms.AckMT {
-	orig := sms.AckMT{}
+func randRPAckMT() sms.RpAckMT {
+	orig := sms.RpAckMT{}
 	orig.TI = randTransactionID()
 	orig.RMR = randByte()
 	return orig
 }
 
-func compareRPRPAckMT(orig, ocom sms.AckMT) error {
+func compareRPRPAckMT(orig, ocom sms.RpAckMT) error {
 	if orig.RMR != ocom.RMR {
 		return errors.New("MR mismatch")
 	}
 	return nil
 }
 
-func compareCPRPAckMT(orig, ocom sms.AckMT) error {
+func compareCPRPAckMT(orig, ocom sms.RpAckMT) error {
 	if orig.TI != ocom.TI {
 		return errors.New("TI mismatch")
 	}
@@ -139,7 +139,7 @@ func TestConvertRPRPAckMT(t *testing.T) {
 		if e != nil {
 			t.Fatal(e)
 		}
-		ocom, ok := res.(sms.AckMT)
+		ocom, ok := res.(sms.RpAckMT)
 		if !ok {
 			t.Fatal("mti mismatch")
 		}
@@ -150,7 +150,7 @@ func TestConvertRPRPAckMT(t *testing.T) {
 			t.Fatal(e)
 		}
 
-		ocom, e = sms.UnmarshalAckMT(b)
+		ocom, e = sms.UnmarshalRpAckMT(b)
 		if e != nil {
 			t.Fatal(e)
 		}
@@ -176,7 +176,7 @@ func TestConvertCPRPAckMT(t *testing.T) {
 		if e != nil {
 			t.Fatal(e)
 		}
-		ocom, ok := res.(sms.AckMT)
+		ocom, ok := res.(sms.RpAckMT)
 		if !ok {
 			t.Fatal("mti mismatch")
 		}
@@ -187,7 +187,7 @@ func TestConvertCPRPAckMT(t *testing.T) {
 			t.Fatal(e)
 		}
 
-		ocom = sms.AckMT{}
+		ocom = sms.RpAckMT{}
 		e = ocom.UnmarshalCP(b)
 		if e != nil {
 			t.Fatal(e)

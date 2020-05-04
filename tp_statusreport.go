@@ -10,7 +10,7 @@ import (
 
 // StatusReport is TPDU message from SC to MS
 type StatusReport struct {
-	rpRequest
+	rpData
 
 	MMS bool `json:"mms"` // M / More Messages to Send (true=more messages)
 	LP  bool `json:"lp"`  // O / Loop Prevention
@@ -79,7 +79,7 @@ func (d StatusReport) MarshalTP() []byte {
 
 // MarshalRP output byte data of this RPDU
 func (d StatusReport) MarshalRP() []byte {
-	return d.rpRequest.marshal(false, d.MarshalTP())
+	return d.rpData.marshal(false, d.MarshalTP())
 }
 
 // MarshalCP output byte data of this CPDU

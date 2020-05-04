@@ -9,8 +9,8 @@ import (
 	"github.com/fkgi/sms"
 )
 
-func randRPErrorMO() sms.ErrorMO {
-	orig := sms.ErrorMO{}
+func randRPErrorMO() sms.RpErrorMO {
+	orig := sms.RpErrorMO{}
 	orig.TI = randTransactionID()
 	orig.RMR = randByte()
 	orig.CS = randByte()
@@ -21,7 +21,7 @@ func randRPErrorMO() sms.ErrorMO {
 	return orig
 }
 
-func compareRPRPErrorMO(orig, ocom sms.ErrorMO) error {
+func compareRPRPErrorMO(orig, ocom sms.RpErrorMO) error {
 	if orig.RMR != ocom.RMR {
 		return errors.New("MR mismatch")
 	}
@@ -37,7 +37,7 @@ func compareRPRPErrorMO(orig, ocom sms.ErrorMO) error {
 	return nil
 }
 
-func compareCPRPErrorMO(orig, ocom sms.ErrorMO) error {
+func compareCPRPErrorMO(orig, ocom sms.RpErrorMO) error {
 	if orig.TI != ocom.TI {
 		return errors.New("TI mismatch")
 	}
@@ -57,7 +57,7 @@ func TestConvertRPRPErrorMO(t *testing.T) {
 		if e != nil {
 			t.Fatal(e)
 		}
-		ocom, ok := res.(sms.ErrorMO)
+		ocom, ok := res.(sms.RpErrorMO)
 		if !ok {
 			t.Fatal("mti mismatch")
 		}
@@ -68,7 +68,7 @@ func TestConvertRPRPErrorMO(t *testing.T) {
 			t.Fatal(e)
 		}
 
-		ocom, e = sms.UnmarshalErrorMO(b)
+		ocom, e = sms.UnmarshalRpErrorMO(b)
 		if e != nil {
 			t.Fatal(e)
 		}
@@ -94,7 +94,7 @@ func TestConvertCPRPErrorMO(t *testing.T) {
 		if e != nil {
 			t.Fatal(e)
 		}
-		ocom, ok := res.(sms.ErrorMO)
+		ocom, ok := res.(sms.RpErrorMO)
 		if !ok {
 			t.Fatal("mti mismatch")
 		}
@@ -105,7 +105,7 @@ func TestConvertCPRPErrorMO(t *testing.T) {
 			t.Fatal(e)
 		}
 
-		ocom = sms.ErrorMO{}
+		ocom = sms.RpErrorMO{}
 		e = ocom.UnmarshalCP(b)
 		if e != nil {
 			t.Fatal(e)
@@ -119,8 +119,8 @@ func TestConvertCPRPErrorMO(t *testing.T) {
 	}
 }
 
-func randRPErrorMT() sms.ErrorMT {
-	orig := sms.ErrorMT{}
+func randRPErrorMT() sms.RpErrorMT {
+	orig := sms.RpErrorMT{}
 	orig.TI = randTransactionID()
 	orig.RMR = randByte()
 	orig.CS = randByte()
@@ -131,7 +131,7 @@ func randRPErrorMT() sms.ErrorMT {
 	return orig
 }
 
-func compareRPRPErrorMT(orig, ocom sms.ErrorMT) error {
+func compareRPRPErrorMT(orig, ocom sms.RpErrorMT) error {
 	if orig.RMR != ocom.RMR {
 		return errors.New("MR mismatch")
 	}
@@ -147,7 +147,7 @@ func compareRPRPErrorMT(orig, ocom sms.ErrorMT) error {
 	return nil
 }
 
-func compareCPRPErrorMT(orig, ocom sms.ErrorMT) error {
+func compareCPRPErrorMT(orig, ocom sms.RpErrorMT) error {
 	if orig.TI != ocom.TI {
 		return errors.New("TI mismatch")
 	}
@@ -167,7 +167,7 @@ func TestConvertRPRPErrorMT(t *testing.T) {
 		if e != nil {
 			t.Fatal(e)
 		}
-		ocom, ok := res.(sms.ErrorMT)
+		ocom, ok := res.(sms.RpErrorMT)
 		if !ok {
 			t.Fatal("mti mismatch")
 		}
@@ -178,7 +178,7 @@ func TestConvertRPRPErrorMT(t *testing.T) {
 			t.Fatal(e)
 		}
 
-		ocom, e = sms.UnmarshalErrorMT(b)
+		ocom, e = sms.UnmarshalRpErrorMT(b)
 		if e != nil {
 			t.Fatal(e)
 		}
@@ -204,7 +204,7 @@ func TestConvertCPRPErrorMR(t *testing.T) {
 		if e != nil {
 			t.Fatal(e)
 		}
-		ocom, ok := res.(sms.ErrorMT)
+		ocom, ok := res.(sms.RpErrorMT)
 		if !ok {
 			t.Fatal("mti mismatch")
 		}
@@ -215,7 +215,7 @@ func TestConvertCPRPErrorMR(t *testing.T) {
 			t.Fatal(e)
 		}
 
-		ocom = sms.ErrorMT{}
+		ocom = sms.RpErrorMT{}
 		e = ocom.UnmarshalCP(b)
 		if e != nil {
 			t.Fatal(e)

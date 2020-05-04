@@ -107,6 +107,7 @@ func (d *cpData) unmarshal(b []byte) (rp []byte, e error) {
 		return
 	}
 	r := bytes.NewReader(b[2:])
+	//	r := bytes.NewReader(b[3:])
 
 	var tmp byte
 	if tmp, e = r.ReadByte(); e != nil {

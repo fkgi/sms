@@ -6,27 +6,31 @@ import (
 	"io"
 )
 
-// AckMO is MO RP-ACK RPDU
-type AckMO struct {
-	rpAnswer
+// RpAck is RP-ACK RPDU
+type RpAck struct {
+	cpData
+
+	RMR byte `json:"rmr"` // M / Message Reference
 }
 
-// AckMT is MT RP-ACK RPDU
-type AckMT struct {
-	rpAnswer
+// RpAckMO is MO RP-ACK RPDU
+type RpAckMO RpAck
+
+// RpAckMT is MT RP-ACK RPDU
+type RpAckMT RpAck
+
+// MarshalRP output byte data of this RPDU
+func (d RpAckMO) MarshalRP() []byte {
+	return RpAck(d).marshalRP(true, nil)
 }
 
 // MarshalRP output byte data of this RPDU
-func (d AckMO) MarshalRP() []byte {
-	return d.marshalAck(true, nil)
+func (d RpAckMT) MarshalRP() []byte {
+	return RpAck(d).marshalRP(false, nil)
 }
 
-// MarshalRP output byte data of this RPDU
-func (d AckMT) MarshalRP() []byte {
-	return d.marshalAck(false, nil)
-}
-
-func (d rpAnswer) marshalAck(mo bool, tp []byte) []byte {
+func (d RpAck) marshalRP(mo bool, tp []byte) []byte {
+	// func (d rpAnswer) marshalAck(mo bool, tp []byte) []byte {
 	w := new(bytes.Buffer)
 
 	if mo {
@@ -46,44 +50,45 @@ func (d rpAnswer) marshalAck(mo bool, tp []byte) []byte {
 }
 
 // MarshalCP output byte data of this CPDU
-func (d AckMO) MarshalCP() []byte {
+func (d RpAckMO) MarshalCP() []byte {
 	return d.cpData.marshal(d.MarshalRP())
 }
 
 // MarshalCP output byte data of this CPDU
-func (d AckMT) MarshalCP() []byte {
+func (d RpAckMT) MarshalCP() []byte {
 	return d.cpData.marshal(d.MarshalRP())
 }
 
-// UnmarshalAckMO decode Ack MO from bytes
-func UnmarshalAckMO(b []byte) (a AckMO, e error) {
+// UnmarshalRpAckMO decode Ack MO from bytes
+func UnmarshalRpAckMO(b []byte) (a RpAckMO, e error) {
 	e = a.UnmarshalRP(b)
 	return
 }
 
 // UnmarshalRP get data of this RPDU
-func (d *AckMO) UnmarshalRP(b []byte) (e error) {
-	if b, e = d.unmarshalAck(true, b); e != nil && b != nil {
+func (d *RpAckMO) UnmarshalRP(b []byte) (e error) {
+	if b, e = (*RpAck)(d).unmarshalRP(true, b); e != nil && b != nil {
 		e = ErrExtraData
 	}
 	return
 }
 
-// UnmarshalAckMT decode Ack MT from bytes
-func UnmarshalAckMT(b []byte) (a AckMT, e error) {
+// UnmarshalRpAckMT decode Ack MT from bytes
+func UnmarshalRpAckMT(b []byte) (a RpAckMT, e error) {
 	e = a.UnmarshalRP(b)
 	return
 }
 
 // UnmarshalRP get data of this RPDU
-func (d *AckMT) UnmarshalRP(b []byte) (e error) {
-	if b, e = d.unmarshalAck(false, b); e != nil && b != nil {
+func (d *RpAckMT) UnmarshalRP(b []byte) (e error) {
+	if b, e = (*RpAck)(d).unmarshalRP(false, b); e != nil && b != nil {
 		e = ErrExtraData
 	}
 	return
 }
 
-func (d *rpAnswer) unmarshalAck(mo bool, b []byte) (tp []byte, e error) {
+func (d *RpAck) unmarshalRP(mo bool, b []byte) (tp []byte, e error) {
+	// func (d *rpAnswer) unmarshalAck(mo bool, b []byte) (tp []byte, e error) {
 	if mo {
 		d.RMR, e = unmarshalRpHeader(2, b)
 	} else {
@@ -120,7 +125,7 @@ func (d *rpAnswer) unmarshalAck(mo bool, b []byte) (tp []byte, e error) {
 }
 
 // UnmarshalCP get data of this CPDU
-func (d *AckMO) UnmarshalCP(b []byte) (e error) {
+func (d *RpAckMO) UnmarshalCP(b []byte) (e error) {
 	if b, e = d.cpData.unmarshal(b); e == nil {
 		e = d.UnmarshalRP(b)
 	}
@@ -128,22 +133,23 @@ func (d *AckMO) UnmarshalCP(b []byte) (e error) {
 }
 
 // UnmarshalCP get data of this CPDU
-func (d *AckMT) UnmarshalCP(b []byte) (e error) {
+func (d *RpAckMT) UnmarshalCP(b []byte) (e error) {
 	if b, e = d.cpData.unmarshal(b); e == nil {
 		e = d.UnmarshalRP(b)
 	}
 	return
 }
 
-func (d AckMO) String() string {
-	return d.stringAck()
+func (d RpAckMO) String() string {
+	return RpAck(d).String()
 }
 
-func (d AckMT) String() string {
-	return d.stringAck()
+func (d RpAckMT) String() string {
+	return RpAck(d).String()
 }
 
-func (d rpAnswer) stringAck() string {
+func (d RpAck) String() string {
+	// func (d rpAnswer) stringAck() string {
 	w := new(bytes.Buffer)
 
 	fmt.Fprintf(w, "RP-Ack\n")

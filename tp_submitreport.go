@@ -10,7 +10,11 @@ import (
 
 // SubmitReport is TPDU message from SC to MS
 type SubmitReport struct {
-	rpAnswer
+	cpData
+
+	RMR  byte  `json:"rmr"`            // M / Message Reference
+	CS   byte  `json:"cs"`             // M / Cause
+	DIAG *byte `json:"diag,omitempty"` // O / Diagnostics
 
 	FCS  byte       `json:"fcs,omitempty"` // C / Failure Cause
 	SCTS time.Time  `json:"scts"`          // M / Service Centre Time Stamp
@@ -59,9 +63,11 @@ func (d SubmitReport) MarshalTP() []byte {
 // MarshalRP output byte data of this RPDU
 func (d SubmitReport) MarshalRP() []byte {
 	if d.FCS&0x80 == 0x80 {
-		return d.marshalErr(false, d.MarshalTP())
+		rp := RpError{RMR: d.RMR, CS: d.CS, DIAG: d.DIAG}
+		return rp.marshalRP(false, d.MarshalTP())
 	}
-	return d.marshalAck(false, d.MarshalTP())
+	rp := RpAck{RMR: d.RMR}
+	return rp.marshalRP(false, d.MarshalTP())
 }
 
 // MarshalCP output byte data of this CPDU
@@ -131,9 +137,19 @@ func (d *SubmitReport) UnmarshalRP(b []byte) (e error) {
 	}
 	switch b[0] & 0x07 {
 	case 0x03:
-		b, e = d.unmarshalAck(false, b)
+		rp := RpAck{}
+		b, e = rp.unmarshalRP(false, b)
+		if e == nil {
+			d.RMR = rp.RMR
+		}
 	case 0x05:
-		b, e = d.unmarshalErr(false, b)
+		rp := RpError{}
+		b, e = rp.unmarshalRP(false, b)
+		if e == nil {
+			d.RMR = rp.RMR
+			d.CS = rp.CS
+			d.DIAG = rp.DIAG
+		}
 	}
 	if b == nil {
 		e = io.EOF

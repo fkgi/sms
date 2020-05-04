@@ -12,7 +12,7 @@ func TestConvertCPAckMO(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
-		orig := sms.Ack{
+		orig := sms.CpAck{
 			TI: randTransactionID()}
 
 		t.Logf("%s", orig)
@@ -22,7 +22,7 @@ func TestConvertCPAckMO(t *testing.T) {
 		if e != nil {
 			t.Fatal(e)
 		}
-		ocom, ok := res.(sms.Ack)
+		ocom, ok := res.(sms.CpAck)
 		if !ok {
 			t.Fatal("mti mismatch")
 		}
@@ -38,7 +38,7 @@ func TestConvertCPAckMT(t *testing.T) {
 	rand.Seed(time.Now().Unix())
 
 	for i := 0; i < 1000; i++ {
-		orig := sms.Ack{
+		orig := sms.CpAck{
 			TI: randTransactionID()}
 
 		t.Logf("%s", orig)
@@ -48,7 +48,7 @@ func TestConvertCPAckMT(t *testing.T) {
 		if e != nil {
 			t.Fatal(e)
 		}
-		ocom, ok := res.(sms.Ack)
+		ocom, ok := res.(sms.CpAck)
 		if !ok {
 			t.Fatal("mti mismatch")
 		}

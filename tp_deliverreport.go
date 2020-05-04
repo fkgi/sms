@@ -9,7 +9,11 @@ import (
 
 // DeliverReport is TPDU message from MS to SC
 type DeliverReport struct {
-	rpAnswer
+	cpData
+
+	RMR  byte  `json:"rmr"`            // M / Message Reference
+	CS   byte  `json:"cs"`             // M / Cause
+	DIAG *byte `json:"diag,omitempty"` // O / Diagnostics
 
 	FCS byte       `json:"fcs,omitempty"` // C / Failure Cause
 	PID *byte      `json:"pid,omitempty"` // O / Protocol Identifier
@@ -56,9 +60,11 @@ func (d DeliverReport) MarshalTP() []byte {
 // MarshalRP output byte data of this RPDU
 func (d DeliverReport) MarshalRP() []byte {
 	if d.FCS&0x80 == 0x80 {
-		return d.rpAnswer.marshalErr(true, d.MarshalTP())
+		rp := RpError{RMR: d.RMR, CS: d.CS, DIAG: d.DIAG}
+		return rp.marshalRP(true, d.MarshalTP())
 	}
-	return d.rpAnswer.marshalAck(true, d.MarshalTP())
+	rp := RpAck{RMR: d.RMR}
+	return rp.marshalRP(true, d.MarshalTP())
 }
 
 // MarshalCP output byte data of this CPDU
@@ -123,9 +129,19 @@ func (d *DeliverReport) UnmarshalRP(b []byte) (e error) {
 	}
 	switch b[0] & 0x07 {
 	case 0x02:
-		b, e = d.unmarshalAck(true, b)
+		rp := RpAck{}
+		b, e = rp.unmarshalRP(true, b)
+		if e == nil {
+			d.RMR = rp.RMR
+		}
 	case 0x04:
-		b, e = d.unmarshalErr(true, b)
+		rp := RpError{}
+		b, e = rp.unmarshalRP(true, b)
+		if e == nil {
+			d.RMR = rp.RMR
+			d.CS = rp.CS
+			d.DIAG = rp.DIAG
+		}
 	}
 	if b == nil {
 		e = io.EOF
