@@ -95,7 +95,7 @@ func (d cpData) marshal(rp []byte) []byte {
 	b |= 0x09
 	w.WriteByte(b)
 	w.WriteByte(0x01)
-	//	w.WriteByte(0x01)
+	// w.WriteByte(0x01)
 	w.WriteByte(byte(len(rp)))
 	w.Write(rp)
 
@@ -107,7 +107,7 @@ func (d *cpData) unmarshal(b []byte) (rp []byte, e error) {
 		return
 	}
 	r := bytes.NewReader(b[2:])
-	//	r := bytes.NewReader(b[3:])
+	// r := bytes.NewReader(b[3:])
 
 	var tmp byte
 	if tmp, e = r.ReadByte(); e != nil {
