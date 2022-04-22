@@ -248,10 +248,7 @@ func (f VPEnhanced) Duration() time.Duration {
 
 // SingleAttempt return single attempt is required or not
 func (f VPEnhanced) SingleAttempt() bool {
-	if f[0]&0x40 == 0x40 {
-		return true
-	}
-	return false
+	return f[0]&0x40 == 0x40
 }
 
 // Equal reports a and b are same

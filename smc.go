@@ -1,5 +1,6 @@
 package sms
 
+/*
 type state byte
 
 const (
@@ -8,6 +9,7 @@ const (
 	waitAck    state = iota
 	waitData   state = iota
 )
+*/
 
 // SMC is SM-CP handler
 type SMC struct {
@@ -252,8 +254,7 @@ func (smc SMC) rxHandler(c chan CPDU, ti byte) {
 		}
 	}
 
-	pdu = <-c
-	return
+	<-c
 }
 
 // TranspReq handle TP-DATA

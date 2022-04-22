@@ -159,7 +159,7 @@ func (h ConcatenatedSM) Marshal() []byte {
 
 // UnmarshalConcatenatedSM make ConcatenatedSM UDH
 func UnmarshalConcatenatedSM(b []byte) (h ConcatenatedSM) {
-	if b != nil && len(b) >= 3 {
+	if len(b) >= 3 {
 		h.RefNum = b[0]
 		h.MaxNum = b[1]
 		h.SeqNum = b[2]
@@ -216,7 +216,7 @@ func (h ConcatenatedSM16bit) Marshal() []byte {
 
 // UnmarshalConcatenatedSM16bit make ConcatenatedSM16bit UDH
 func UnmarshalConcatenatedSM16bit(b []byte) (h ConcatenatedSM16bit) {
-	if b != nil && len(b) >= 4 {
+	if len(b) >= 4 {
 		h.RefNum = (uint16(b[0]) << 8) | uint16(b[1])
 		h.MaxNum = b[2]
 		h.SeqNum = b[3]
