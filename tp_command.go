@@ -124,8 +124,7 @@ func (d Command) MarshalJSON() ([]byte, error) {
 	al := struct {
 		*alias
 		Cd *UserData `json:"cd,omitempty"`
-	}{
-		alias: (*alias)(&d)}
+	}{alias: (*alias)(&d)}
 	if !d.CD.isEmpty() {
 		al.Cd = &d.CD
 	}
@@ -141,8 +140,7 @@ func (d *Command) UnmarshalJSON(b []byte) error {
 	al := struct {
 		Cd *UserData `json:"cd,omitempty"`
 		*alias
-	}{
-		alias: (*alias)(d)}
+	}{alias: (*alias)(d)}
 	if e := json.Unmarshal(b, &al); e != nil {
 		return e
 	}

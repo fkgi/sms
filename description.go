@@ -243,7 +243,7 @@ func pidStat(b byte) string {
 	if b > 55 && b < 63 {
 		return "SC specific use"
 	}
-	if b > 191 && b <= 255 {
+	if b > 191 {
 		return "SC specific use"
 	}
 

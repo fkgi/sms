@@ -1,0 +1,10 @@
+{
+    "deliverreport": {
+        "fcs": 192,
+        "pid": 1,
+        "dcs": 8,
+        "ud": {
+            "text": "あいうえお"
+        }
+    }
+}

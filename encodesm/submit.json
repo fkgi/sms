@@ -1,0 +1,18 @@
+{
+    "submit": {
+        "rd": false,
+        "srr": false,
+        "rp": false,
+        "tmr": 64,
+        "da": {
+            "ton": 0,
+            "npi": 1,
+            "addr": "09012345678"
+        },
+        "pid": 0,
+        "dcs": 8,
+        "ud": {
+            "text": "あいうえお"
+        }
+    }
+}

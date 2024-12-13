@@ -3,6 +3,7 @@ package sms
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -41,7 +42,7 @@ func (u UserData) Equal(b UserData) bool {
 
 type judh struct {
 	Key byte   `json:"key"`
-	Val []byte `json:"value"`
+	Val string `json:"value"`
 }
 
 // MarshalJSON provide custom marshaller
@@ -54,7 +55,9 @@ func (u UserData) MarshalJSON() ([]byte, error) {
 		UDH:   make([]judh, len(u.UDH)),
 		alias: (*alias)(&u)}
 	for i, h := range u.UDH {
-		ud.UDH[i] = judh{Key: h.Key(), Val: h.Value()}
+		ud.UDH[i] = judh{
+			Key: h.Key(),
+			Val: hex.EncodeToString(h.Value())}
 	}
 	return json.Marshal(ud)
 }
@@ -72,12 +75,16 @@ func (u *UserData) UnmarshalJSON(b []byte) (e error) {
 	}
 	u.UDH = make([]UserDataHdr, 0, len(al.UDH))
 	for _, h := range al.UDH {
+		b, e = hex.DecodeString(h.Val)
+		if e != nil {
+			return e
+		}
 		switch h.Key {
 		case 0x00:
-			t := UnmarshalConcatenatedSM(h.Val)
+			t := UnmarshalConcatenatedSM(b)
 			u.UDH = append(u.UDH, t)
 		default:
-			t := UnmarshalGeneric(h.Val)
+			t := UnmarshalGeneric(b)
 			t.K = h.Key
 			u.UDH = append(u.UDH, t)
 		}

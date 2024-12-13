@@ -173,8 +173,7 @@ func (d Submit) MarshalJSON() ([]byte, error) {
 		Dcs byte      `json:"dcs"`
 		Vp  *jvp      `json:"vp,omitempty"`
 		Ud  *UserData `json:"ud,omitempty"`
-	}{
-		alias: (*alias)(&d)}
+	}{alias: (*alias)(&d)}
 	if d.DCS != nil {
 		al.Dcs = d.DCS.Marshal()
 	} else {
@@ -202,8 +201,7 @@ func (d *Submit) UnmarshalJSON(b []byte) error {
 		Vp  *jvp      `json:"vp,omitempty"`
 		Ud  *UserData `json:"ud,omitempty"`
 		*alias
-	}{
-		alias: (*alias)(d)}
+	}{alias: (*alias)(d)}
 	if e := json.Unmarshal(b, &al); e != nil {
 		return e
 	}

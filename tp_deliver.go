@@ -139,8 +139,7 @@ func (d Deliver) MarshalJSON() ([]byte, error) {
 		*alias
 		Dcs byte      `json:"dcs"`
 		Ud  *UserData `json:"ud,omitempty"`
-	}{
-		alias: (*alias)(&d)}
+	}{alias: (*alias)(&d)}
 	if d.DCS != nil {
 		al.Dcs = d.DCS.Marshal()
 	} else {
@@ -159,11 +158,10 @@ func (d *Deliver) UnmarshalJSON(b []byte) error {
 	}
 	type alias Deliver
 	al := struct {
+		*alias
 		Dcs byte      `json:"dcs"`
 		Ud  *UserData `json:"ud,omitempty"`
-		*alias
-	}{
-		alias: (*alias)(d)}
+	}{alias: (*alias)(d)}
 	if e := json.Unmarshal(b, &al); e != nil {
 		return e
 	}

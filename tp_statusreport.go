@@ -182,8 +182,7 @@ func (d StatusReport) MarshalJSON() ([]byte, error) {
 		Pid *byte     `json:"pid,omitempty"`
 		Dcs *byte     `json:"dcs,omitempty"`
 		Ud  *UserData `json:"ud,omitempty"`
-	}{
-		alias: (*alias)(&d)}
+	}{alias: (*alias)(&d)}
 	al.Pid = d.PID
 	if d.DCS != nil {
 		tmp := d.DCS.Marshal()
@@ -202,12 +201,11 @@ func (d *StatusReport) UnmarshalJSON(b []byte) error {
 	}
 	type alias StatusReport
 	al := struct {
+		*alias
 		Pid *byte     `json:"pid,omitempty"`
 		Dcs *byte     `json:"dcs,omitempty"`
 		Ud  *UserData `json:"ud,omitempty"`
-		*alias
-	}{
-		alias: (*alias)(d)}
+	}{alias: (*alias)(d)}
 	if e := json.Unmarshal(b, &al); e != nil {
 		return e
 	}

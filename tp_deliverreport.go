@@ -164,41 +164,40 @@ func (d *DeliverReport) UnmarshalJSON(b []byte) error {
 	if string(b) == "null" {
 		return nil
 	}
+	type alias DeliverReport
 	al := struct {
+		*alias
 		Fcs *byte     `json:"fcs,omitempty"`
-		Pid *byte     `json:"pid,omitempty"`
 		Dcs *byte     `json:"dcs,omitempty"`
 		Ud  *UserData `json:"ud,omitempty"`
-	}{}
+	}{alias: (*alias)(d)}
 	if e := json.Unmarshal(b, &al); e != nil {
 		return e
 	}
 	if al.Fcs != nil && *al.Fcs&0x80 == 0x80 {
 		d.FCS = *al.Fcs
 	}
-	d.PID = al.Pid
 	if al.Dcs != nil {
 		d.DCS = UnmarshalDataCoding(*al.Dcs)
 	}
 	if al.Ud != nil {
 		d.UD = *al.Ud
 	}
-
 	return nil
 }
 
 // MarshalJSON provide custom marshaller
 func (d DeliverReport) MarshalJSON() ([]byte, error) {
+	type alias DeliverReport
 	al := struct {
+		*alias
 		Fcs *byte     `json:"fcs,omitempty"`
-		Pid *byte     `json:"pid,omitempty"`
 		Dcs *byte     `json:"dcs,omitempty"`
 		Ud  *UserData `json:"ud,omitempty"`
-	}{}
+	}{alias: (*alias)(&d)}
 	if d.FCS&0x80 == 0x80 {
 		al.Fcs = &d.FCS
 	}
-	al.Pid = d.PID
 	if d.DCS != nil {
 		tmp := d.DCS.Marshal()
 		al.Dcs = &tmp
