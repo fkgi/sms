@@ -4,7 +4,6 @@ import (
 	"errors"
 	"math/rand"
 	"testing"
-	"time"
 
 	"github.com/fkgi/sms"
 )
@@ -45,8 +44,6 @@ func compareCPRPErrorMO(orig, ocom sms.RpErrorMO) error {
 }
 
 func TestConvertRPRPErrorMO(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-
 	for i := 0; i < 1000; i++ {
 		orig := randRPErrorMO()
 
@@ -82,8 +79,6 @@ func TestConvertRPRPErrorMO(t *testing.T) {
 }
 
 func TestConvertCPRPErrorMO(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-
 	for i := 0; i < 1000; i++ {
 		orig := randRPErrorMO()
 
@@ -155,8 +150,6 @@ func compareCPRPErrorMT(orig, ocom sms.RpErrorMT) error {
 }
 
 func TestConvertRPRPErrorMT(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-
 	for i := 0; i < 1000; i++ {
 		orig := randRPErrorMT()
 
@@ -192,8 +185,6 @@ func TestConvertRPRPErrorMT(t *testing.T) {
 }
 
 func TestConvertCPRPErrorMR(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-
 	for i := 0; i < 1000; i++ {
 		orig := randRPErrorMT()
 

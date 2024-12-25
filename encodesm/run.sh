@@ -1,2 +1,1 @@
- cat submit.json | ./encodesm | xxd -p | xxd -r -p |../decodesm/decodesm mo
- 
+cat submit.json | ./encodesm -t submit | xxd -p | xxd -r -p | ./encodesm -r -t submit

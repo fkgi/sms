@@ -1,10 +1,8 @@
 {
-    "deliverreport": {
-        "fcs": 192,
-        "pid": 1,
-        "dcs": 8,
-        "ud": {
-            "text": "あいうえお"
-        }
+    "tp-fcs": 192,
+    "tp-pid": 1,
+    "tp-dcs": 8,
+    "tp-ud": {
+        "text": "あいうえお"
     }
 }

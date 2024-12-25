@@ -11,14 +11,14 @@ import (
 type DeliverReport struct {
 	cpData
 
-	RMR  byte  `json:"rmr"`            // M / Message Reference
-	CS   byte  `json:"cs"`             // M / Cause
+	RMR  byte  `json:"rp-mr"`          // M / Message Reference
+	CS   byte  `json:"rp-cs"`          // M / Cause
 	DIAG *byte `json:"diag,omitempty"` // O / Diagnostics
 
-	FCS byte       `json:"fcs,omitempty"` // C / Failure Cause
-	PID *byte      `json:"pid,omitempty"` // O / Protocol Identifier
-	DCS DataCoding `json:"dcs,omitempty"` // O / Data Coding Scheme
-	UD  UserData   `json:"ud,omitempty"`  // O / User Data
+	FCS byte       `json:"tp-fcs,omitempty"` // C / Failure Cause
+	PID *byte      `json:"tp-pid,omitempty"` // O / Protocol Identifier
+	DCS DataCoding `json:"tp-dcs,omitempty"` // O / Data Coding Scheme
+	UD  UserData   `json:"tp-ud,omitempty"`  // O / User Data
 }
 
 // MarshalTP output byte data of this TPDU
@@ -167,9 +167,9 @@ func (d *DeliverReport) UnmarshalJSON(b []byte) error {
 	type alias DeliverReport
 	al := struct {
 		*alias
-		Fcs *byte     `json:"fcs,omitempty"`
-		Dcs *byte     `json:"dcs,omitempty"`
-		Ud  *UserData `json:"ud,omitempty"`
+		Fcs *byte     `json:"tp-fcs,omitempty"`
+		Dcs *byte     `json:"tp-dcs,omitempty"`
+		Ud  *UserData `json:"tp-ud,omitempty"`
 	}{alias: (*alias)(d)}
 	if e := json.Unmarshal(b, &al); e != nil {
 		return e
@@ -191,9 +191,9 @@ func (d DeliverReport) MarshalJSON() ([]byte, error) {
 	type alias DeliverReport
 	al := struct {
 		*alias
-		Fcs *byte     `json:"fcs,omitempty"`
-		Dcs *byte     `json:"dcs,omitempty"`
-		Ud  *UserData `json:"ud,omitempty"`
+		Fcs *byte     `json:"tp-fcs,omitempty"`
+		Dcs *byte     `json:"tp-dcs,omitempty"`
+		Ud  *UserData `json:"tp-ud,omitempty"`
 	}{alias: (*alias)(&d)}
 	if d.FCS&0x80 == 0x80 {
 		al.Fcs = &d.FCS

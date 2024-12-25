@@ -9,7 +9,7 @@ import (
 type MemoryAvailable struct {
 	cpData
 
-	RMR byte `json:"rmr"` // M / Message Reference
+	RMR byte `json:"rp-mr"` // M / Message Reference
 }
 
 // MarshalRP output byte data of this RPDU

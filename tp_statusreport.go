@@ -12,18 +12,18 @@ import (
 type StatusReport struct {
 	rpData
 
-	MMS bool `json:"mms"` // M / More Messages to Send (true=more messages)
-	LP  bool `json:"lp"`  // O / Loop Prevention
-	SRQ bool `json:"srq"` // M / Status Report Qualifier (true=status report shall be returned)
+	MMS bool `json:"tp-mms"` // M / More Messages to Send (true=more messages)
+	LP  bool `json:"tp-lp"`  // O / Loop Prevention
+	SRQ bool `json:"tp-srq"` // M / Status Report Qualifier (true=status report shall be returned)
 
-	TMR  byte       `json:"tmr"`           // M / Message Reference
-	RA   Address    `json:"ra"`            // M / Destination Address
-	SCTS time.Time  `json:"scts"`          // M / Service Centre Time Stamp
-	DT   time.Time  `json:"dt"`            // M / Discharge Time
-	ST   byte       `json:"st"`            // M / Status
-	PID  *byte      `json:"pid,omitempty"` // O / Protocol Identifier
-	DCS  DataCoding `json:"dcs,omitempty"` // O / Data Coding Scheme
-	UD   UserData   `json:"ud,omitempty"`  // O / User Data
+	TMR  byte       `json:"tp-mr"`            // M / Message Reference
+	RA   Address    `json:"tp-ra"`            // M / Destination Address
+	SCTS time.Time  `json:"tp-scts"`          // M / Service Centre Time Stamp
+	DT   time.Time  `json:"tp-dt"`            // M / Discharge Time
+	ST   byte       `json:"tp-st"`            // M / Status
+	PID  *byte      `json:"tp-pid,omitempty"` // O / Protocol Identifier
+	DCS  DataCoding `json:"tp-dcs,omitempty"` // O / Data Coding Scheme
+	UD   UserData   `json:"tp-ud,omitempty"`  // O / User Data
 }
 
 // MarshalTP output byte data of this TPDU
@@ -179,9 +179,9 @@ func (d StatusReport) MarshalJSON() ([]byte, error) {
 	type alias StatusReport
 	al := struct {
 		*alias
-		Pid *byte     `json:"pid,omitempty"`
-		Dcs *byte     `json:"dcs,omitempty"`
-		Ud  *UserData `json:"ud,omitempty"`
+		Pid *byte     `json:"tp-pid,omitempty"`
+		Dcs *byte     `json:"tp-dcs,omitempty"`
+		Ud  *UserData `json:"tp-ud,omitempty"`
 	}{alias: (*alias)(&d)}
 	al.Pid = d.PID
 	if d.DCS != nil {
@@ -202,9 +202,9 @@ func (d *StatusReport) UnmarshalJSON(b []byte) error {
 	type alias StatusReport
 	al := struct {
 		*alias
-		Pid *byte     `json:"pid,omitempty"`
-		Dcs *byte     `json:"dcs,omitempty"`
-		Ud  *UserData `json:"ud,omitempty"`
+		Pid *byte     `json:"tp-pid,omitempty"`
+		Dcs *byte     `json:"tp-dcs,omitempty"`
+		Ud  *UserData `json:"tp-ud,omitempty"`
 	}{alias: (*alias)(d)}
 	if e := json.Unmarshal(b, &al); e != nil {
 		return e

@@ -10,7 +10,7 @@ import (
 type RpAck struct {
 	cpData
 
-	RMR byte `json:"rmr"` // M / Message Reference
+	RMR byte `json:"rp-mr"` // M / Message Reference
 }
 
 // RpAckMO is MO RP-ACK RPDU

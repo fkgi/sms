@@ -2,9 +2,7 @@ package sms_test
 
 import (
 	"errors"
-	"math/rand"
 	"testing"
-	"time"
 
 	"github.com/fkgi/sms"
 )
@@ -31,8 +29,6 @@ func compareCPMemoryAvailable(orig, ocom sms.MemoryAvailable) error {
 }
 
 func TestConvertRPMemoryAvailable(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-
 	for i := 0; i < 1000; i++ {
 		orig := randMemoryAvailable()
 
@@ -68,8 +64,6 @@ func TestConvertRPMemoryAvailable(t *testing.T) {
 }
 
 func TestConvertCPMemoryAvailable(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-
 	for i := 0; i < 1000; i++ {
 		orig := randMemoryAvailable()
 

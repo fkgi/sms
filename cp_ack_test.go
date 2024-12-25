@@ -1,16 +1,12 @@
 package sms_test
 
 import (
-	"math/rand"
 	"testing"
-	"time"
 
 	"github.com/fkgi/sms"
 )
 
 func TestConvertCPAckMO(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-
 	for i := 0; i < 1000; i++ {
 		orig := sms.CpAck{
 			TI: randTransactionID()}
@@ -35,8 +31,6 @@ func TestConvertCPAckMO(t *testing.T) {
 }
 
 func TestConvertCPAckMT(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-
 	for i := 0; i < 1000; i++ {
 		orig := sms.CpAck{
 			TI: randTransactionID()}

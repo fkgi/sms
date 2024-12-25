@@ -161,8 +161,6 @@ func compareCPSubmit(orig, ocom sms.Submit) error {
 }
 
 func TestConvertTPSubmit(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-
 	for i := 0; i < 1000; i++ {
 		orig := randSubmit()
 
@@ -199,8 +197,6 @@ func TestConvertTPSubmit(t *testing.T) {
 }
 
 func TestConvertRPSubmit(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-
 	for i := 0; i < 1000; i++ {
 		orig := randSubmit()
 
@@ -237,8 +233,6 @@ func TestConvertRPSubmit(t *testing.T) {
 }
 
 func TestConvertCPSubmit(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-
 	for i := 0; i < 1000; i++ {
 		orig := randSubmit()
 
@@ -400,8 +394,6 @@ func compareCPSubmitReport(orig, ocom sms.SubmitReport) error {
 }
 
 func TestConvertTPSubmitreport(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-
 	for i := 0; i < 1000; i++ {
 		orig := randSubmitreport()
 
@@ -438,8 +430,6 @@ func TestConvertTPSubmitreport(t *testing.T) {
 }
 
 func TestConvertRPSubmitreport(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-
 	for i := 0; i < 1000; i++ {
 		orig := randSubmitreport()
 
@@ -476,8 +466,6 @@ func TestConvertRPSubmitreport(t *testing.T) {
 }
 
 func TestConvertCPSubmitreport(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-
 	for i := 0; i < 1000; i++ {
 		orig := randSubmitreport()
 

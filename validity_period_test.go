@@ -2,7 +2,6 @@ package sms_test
 
 import (
 	"log"
-	"math/rand"
 	"testing"
 	"time"
 
@@ -20,7 +19,6 @@ func randDuration() (time.Duration, bool) {
 }
 
 func TestMakeVPfmDuration(t *testing.T) {
-	rand.Seed(time.Now().Unix())
 	for i := 0; i < 1000; i++ {
 		orig, sa := randDuration()
 		vp := sms.ValidityPeriodOf(orig, sa)
@@ -38,7 +36,6 @@ func TestMakeVPfmDuration(t *testing.T) {
 }
 
 func TestDurationValue(t *testing.T) {
-	rand.Seed(time.Now().Unix())
 	for i := 0; i < 1000; i++ {
 		orig, sa := randDuration()
 		if orig == 0 {

@@ -8,7 +8,7 @@ import (
 
 // CpAck is CP-ACK CPDU
 type CpAck struct {
-	TI byte `json:"ti"` // M / Transaction identifier
+	TI byte `json:"cp-ti"` // M / Transaction identifier
 }
 
 // MarshalCP output byte data of this CPDU

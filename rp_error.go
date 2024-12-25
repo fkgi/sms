@@ -64,8 +64,8 @@ func rpCauseStat(c byte) string {
 type RpError struct {
 	cpData
 
-	RMR  byte  `json:"rmr"`            // M / Message Reference
-	CS   byte  `json:"cs"`             // M / Cause
+	RMR  byte  `json:"rp-mr"`          // M / Message Reference
+	CS   byte  `json:"rp-cs"`          // M / Cause
 	DIAG *byte `json:"diag,omitempty"` // O / Diagnostics
 }
 

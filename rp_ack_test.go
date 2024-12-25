@@ -2,9 +2,7 @@ package sms_test
 
 import (
 	"errors"
-	"math/rand"
 	"testing"
-	"time"
 
 	"github.com/fkgi/sms"
 )
@@ -31,8 +29,6 @@ func compareCPRPAckMO(orig, ocom sms.RpAckMO) error {
 }
 
 func TestConvertRPRPAckMO(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-
 	for i := 0; i < 1000; i++ {
 		orig := randRPAckMO()
 
@@ -68,8 +64,6 @@ func TestConvertRPRPAckMO(t *testing.T) {
 }
 
 func TestConvertCPRPAckMO(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-
 	for i := 0; i < 1000; i++ {
 		orig := randRPAckMO()
 
@@ -127,8 +121,6 @@ func compareCPRPAckMT(orig, ocom sms.RpAckMT) error {
 }
 
 func TestConvertRPRPAckMT(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-
 	for i := 0; i < 1000; i++ {
 		orig := randRPAckMT()
 
@@ -164,8 +156,6 @@ func TestConvertRPRPAckMT(t *testing.T) {
 }
 
 func TestConvertCPRPAckMT(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-
 	for i := 0; i < 1000; i++ {
 		orig := randRPAckMT()
 

@@ -12,16 +12,16 @@ import (
 type Deliver struct {
 	rpData
 
-	MMS bool `json:"mms"` // M / More Messages to Send (true=more messages)
-	LP  bool `json:"lp"`  // O / Loop Prevention
-	SRI bool `json:"sri"` // O / Status Report Indication (true=status report shall be returned)
-	RP  bool `json:"rp"`  // M / Reply Path
+	MMS bool `json:"tp-mms"` // M / More Messages to Send (true=more messages)
+	LP  bool `json:"tp-lp"`  // O / Loop Prevention
+	SRI bool `json:"tp-sri"` // O / Status Report Indication (true=status report shall be returned)
+	RP  bool `json:"tp-rp"`  // M / Reply Path
 
-	OA   Address    `json:"oa"`           // M / Originating Address
-	PID  byte       `json:"pid"`          // M / Protocol Identifier
-	DCS  DataCoding `json:"dcs"`          // M / Data Coding Scheme
-	SCTS time.Time  `json:"scts"`         // M / Service Centre Time Stamp
-	UD   UserData   `json:"ud,omitempty"` // O / User Data
+	OA   Address    `json:"tp-oa"`           // M / Originating Address
+	PID  byte       `json:"tp-pid"`          // M / Protocol Identifier
+	DCS  DataCoding `json:"tp-dcs"`          // M / Data Coding Scheme
+	SCTS time.Time  `json:"tp-scts"`         // M / Service Centre Time Stamp
+	UD   UserData   `json:"tp-ud,omitempty"` // O / User Data
 }
 
 // MarshalTP output byte data of this TPDU
@@ -137,8 +137,8 @@ func (d Deliver) MarshalJSON() ([]byte, error) {
 	type alias Deliver
 	al := struct {
 		*alias
-		Dcs byte      `json:"dcs"`
-		Ud  *UserData `json:"ud,omitempty"`
+		Dcs byte      `json:"tp-dcs"`
+		Ud  *UserData `json:"tp-ud,omitempty"`
 	}{alias: (*alias)(&d)}
 	if d.DCS != nil {
 		al.Dcs = d.DCS.Marshal()
@@ -159,8 +159,8 @@ func (d *Deliver) UnmarshalJSON(b []byte) error {
 	type alias Deliver
 	al := struct {
 		*alias
-		Dcs byte      `json:"dcs"`
-		Ud  *UserData `json:"ud,omitempty"`
+		Dcs byte      `json:"tp-dcs"`
+		Ud  *UserData `json:"tp-ud,omitempty"`
 	}{alias: (*alias)(d)}
 	if e := json.Unmarshal(b, &al); e != nil {
 		return e

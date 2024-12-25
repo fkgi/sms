@@ -1,16 +1,12 @@
 package sms_test
 
 import (
-	"math/rand"
 	"testing"
-	"time"
 
 	"github.com/fkgi/sms"
 )
 
 func TestConvertCPErrorMO(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-
 	for i := 0; i < 1000; i++ {
 		orig := sms.CpError{
 			TI: randTransactionID(),
@@ -39,8 +35,6 @@ func TestConvertCPErrorMO(t *testing.T) {
 }
 
 func TestConvertCPErrorMT(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-
 	for i := 0; i < 1000; i++ {
 		orig := sms.CpError{
 			TI: randTransactionID(),

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"math/rand"
 	"testing"
-	"time"
 	"unicode"
 	"unicode/utf8"
 
@@ -57,8 +56,6 @@ func subfuncMarshalJSON(u sms.UserData, t *testing.T) {
 }
 
 func TestConvertUDH(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-
 	origs := make([]sms.UserDataHdr, rand.Int()%10)
 	for i := range origs {
 		origs[i] = randUDH()
@@ -102,8 +99,6 @@ func randUDH() sms.UserDataHdr {
 
 /*
 func TestConvertUD(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-
 	for i := 0; i < 500; i++ {
 		d := getRandomDCS()
 		orig := getRandomUDText(d)
@@ -156,8 +151,6 @@ func randUD(d sms.DataCoding) sms.UserData {
 }
 
 func TestMakeSeparatedText(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-
 	for j := 0; j < 100; j++ {
 		var txt string
 		if randBool() {

@@ -1,16 +1,12 @@
 package sms_test
 
 import (
-	"math/rand"
 	"testing"
-	"time"
 
 	"github.com/fkgi/sms"
 )
 
 func TestConvertDCS(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-
 	for i := 0; i < 256; i++ {
 		orig := sms.UnmarshalDataCoding(byte(i))
 		if orig == nil {

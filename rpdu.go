@@ -172,8 +172,8 @@ func unmarshalRpHeader(mti byte, b []byte) (byte, error) {
 type rpData struct {
 	cpData
 
-	RMR byte    `json:"rmr"` // M / Message Reference for RP
-	SCA Address `json:"sca"` // M / SC Address
+	RMR byte    `json:"rp-mr"`  // M / Message Reference for RP
+	SCA Address `json:"rp-sca"` // M / SC Address
 }
 
 func (d rpData) marshal(mo bool, tp []byte) []byte {

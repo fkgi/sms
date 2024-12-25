@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"math/rand"
 	"testing"
-	"time"
 
 	"github.com/fkgi/sms"
 	"github.com/fkgi/teldata"
@@ -30,8 +29,6 @@ func TestUnmarshalJSON(t *testing.T) {
 }
 
 func TestConvertAddress(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-
 	for i := 0; i < 1000; i++ {
 		orig := randAddress()
 		t.Logf("%s", orig)

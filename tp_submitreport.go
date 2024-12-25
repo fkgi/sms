@@ -12,15 +12,15 @@ import (
 type SubmitReport struct {
 	cpData
 
-	RMR  byte  `json:"rmr"`            // M / Message Reference
-	CS   byte  `json:"cs"`             // M / Cause
+	RMR  byte  `json:"rp-mr"`          // M / Message Reference
+	CS   byte  `json:"rp-cs"`          // M / Cause
 	DIAG *byte `json:"diag,omitempty"` // O / Diagnostics
 
-	FCS  byte       `json:"fcs,omitempty"` // C / Failure Cause
-	SCTS time.Time  `json:"scts"`          // M / Service Centre Time Stamp
-	PID  *byte      `json:"pid,omitempty"` // O / Protocol Identifier
-	DCS  DataCoding `json:"dcs,omitempty"` // O / Data Coding Scheme
-	UD   UserData   `json:"uid,omitempty"` // O / User Data
+	FCS  byte       `json:"tp-fcs,omitempty"` // C / Failure Cause
+	SCTS time.Time  `json:"tp-scts"`          // M / Service Centre Time Stamp
+	PID  *byte      `json:"tp-pid,omitempty"` // O / Protocol Identifier
+	DCS  DataCoding `json:"tp-dcs,omitempty"` // O / Data Coding Scheme
+	UD   UserData   `json:"tp-uid,omitempty"` // O / User Data
 }
 
 // MarshalTP output byte data of this TPDU
@@ -172,9 +172,9 @@ func (d SubmitReport) MarshalJSON() ([]byte, error) {
 	type alias SubmitReport
 	al := struct {
 		*alias
-		Fcs *byte     `json:"fcs,omitempty"`
-		Dcs *byte     `json:"dcs,omitempty"`
-		Ud  *UserData `json:"ud,omitempty"`
+		Fcs *byte     `json:"tp-fcs,omitempty"`
+		Dcs *byte     `json:"tp-dcs,omitempty"`
+		Ud  *UserData `json:"tp-ud,omitempty"`
 	}{alias: (*alias)(&d)}
 	if d.FCS&0x80 == 0x80 {
 		al.Fcs = &d.FCS
@@ -197,9 +197,9 @@ func (d *SubmitReport) UnmarshalJSON(b []byte) error {
 	type alias SubmitReport
 	al := struct {
 		*alias
-		Fcs *byte     `json:"fcs,omitempty"`
-		Dcs *byte     `json:"dcs,omitempty"`
-		Ud  *UserData `json:"ud,omitempty"`
+		Fcs *byte     `json:"tp-fcs,omitempty"`
+		Dcs *byte     `json:"tp-dcs,omitempty"`
+		Ud  *UserData `json:"tp-ud,omitempty"`
 	}{alias: (*alias)(d)}
 	if e := json.Unmarshal(b, &al); e != nil {
 		return e

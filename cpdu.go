@@ -85,7 +85,7 @@ func UnmarshalCPMT(b []byte) (CPDU, error) {
 }
 
 type cpData struct {
-	TI byte `json:"ti"` // M / Transaction identifier
+	TI byte `json:"cp-ti"` // M / Transaction identifier
 }
 
 func (d cpData) marshal(rp []byte) []byte {

@@ -11,16 +11,16 @@ import (
 type Submit struct {
 	rpData
 
-	RD  bool `json:"rd"`  // M / Reject Duplicates
-	SRR bool `json:"srr"` // O / Status Report Request
-	RP  bool `json:"rp"`  // M / Reply Path
+	RD  bool `json:"tp-rd"`  // M / Reject Duplicates
+	SRR bool `json:"tp-srr"` // O / Status Report Request
+	RP  bool `json:"tp-rp"`  // M / Reply Path
 
-	TMR byte           `json:"tmr"`          // M / Message Reference for TP
-	DA  Address        `json:"da"`           // M / Destination Address
-	PID byte           `json:"pid"`          // M / Protocol Identifier
-	DCS DataCoding     `json:"dcs"`          // M / Data Coding Scheme
-	VP  ValidityPeriod `json:"vp,omitempty"` // O / Validity Period
-	UD  UserData       `json:"ud,omitempty"` // O / User Data
+	TMR byte           `json:"tp-mr"`           // M / Message Reference for TP
+	DA  Address        `json:"tp-da"`           // M / Destination Address
+	PID byte           `json:"tp-pid"`          // M / Protocol Identifier
+	DCS DataCoding     `json:"tp-dcs"`          // M / Data Coding Scheme
+	VP  ValidityPeriod `json:"tp-vp,omitempty"` // O / Validity Period
+	UD  UserData       `json:"tp-ud,omitempty"` // O / User Data
 }
 
 // MarshalTP output byte data of this TPDU
@@ -170,9 +170,9 @@ func (d Submit) MarshalJSON() ([]byte, error) {
 	type alias Submit
 	al := struct {
 		*alias
-		Dcs byte      `json:"dcs"`
-		Vp  *jvp      `json:"vp,omitempty"`
-		Ud  *UserData `json:"ud,omitempty"`
+		Dcs byte      `json:"tp-dcs"`
+		Vp  *jvp      `json:"tp-vp,omitempty"`
+		Ud  *UserData `json:"tp-ud,omitempty"`
 	}{alias: (*alias)(&d)}
 	if d.DCS != nil {
 		al.Dcs = d.DCS.Marshal()
@@ -197,9 +197,9 @@ func (d *Submit) UnmarshalJSON(b []byte) error {
 	}
 	type alias Submit
 	al := struct {
-		Dcs byte      `json:"dcs"`
-		Vp  *jvp      `json:"vp,omitempty"`
-		Ud  *UserData `json:"ud,omitempty"`
+		Dcs byte      `json:"tp-dcs"`
+		Vp  *jvp      `json:"tp-vp,omitempty"`
+		Ud  *UserData `json:"tp-ud,omitempty"`
 		*alias
 	}{alias: (*alias)(d)}
 	if e := json.Unmarshal(b, &al); e != nil {

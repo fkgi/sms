@@ -163,8 +163,6 @@ func compareCPStatusreport(orig, ocom sms.StatusReport) error {
 }
 
 func TestConvertTPStatusreport(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-
 	for i := 0; i < 1000; i++ {
 		orig := randStatusreport()
 
@@ -201,8 +199,6 @@ func TestConvertTPStatusreport(t *testing.T) {
 }
 
 func TestConvertRPStatusreport(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-
 	for i := 0; i < 1000; i++ {
 		orig := randStatusreport()
 
@@ -239,8 +235,6 @@ func TestConvertRPStatusreport(t *testing.T) {
 }
 
 func TestConvertCPStatusreport(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-
 	for i := 0; i < 1000; i++ {
 		orig := randStatusreport()
 

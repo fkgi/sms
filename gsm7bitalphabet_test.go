@@ -4,7 +4,6 @@ import (
 	"math/rand"
 	"strconv"
 	"testing"
-	"time"
 	"unicode/utf8"
 
 	"github.com/fkgi/sms"
@@ -33,7 +32,6 @@ func TestGetGSM7bitString(t *testing.T) {
 
 /*
 func TestGSM7bitStringLength(t *testing.T) {
-	rand.Seed(time.Now().Unix())
 	for i := 0; i < 500; i++ {
 		txt := randText(rand.Int() % 1000)
 		t.Logf("\ntest text=%s", strconv.QuoteToGraphic(txt))
@@ -54,8 +52,6 @@ func TestGSM7bitStringLength(t *testing.T) {
 */
 
 func TestGSM7bitStringByteConv(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-
 	for i := 0; i < 1000; i++ {
 		org := randText(rand.Int() % 1000)
 		l := utf8.RuneCountInString(org)

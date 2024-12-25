@@ -11,14 +11,14 @@ import (
 type Command struct {
 	rpData
 
-	SRR bool `json:"srr"` // O / Status Report Request
+	SRR bool `json:"tp-srr"` // O / Status Report Request
 
-	TMR byte     `json:"tmr"`          // M / Message Reference for TP
-	PID byte     `json:"pid"`          // M / Protocol Identifier
-	CT  byte     `json:"ct"`           // M / Command Type
-	MN  byte     `json:"mn"`           // M / Message Number
-	DA  Address  `json:"da"`           // M / Destination Address
-	CD  UserData `json:"cd,omitempty"` // O / Command Data
+	TMR byte     `json:"tp-mr"`           // M / Message Reference for TP
+	PID byte     `json:"tp-pid"`          // M / Protocol Identifier
+	CT  byte     `json:"tp-ct"`           // M / Command Type
+	MN  byte     `json:"tp-mn"`           // M / Message Number
+	DA  Address  `json:"tp-da"`           // M / Destination Address
+	CD  UserData `json:"tp-cd,omitempty"` // O / Command Data
 }
 
 var binDCS = GeneralDataCoding{MsgCharset: Charset8bitData}
@@ -123,7 +123,7 @@ func (d Command) MarshalJSON() ([]byte, error) {
 	type alias Command
 	al := struct {
 		*alias
-		Cd *UserData `json:"cd,omitempty"`
+		Cd *UserData `json:"tp-cd,omitempty"`
 	}{alias: (*alias)(&d)}
 	if !d.CD.isEmpty() {
 		al.Cd = &d.CD
@@ -138,7 +138,7 @@ func (d *Command) UnmarshalJSON(b []byte) error {
 	}
 	type alias Command
 	al := struct {
-		Cd *UserData `json:"cd,omitempty"`
+		Cd *UserData `json:"tp-cd,omitempty"`
 		*alias
 	}{alias: (*alias)(d)}
 	if e := json.Unmarshal(b, &al); e != nil {

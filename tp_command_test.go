@@ -5,7 +5,6 @@ import (
 	"errors"
 	"math/rand"
 	"testing"
-	"time"
 
 	"github.com/fkgi/sms"
 	"github.com/fkgi/teldata"
@@ -135,8 +134,6 @@ func compareCPCommand(orig, ocom sms.Command) error {
 }
 
 func TestConvertTPCommand(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-
 	for i := 0; i < 1000; i++ {
 		orig := randCommand()
 
@@ -173,8 +170,6 @@ func TestConvertTPCommand(t *testing.T) {
 }
 
 func TestConvertRPCommand(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-
 	for i := 0; i < 1000; i++ {
 		orig := randCommand()
 
@@ -211,8 +206,6 @@ func TestConvertRPCommand(t *testing.T) {
 }
 
 func TestConvertCPCommand(t *testing.T) {
-	rand.Seed(time.Now().Unix())
-
 	for i := 0; i < 1000; i++ {
 		orig := randCommand()
 

@@ -32,8 +32,8 @@ func cpCauseStat(c byte) string {
 
 // CpError is CP-ERROR CPDU
 type CpError struct {
-	TI byte `json:"ti"` // M / Transaction identifier
-	CS byte `json:"cs"` // M / Cause
+	TI byte `json:"cp-ti"` // M / Transaction identifier
+	CS byte `json:"cp-cs"` // M / Cause
 }
 
 // MarshalCP output byte data of this CPDU
