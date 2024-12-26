@@ -12,10 +12,11 @@ import (
 func TestGetGSM7bitString(t *testing.T) {
 	txt := "Hello0!"
 	bin := []byte{0xC8, 0x32, 0x9B, 0xFD, 0x86, 0x85, 0x00}
-	cnv := []byte{}
+	var cnv []byte
 
 	if s, e := sms.StringToGSM7bit(txt); e != nil {
 		t.Fatalf("conversion failure: %s", e)
+		cnv = []byte{}
 	} else {
 		t.Logf("\ntest text=%s", s)
 		cnv = s.Bytes()

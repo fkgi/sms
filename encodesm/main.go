@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/fkgi/sms"
 )
@@ -114,8 +115,23 @@ func decode(bindata []byte, pdutype string) (r []byte, e error) {
 			e = fmt.Errorf("PDU type missmatch")
 		}
 	}
-	if e == nil {
-		r, e = json.Marshal(pdu)
+	if e != nil {
+		return
 	}
+	if r, e = json.Marshal(pdu); e != nil {
+		return
+	}
+	tmp1 := map[string]json.RawMessage{}
+	tmp2 := map[string]json.RawMessage{}
+	if e = json.Unmarshal(r, &tmp1); e != nil {
+		return
+	}
+	for k, v := range tmp1 {
+		if strings.HasPrefix(k, "tp-") {
+			tmp2[k] = v
+		}
+	}
+	r, e = json.Marshal(tmp2)
+
 	return
 }
