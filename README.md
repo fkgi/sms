@@ -2,6 +2,7 @@
 TPDU (3GPP TS23.040), RPDU and CPDU (3GPP TS24.011) message encoding implementation by Golang.
 
 [![GoDoc](https://godoc.org/github.com/fkgi/sms?status.svg)](https://godoc.org/github.com/fkgi/sms)
+[![Go Report Card](https://goreportcard.com/badge/github.com/fkgi/sms)](https://goreportcard.com/report/github.com/fkgi/sms)
 
 ## About SMS
 
