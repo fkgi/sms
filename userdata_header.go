@@ -43,7 +43,7 @@ func UnmarshalUDHs(b []byte) (h []UserDataHdr) {
 	return
 }
 
-// MarshalUDHs ganerate binary data of this UDHs
+// MarshalUDHs generate binary data of this UDHs
 func MarshalUDHs(h []UserDataHdr) []byte {
 	if len(h) == 0 {
 		return []byte{}
