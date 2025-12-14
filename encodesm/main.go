@@ -14,6 +14,7 @@ import (
 func main() {
 	pdutype := flag.String("t", "",
 		"PDU type for encoding `submit|submitreport|deliver|deliverreport|command|statusreport`")
+	layer := flag.String("l", "tp", "PDU layer for encoding `tp|rp|cp")
 	revert := flag.Bool("r", false, "decode SMS PDU from bindary to JSON")
 	flag.Parse()
 
@@ -25,9 +26,9 @@ func main() {
 
 	var res []byte
 	if *revert {
-		res, e = decode(in, *pdutype)
+		res, e = decode(in, *pdutype, *layer)
 	} else {
-		res, e = encode(in, *pdutype)
+		res, e = encode(in, *pdutype, *layer)
 	}
 
 	if e != nil {
@@ -37,7 +38,7 @@ func main() {
 	os.Stdout.Write(res)
 }
 
-func encode(jsondata []byte, pdutype string) (r []byte, e error) {
+func encode(jsondata []byte, pdutype, layer string) (r []byte, e error) {
 	var pdu sms.TPDU
 
 	switch pdutype {
@@ -69,19 +70,47 @@ func encode(jsondata []byte, pdutype string) (r []byte, e error) {
 		e = fmt.Errorf("invalid PDU type: %s", pdutype)
 	}
 
-	if e == nil {
+	if e != nil {
+		return
+	}
+	switch layer {
+	case "tp":
 		r = pdu.MarshalTP()
+	case "rp":
+		r = pdu.MarshalRP()
+	case "cp":
+		r = pdu.MarshalCP()
+	default:
+		e = fmt.Errorf("invalid PDU layer: %s", layer)
 	}
 	return
 }
 
-func decode(bindata []byte, pdutype string) (r []byte, e error) {
-	var pdu sms.TPDU
+func decode(bindata []byte, pdutype, layer string) (r []byte, e error) {
+	var pdu sms.CPDU
 	switch pdutype {
 	case "submit", "deliverreport", "command":
-		pdu, e = sms.UnmarshalTPMO(bindata)
+		switch layer {
+		case "tp":
+			pdu, e = sms.UnmarshalTPMO(bindata)
+		case "rp":
+			pdu, e = sms.UnmarshalRPMO(bindata)
+		case "cp":
+			pdu, e = sms.UnmarshalCPMO(bindata)
+		default:
+			e = fmt.Errorf("invalid PDU layer: %s", layer)
+		}
 	case "deliver", "submitreport", "statusreport":
-		pdu, e = sms.UnmarshalTPMT(bindata)
+		switch layer {
+		case "tp":
+			pdu, e = sms.UnmarshalTPMT(bindata)
+		case "rp":
+			pdu, e = sms.UnmarshalRPMT(bindata)
+		case "cp":
+			pdu, e = sms.UnmarshalCPMT(bindata)
+		default:
+			e = fmt.Errorf("invalid PDU layer: %s", layer)
+		}
 	default:
 		e = fmt.Errorf("invalid PDU type: %s", pdutype)
 	}
@@ -127,7 +156,16 @@ func decode(bindata []byte, pdutype string) (r []byte, e error) {
 		return
 	}
 	for k, v := range tmp1 {
-		if strings.HasPrefix(k, "tp-") {
+		switch layer {
+		case "tp":
+			if strings.HasPrefix(k, "tp-") {
+				tmp2[k] = v
+			}
+		case "rp":
+			if !strings.HasPrefix(k, "cp-") {
+				tmp2[k] = v
+			}
+		default:
 			tmp2[k] = v
 		}
 	}
