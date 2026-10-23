@@ -233,7 +233,7 @@ func (d StatusReport) String() string {
 	fmt.Fprintf(w, "%sTP-MR:   %d\n", Indent, d.TMR)
 	fmt.Fprintf(w, "%sTP-RA:   %s\n", Indent, d.RA)
 	fmt.Fprintf(w, "%sTP-SCTS: %s\n", Indent, d.SCTS)
-	fmt.Fprintf(w, "%sTP-DT:   %s\n", Indent, d.SCTS)
+	fmt.Fprintf(w, "%sTP-DT:   %s\n", Indent, d.DT)
 	fmt.Fprintf(w, "%sTP-ST:   %s\n", Indent, stStat(d.ST))
 	if d.PID != nil {
 		fmt.Fprintf(w, "%sTP-PID:  %s\n", Indent, pidStat(*d.PID))

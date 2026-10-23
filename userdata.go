@@ -136,6 +136,9 @@ func (u *UserData) read(r *bytes.Reader, d DataCoding, h bool) error {
 	l = int(p)
 	o := 0
 	if h {
+		if len(ud) == 0 {
+			return io.EOF
+		}
 		if c == CharsetGSM7bit {
 			o = int(ud[0]+1) * 8
 			l -= o / 7

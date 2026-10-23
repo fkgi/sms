@@ -35,6 +35,10 @@ func unmarshalRPMO(b []byte, c cpData) (RPDU, error) {
 		}
 		rp.cpData = c
 
+		if len(b) == 0 {
+			return nil, io.EOF
+		}
+
 		switch b[0] & 0x03 {
 		case 0x01:
 			var tp Submit
@@ -106,6 +110,10 @@ func unmarshalRPMT(b []byte, c cpData) (RPDU, error) {
 			return nil, e
 		}
 		rp.cpData = c
+
+		if len(b) == 0 {
+			return nil, io.EOF
+		}
 
 		switch b[0] & 0x03 {
 		case 0x00:
