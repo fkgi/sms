@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -16,6 +17,7 @@ func main() {
 		"PDU type for encoding `submit|submitreport|deliver|deliverreport|command|statusreport`")
 	layer := flag.String("l", "tp", "PDU layer for encoding `tp|rp|cp")
 	revert := flag.Bool("r", false, "decode SMS PDU from bindary to JSON")
+	binary := flag.Bool("b", false, "use raw binary instead of hex string")
 	flag.Parse()
 
 	in, e := io.ReadAll(os.Stdin)
@@ -26,9 +28,17 @@ func main() {
 
 	var res []byte
 	if *revert {
-		res, e = decode(in, *pdutype, *layer)
+		if !*binary {
+			in, e = hex.DecodeString(string(in))
+		}
+		if e == nil {
+			res, e = decode(in, *pdutype, *layer)
+		}
 	} else {
 		res, e = encode(in, *pdutype, *layer)
+		if !*binary && e == nil {
+			res = []byte(hex.EncodeToString(res))
+		}
 	}
 
 	if e != nil {

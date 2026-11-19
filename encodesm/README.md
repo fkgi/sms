@@ -1,6 +1,7 @@
 # encodesm
 `encodesm` is a command-line tool written in Go for encoding and decoding SMS PDUs (Protocol Data Units).  
 It supports conversion between JSON and binary PDU formats, and handles various SMS PDU types such as submit, deliver, and reports.
+Binary PDU is represented as a string in hexadecimal format.
 
 ## Installation
 ```sh
@@ -19,32 +20,37 @@ cat submit.pdu | ./encodesm -t submit -r > submit.json
 ```
 
 #### Options
-- `-t` : Specify PDU type  
+- `-t` : Specify PDU type (mandatory)  
   `submit` | `submitreport` | `deliver` | `deliverreport` | `command` | `statusreport`
+- `-l` : Specify layer of PDU (default: `tp`)
+  `tp` | `rp` | `cp`
 - `-r` : Decode mode (PDU → JSON). If omitted, encodes (JSON → PDU)
+- `-b` : Output/Input of binary will be raw binary data
+(not hexadecimal format string)
 
 ## JSON Example
+JSON for submit.
 ```json
 {
-  "tp-mti": 1,
   "tp-rd": false,
-  "tp-vpf": 0,
+  "tp-srr": false,
   "tp-rp": false,
-  "tp-mr": 0,
+  "tp-mr": 64,
   "tp-da": {
     "ton": 1,
     "npi": 1,
     "addr": "819012345678"
   },
   "tp-pid": 0,
-  "tp-dcs": {
-    "msgcharset": 0
-  },
-  "tp-vp": "2025-09-26T12:00:00+09:00",
+  "tp-dcs": 8,
   "tp-ud": {
-    "text": "Test message"
+    "text": "あいうえお"
   }
 }
+```
+binary for submit.
+```
+01000c9118092143658700081800540065007300740020006d006500730073006100670065
 ```
 
 ## License

@@ -2,11 +2,11 @@
     "tp-rd": false,
     "tp-srr": false,
     "tp-rp": false,
-    "tp-tmr": 64,
+    "tp-mr": 64,
     "tp-da": {
-        "ton": 0,
+        "ton": 1,
         "npi": 1,
-        "addr": "09012345678"
+        "addr": "819012345678"
     },
     "tp-pid": 0,
     "tp-dcs": 8,
