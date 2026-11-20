@@ -3,6 +3,7 @@ package sms_test
 import (
 	"encoding/json"
 	"math/rand"
+	"regexp"
 	"testing"
 
 	"github.com/fkgi/sms"
@@ -69,5 +70,12 @@ func TestNilAddr(t *testing.T) {
 		orig := randAddress()
 		orig.Addr = nil
 		t.Logf("%s", orig)
+	}
+}
+
+func TestRegexpMatchNilAddr(t *testing.T) {
+	a := sms.Address{}
+	if a.RegexpMatch(regexp.MustCompile(".*")) {
+		t.Fatal("nil address unexpectedly matched")
 	}
 }

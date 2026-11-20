@@ -73,6 +73,47 @@ func TestConvertUDH(t *testing.T) {
 	}
 }
 
+func TestUnmarshalUDHsMalformed(t *testing.T) {
+	t.Run("declared length exceeds buffer", func(t *testing.T) {
+		defer func() {
+			if r := recover(); r != nil {
+				t.Fatalf("panicked: %v", r)
+			}
+		}()
+		if got := sms.UnmarshalUDHs([]byte{5, 0, 3, 1, 2}); len(got) != 0 {
+			t.Fatalf("unexpected headers: %v", got)
+		}
+	})
+
+	t.Run("IE length exceeds remaining", func(t *testing.T) {
+		defer func() {
+			if r := recover(); r != nil {
+				t.Fatalf("panicked: %v", r)
+			}
+		}()
+		if got := sms.UnmarshalUDHs([]byte{3, 0, 3, 1}); len(got) != 0 {
+			t.Fatalf("unexpected headers: %v", got)
+		}
+	})
+}
+
+func TestDeliverRejectsInvalidUDHPayloadLength(t *testing.T) {
+	b := []byte{
+		0x40,                                     // UDH present
+		0x00,                                     // empty originating address
+		0x00,                                     // TON/NPI
+		0x00,                                     // PID
+		0x00,                                     // GSM 7-bit DCS
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // SCTS
+		0x01, // UD length
+		0x00, // UDH length byte only
+	}
+	var d sms.Deliver
+	if e := d.UnmarshalTP(b); e == nil {
+		t.Fatal("malformed TP-UD unexpectedly accepted")
+	}
+}
+
 func randUDH() sms.UserDataHdr {
 	h := randByte()
 	switch h {

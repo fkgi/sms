@@ -284,21 +284,25 @@ func (smc SMC) TranspReq(pdu TPDU) (TPDU, error) {
 		v.TI = ti
 		v.RMR = ti
 		v.SCA = smc.SCAddress
+		pdu = v
 	case Command:
 		isNW = false
 		v.TI = ti
 		v.RMR = ti
 		v.SCA = smc.SCAddress
+		pdu = v
 	case Deliver:
 		isNW = true
 		v.TI = ti
 		v.RMR = ti
 		v.SCA = smc.SCAddress
+		pdu = v
 	case StatusReport:
 		isNW = true
 		v.TI = ti
 		v.RMR = ti
 		v.SCA = smc.SCAddress
+		pdu = v
 	default:
 		return nil, RpError{CS: 97}
 	}

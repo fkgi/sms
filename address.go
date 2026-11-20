@@ -148,6 +148,9 @@ func (a Address) MarshalJSON() ([]byte, error) {
 
 // RegexpMatch check matching text of address
 func (a Address) RegexpMatch(re *regexp.Regexp) bool {
+	if a.Addr == nil {
+		return false
+	}
 	return re.MatchString(a.Addr.String())
 }
 

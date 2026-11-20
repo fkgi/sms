@@ -139,6 +139,10 @@ func (u *UserData) read(r *bytes.Reader, d DataCoding, h bool) error {
 		if len(ud) == 0 {
 			return io.EOF
 		}
+		udl := int(ud[0]) + 1
+		if udl > len(ud) {
+			return ErrInvalidLength
+		}
 		if c == CharsetGSM7bit {
 			o = int(ud[0]+1) * 8
 			l -= o / 7
@@ -150,8 +154,20 @@ func (u *UserData) read(r *bytes.Reader, d DataCoding, h bool) error {
 		} else {
 			l -= int(ud[0] + 1)
 		}
-		u.UDH = UnmarshalUDHs(ud[0 : ud[0]+1])
-		ud = ud[ud[0]+1:]
+		if l < 0 {
+			return ErrInvalidLength
+		}
+		if c != CharsetGSM7bit {
+			remaining := len(ud) - udl
+			if l > remaining {
+				return ErrInvalidLength
+			}
+			if c == CharsetUCS2 && l%2 != 0 {
+				return ErrInvalidLength
+			}
+		}
+		u.UDH = UnmarshalUDHs(ud[:udl])
+		ud = ud[udl:]
 	}
 
 	switch c {

@@ -21,12 +21,27 @@ func UnmarshalUDHs(b []byte) (h []UserDataHdr) {
 	if len(b) == 0 {
 		return
 	}
-	buf := bytes.NewBuffer(b[1:])
+	udl := int(b[0])
+	if udl > len(b)-1 {
+		return
+	}
+	buf := bytes.NewBuffer(b[1 : udl+1])
 	for buf.Len() != 0 {
-		k, _ := buf.ReadByte()
-		l, _ := buf.ReadByte()
+		k, e := buf.ReadByte()
+		if e != nil {
+			return
+		}
+		l, e := buf.ReadByte()
+		if e != nil {
+			return
+		}
+		if int(l) > buf.Len() {
+			return
+		}
 		v := make([]byte, l)
-		buf.Read(v)
+		if _, e = buf.Read(v); e != nil {
+			return
+		}
 		switch k {
 		case 0x00:
 			u := UnmarshalConcatenatedSM(v)
